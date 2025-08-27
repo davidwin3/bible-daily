@@ -1,31 +1,32 @@
-import { useQuery } from '@tanstack/react-query';
-import { missionsAPI, postsAPI } from '@/lib/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Link } from 'react-router-dom';
-import { Calendar, CheckCircle, MessageSquare, Target, Users } from 'lucide-react';
-import { useAuth } from '@/contexts/auth';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Link } from "react-router-dom";
+import {
+  Calendar,
+  CheckCircle,
+  MessageSquare,
+  Target,
+  Users,
+} from "lucide-react";
+import { useAuth } from "@/contexts/auth";
+import { useTodayMission } from "@/hooks/useMissions";
+import { usePosts } from "@/hooks/usePosts";
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
 
-  const { data: todayMission, isLoading: missionLoading } = useQuery({
-    queryKey: ['mission', 'today'],
-    queryFn: missionsAPI.getTodayMission,
-  });
-
-  const { data: recentPosts, isLoading: postsLoading } = useQuery({
-    queryKey: ['posts', 'recent'],
-    queryFn: () => postsAPI.getPosts({ limit: 3 }),
-  });
+  const { data: todayMission, isLoading: missionLoading } = useTodayMission();
+  const { data: recentPosts, isLoading: postsLoading } = usePosts({ limit: 3 });
 
   return (
     <div className="space-y-6 pb-20">
       {/* 환영 메시지 */}
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">
-          {user ? `안녕하세요, ${user.name}님!` : 'Bible Daily에 오신 것을 환영합니다'}
+          {user
+            ? `안녕하세요, ${user.name}님!`
+            : "Bible Daily에 오신 것을 환영합니다"}
         </h1>
         <p className="text-muted-foreground">
           오늘도 말씀과 함께 은혜로운 하루 되세요
@@ -42,7 +43,7 @@ export const HomePage: React.FC = () => {
             </div>
             <Badge variant="secondary">
               <Calendar className="h-3 w-3 mr-1" />
-              {new Date().toLocaleDateString('ko-KR')}
+              {new Date().toLocaleDateString("ko-KR")}
             </Badge>
           </div>
         </CardHeader>
@@ -52,34 +53,33 @@ export const HomePage: React.FC = () => {
               <div className="h-4 bg-muted rounded w-3/4"></div>
               <div className="h-3 bg-muted rounded w-1/2"></div>
             </div>
-          ) : todayMission?.data ? (
+          ) : todayMission ? (
             <div className="space-y-3">
               <div>
                 <h3 className="font-semibold">
-                  {todayMission.data.title || '오늘의 성경 읽기'}
+                  {todayMission.title || "오늘의 성경 읽기"}
                 </h3>
                 <p className="text-sm text-muted-foreground">
-                  {todayMission.data.startBook} {todayMission.data.startChapter}
-                  {todayMission.data.startVerse && `:${todayMission.data.startVerse}`}
-                  {todayMission.data.endBook && (
-                    ` - ${todayMission.data.endBook} ${todayMission.data.endChapter}`
-                  )}
-                  {todayMission.data.endVerse && `:${todayMission.data.endVerse}`}
+                  {todayMission.startBook} {todayMission.startChapter}
+                  {todayMission.startVerse && `:${todayMission.startVerse}`}
+                  {todayMission.endBook &&
+                    ` - ${todayMission.endBook} ${todayMission.endChapter}`}
+                  {todayMission.endVerse && `:${todayMission.endVerse}`}
                 </p>
               </div>
-              {todayMission.data.description && (
-                <p className="text-sm">{todayMission.data.description}</p>
+              {todayMission.description && (
+                <p className="text-sm">{todayMission.description}</p>
               )}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                   <div className="flex items-center gap-1">
                     <Users className="h-4 w-4" />
-                    <span>{todayMission.data.completionCount || 0}명 완료</span>
+                    <span>{todayMission.completionCount || 0}명 완료</span>
                   </div>
-                  {todayMission.data.completionRate && (
+                  {todayMission.completionRate && (
                     <div className="flex items-center gap-1">
                       <CheckCircle className="h-4 w-4" />
-                      <span>{Math.round(todayMission.data.completionRate)}%</span>
+                      <span>{Math.round(todayMission.completionRate)}%</span>
                     </div>
                   )}
                 </div>
@@ -90,7 +90,9 @@ export const HomePage: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-4">
-              <p className="text-muted-foreground">오늘의 미션이 준비되지 않았습니다</p>
+              <p className="text-muted-foreground">
+                오늘의 미션이 준비되지 않았습니다
+              </p>
             </div>
           )}
         </CardContent>
@@ -121,9 +123,9 @@ export const HomePage: React.FC = () => {
                 </div>
               ))}
             </div>
-          ) : recentPosts?.data?.posts?.length ? (
+          ) : recentPosts?.data?.length ? (
             <div className="space-y-4">
-              {recentPosts.data.posts.map((post: any) => (
+              {recentPosts.data.map((post: any) => (
                 <Link key={post.id} to={`/posts/${post.id}`}>
                   <div className="p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
                     <h4 className="font-medium line-clamp-1">{post.title}</h4>
@@ -132,7 +134,9 @@ export const HomePage: React.FC = () => {
                     </p>
                     <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
                       <span>{post.author.name}</span>
-                      <span>{new Date(post.createdAt).toLocaleDateString('ko-KR')}</span>
+                      <span>
+                        {new Date(post.createdAt).toLocaleDateString("ko-KR")}
+                      </span>
                     </div>
                   </div>
                 </Link>
@@ -140,7 +144,9 @@ export const HomePage: React.FC = () => {
             </div>
           ) : (
             <div className="text-center py-4">
-              <p className="text-muted-foreground">아직 작성된 소감이 없습니다</p>
+              <p className="text-muted-foreground">
+                아직 작성된 소감이 없습니다
+              </p>
               {user && (
                 <Link to="/posts/new" className="mt-2 inline-block">
                   <Button size="sm">첫 소감 작성하기</Button>

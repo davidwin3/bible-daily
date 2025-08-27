@@ -21,7 +21,7 @@ export class UserMission {
   isCompleted: boolean;
 
   @Column({ type: 'datetime', nullable: true })
-  completedAt: Date;
+  completedAt: Date | null;
 
   @CreateDateColumn()
   createdAt: Date;

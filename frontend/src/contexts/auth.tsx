@@ -1,7 +1,12 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User as FirebaseUser, onAuthStateChanged, signInWithPopup, signOut } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
-import { authAPI } from '@/lib/api';
+import React, { createContext, useContext, useEffect, useState } from "react";
+import {
+  type User as FirebaseUser,
+  onAuthStateChanged,
+  signInWithPopup,
+  signOut,
+} from "firebase/auth";
+import { auth, googleProvider } from "@/lib/firebase";
+import { authAPI } from "@/lib/api";
 
 interface User {
   id: string;
@@ -24,12 +29,14 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
 
-export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
@@ -37,28 +44,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setFirebaseUser(firebaseUser);
-      
+
       if (firebaseUser) {
         try {
           // Get Firebase token
           const token = await firebaseUser.getIdToken();
-          
+
           // Login with backend
           const response = await authAPI.login(token);
-          
+
           // Store token and user info
-          localStorage.setItem('authToken', response.data.accessToken);
+          localStorage.setItem("authToken", response.data.accessToken);
           setUser(response.data.user);
         } catch (error) {
-          console.error('Login failed:', error);
+          console.error("Login failed:", error);
           await signOut(auth);
           setUser(null);
         }
       } else {
-        localStorage.removeItem('authToken');
+        localStorage.removeItem("authToken");
         setUser(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -71,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       await signInWithPopup(auth, googleProvider);
       // onAuthStateChanged will handle the rest
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error("Login failed:", error);
       setLoading(false);
       throw error;
     }
@@ -80,11 +87,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await signOut(auth);
-      localStorage.removeItem('authToken');
+      localStorage.removeItem("authToken");
       setUser(null);
       setFirebaseUser(null);
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
       throw error;
     }
   };

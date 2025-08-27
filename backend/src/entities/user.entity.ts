@@ -5,8 +5,6 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
-  ManyToOne,
-  JoinColumn,
 } from 'typeorm';
 import { Post } from './post.entity';
 import { Like } from './like.entity';
@@ -30,8 +28,8 @@ export class User {
   @Column()
   name: string;
 
-  @Column({ nullable: true })
-  profileImage: string;
+  @Column({ type: 'varchar', length: 500, nullable: true })
+  profileImage: string | null;
 
   @Column({ unique: true })
   firebaseUid: string;
@@ -53,7 +51,7 @@ export class User {
   updatedAt: Date;
 
   @Column({ type: 'datetime', nullable: true })
-  lastLoginAt: Date;
+  lastLoginAt: Date | null;
 
   // Relations
   @OneToMany(() => Post, (post) => post.author)

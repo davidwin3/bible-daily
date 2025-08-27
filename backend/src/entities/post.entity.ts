@@ -19,7 +19,7 @@ export class Post {
   @Column({ length: 200 })
   title: string;
 
-  @Column({ type: 'text', length: 1000 })
+  @Column({ type: 'varchar', length: 1000 })
   content: string;
 
   @Column({ nullable: true, length: 200 })

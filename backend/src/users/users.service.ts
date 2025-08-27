@@ -31,7 +31,7 @@ export class UsersService {
 
   async createFromFirebase(firebaseUser: admin.auth.UserRecord): Promise<User> {
     const user = this.usersRepository.create({
-      email: firebaseUser.email,
+      email: firebaseUser.email || '',
       name:
         firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
       profileImage: firebaseUser.photoURL || null,
