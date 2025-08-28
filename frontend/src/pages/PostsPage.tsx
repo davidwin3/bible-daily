@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/auth";
 import { usePosts } from "@/hooks/usePosts";
+import { LikeButton } from "@/components/ui/LikeButton";
 import {
   PlusIcon,
   SearchIcon,
@@ -157,20 +158,21 @@ export const PostsPage: React.FC = () => {
           </Card>
         ) : (
           posts.map((post) => (
-            <Card
-              key={post.id}
-              className="cursor-pointer hover:shadow-md transition-shadow"
-              onClick={() => navigate(`/posts/${post.id}`)}
-            >
+            <Card key={post.id} className="hover:shadow-md transition-shadow">
               <CardHeader className="pb-3">
                 <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg line-clamp-1">
+                  <CardTitle
+                    className="text-lg line-clamp-1 cursor-pointer"
+                    onClick={() => navigate(`/posts/${post.id}`)}
+                  >
                     {post.title}
                   </CardTitle>
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground">
-                    <HeartIcon className="h-4 w-4" />
-                    {post.likeCount}
-                  </div>
+                  <LikeButton
+                    postId={post.id}
+                    likeCount={post.likeCount}
+                    authorId={post.author.id}
+                    className="shrink-0"
+                  />
                 </div>
                 {post.bibleVerse && (
                   <Badge variant="secondary" className="w-fit">
@@ -178,12 +180,15 @@ export const PostsPage: React.FC = () => {
                   </Badge>
                 )}
               </CardHeader>
-              <CardContent className="pt-0">
-                <CardDescription className="text-sm mb-4 line-clamp-2">
+              <CardContent
+                className="pt-0"
+                onClick={() => navigate(`/posts/${post.id}`)}
+              >
+                <CardDescription className="text-sm mb-4 line-clamp-2 cursor-pointer">
                   {truncateContent(post.content)}
                 </CardDescription>
                 <Separator className="my-3" />
-                <div className="flex justify-between items-center text-sm text-muted-foreground">
+                <div className="flex justify-between items-center text-sm text-muted-foreground cursor-pointer">
                   <div className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4" />
                     {post.author.name}

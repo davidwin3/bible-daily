@@ -69,11 +69,13 @@ export const useToggleLike = () => {
   return useMutation({
     mutationFn: async (postId: string) => {
       const response = await postsAPI.toggleLike(postId);
-      return response.data as { liked: boolean };
+      return response.data as { liked: boolean; likeCount: number };
     },
     onSuccess: (data, postId) => {
       // 좋아요 상태 캐시 업데이트
-      queryClient.setQueryData(postKeys.likeStatus(postId), data);
+      queryClient.setQueryData(postKeys.likeStatus(postId), {
+        liked: data.liked,
+      });
 
       // 포스트 상세 정보의 좋아요 수 업데이트
       queryClient.setQueryData(
@@ -82,9 +84,7 @@ export const useToggleLike = () => {
           if (!oldData) return oldData;
           return {
             ...oldData,
-            likeCount: data.liked
-              ? oldData.likeCount + 1
-              : oldData.likeCount - 1,
+            likeCount: data.likeCount,
           };
         }
       );
@@ -100,9 +100,7 @@ export const useToggleLike = () => {
               post.id === postId
                 ? {
                     ...post,
-                    likeCount: data.liked
-                      ? post.likeCount + 1
-                      : post.likeCount - 1,
+                    likeCount: data.likeCount,
                   }
                 : post
             ),

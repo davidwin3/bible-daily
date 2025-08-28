@@ -5,12 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth";
-import {
-  usePost,
-  useLikeStatus,
-  useToggleLike,
-  useDeletePost,
-} from "@/hooks/usePosts";
+import { usePost, useDeletePost } from "@/hooks/usePosts";
+import { LikeButton } from "@/components/ui/LikeButton";
 import {
   ArrowLeftIcon,
   HeartIcon,
@@ -31,16 +27,7 @@ export const PostDetailPage: React.FC = () => {
   const { user } = useAuth();
 
   const { data: post, isLoading, error } = usePost(id!);
-  const { data: likeStatus } = useLikeStatus(id!, !!user);
-  const toggleLikeMutation = useToggleLike();
   const deletePostMutation = useDeletePost();
-
-  const liked = likeStatus?.liked || false;
-
-  const handleLike = () => {
-    if (!user || !id) return;
-    toggleLikeMutation.mutate(id);
-  };
 
   const handleEdit = () => {
     navigate(`/posts/${id}/edit`);
@@ -238,20 +225,15 @@ export const PostDetailPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Actions for logged in users */}
-      {user && !isAuthor && (
-        <div className="flex justify-center">
-          <Button
-            variant={liked ? "default" : "outline"}
-            onClick={handleLike}
-            disabled={toggleLikeMutation.isPending}
-            className="flex items-center gap-2"
-          >
-            <HeartIcon className={`h-4 w-4 ${liked ? "fill-current" : ""}`} />
-            {liked ? "좋아요 취소" : "좋아요"}
-          </Button>
-        </div>
-      )}
+      {/* Like Button */}
+      <div className="flex justify-center">
+        <LikeButton
+          postId={post.id}
+          likeCount={post.likeCount}
+          authorId={post.author.id}
+          className="text-base"
+        />
+      </div>
 
       {/* Login prompt for non-logged in users */}
       {!user && (

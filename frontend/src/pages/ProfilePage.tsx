@@ -1,8 +1,144 @@
+import { useNavigate } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/contexts/auth";
+import {
+  UserIcon,
+  BellIcon,
+  LogOutIcon,
+  SettingsIcon,
+  MailIcon,
+  CalendarIcon,
+} from "lucide-react";
+
 export const ProfilePage: React.FC = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
+  };
+
+  if (!user) {
+    return (
+      <div className="space-y-6 pb-20">
+        <Card>
+          <CardContent className="py-8 text-center">
+            <UserIcon className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+            <p className="text-muted-foreground">
+              프로필을 보려면 로그인이 필요합니다
+            </p>
+            <Button onClick={() => navigate("/login")} className="mt-4">
+              로그인하기
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-20">
-      <h1 className="text-2xl font-bold">프로필</h1>
-      <p className="text-muted-foreground">준비 중입니다...</p>
+      {/* 페이지 헤더 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-2xl">프로필</CardTitle>
+          <CardDescription>
+            내 정보를 확인하고 설정을 변경할 수 있습니다
+          </CardDescription>
+        </CardHeader>
+      </Card>
+
+      {/* 사용자 정보 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>내 정보</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              <AvatarImage src={user.profileImage} alt={user.name} />
+              <AvatarFallback className="text-xl">
+                {user.name.charAt(0)}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <h3 className="text-xl font-semibold">{user.name}</h3>
+              <div className="flex items-center gap-2 text-muted-foreground">
+                <MailIcon className="h-4 w-4" />
+                <span>{user.email}</span>
+              </div>
+              <div className="flex items-center gap-2 text-muted-foreground mt-1">
+                <CalendarIcon className="h-4 w-4" />
+                <span>
+                  {new Date(user.createdAt).toLocaleDateString("ko-KR")} 가입
+                </span>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* 설정 메뉴 */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <SettingsIcon className="h-5 w-5" />
+            설정
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={() => navigate("/notifications")}
+          >
+            <BellIcon className="h-4 w-4 mr-3" />
+            알림 설정
+          </Button>
+
+          <Separator />
+
+          <Button
+            variant="ghost"
+            className="w-full justify-start text-destructive hover:text-destructive"
+            onClick={handleLogout}
+          >
+            <LogOutIcon className="h-4 w-4 mr-3" />
+            로그아웃
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* 활동 요약 */}
+      <Card>
+        <CardHeader>
+          <CardTitle>내 활동</CardTitle>
+          <CardDescription>
+            Bible Daily에서의 활동을 확인해보세요
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-6">
+            <p className="text-muted-foreground">
+              활동 통계는 곧 추가될 예정입니다
+            </p>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 };

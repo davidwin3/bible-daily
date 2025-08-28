@@ -1,15 +1,18 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from '@/contexts/auth';
-import { Layout } from '@/components/layout/Layout';
-import { LoginPage } from '@/pages/LoginPage';
-import { HomePage } from '@/pages/HomePage';
-import { PostsPage } from '@/pages/PostsPage';
-import { PostDetailPage } from '@/pages/PostDetailPage';
-import { CreatePostPage } from '@/pages/CreatePostPage';
-import { MissionsPage } from '@/pages/MissionsPage';
-import { ProfilePage } from '@/pages/ProfilePage';
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/auth";
+import { Layout } from "@/components/layout/Layout";
+import { LoginPage } from "@/pages/LoginPage";
+import { HomePage } from "@/pages/HomePage";
+import { PostsPage } from "@/pages/PostsPage";
+import { PostDetailPage } from "@/pages/PostDetailPage";
+import { CreatePostPage } from "@/pages/CreatePostPage";
+import { MissionsPage } from "@/pages/MissionsPage";
+import { ProfilePage } from "@/pages/ProfilePage";
+import { CellsPage } from "@/pages/CellsPage";
+import { CellDetailPage } from "@/pages/CellDetailPage";
+import { NotificationSettingsPage } from "@/pages/NotificationSettingsPage";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +43,16 @@ function App() {
                 }
               />
               <Route path="missions" element={<MissionsPage />} />
+              <Route path="cells" element={<CellsPage />} />
+              <Route path="cells/:id" element={<CellDetailPage />} />
+              <Route
+                path="notifications"
+                element={
+                  <ProtectedRoute>
+                    <NotificationSettingsPage />
+                  </ProtectedRoute>
+                }
+              />
               <Route
                 path="profile"
                 element={
