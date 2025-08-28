@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 import { useTodayMission } from "@/hooks/useMissions";
-import { usePosts } from "@/hooks/usePosts";
+import { usePosts, type Post } from "@/hooks/usePosts";
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -123,9 +123,9 @@ export const HomePage: React.FC = () => {
                 </div>
               ))}
             </div>
-          ) : recentPosts?.data?.length ? (
+          ) : recentPosts?.posts?.length ? (
             <div className="space-y-4">
-              {recentPosts.data.map((post: any) => (
+              {recentPosts.posts.map((post: Post) => (
                 <Link key={post.id} to={`/posts/${post.id}`}>
                   <div className="p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
                     <h4 className="font-medium line-clamp-1">{post.title}</h4>

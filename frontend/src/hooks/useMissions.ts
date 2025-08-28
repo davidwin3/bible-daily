@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { missionsAPI } from "@/lib/api";
+import { missionKeys } from "@/queries";
 
 export interface Mission {
   id: string;
@@ -25,14 +26,10 @@ export interface UserProgress {
   longestStreak: number;
 }
 
-export interface MissionsParams {
-  month?: string;
-}
-
 // 오늘의 미션 조회
 export const useTodayMission = () => {
   return useQuery({
-    queryKey: ["missions", "today"],
+    queryKey: missionKeys.today(),
     queryFn: async () => {
       const response = await missionsAPI.getTodayMission();
       return response.data as Mission;
@@ -41,9 +38,9 @@ export const useTodayMission = () => {
 };
 
 // 월별 미션 목록 조회
-export const useMissions = (params: MissionsParams = {}) => {
+export const useMissions = (params: { month?: string } = {}) => {
   return useQuery({
-    queryKey: ["missions", "list", params],
+    queryKey: missionKeys.list(params),
     queryFn: async () => {
       const response = await missionsAPI.getMissions(params);
       return response.data as Mission[];
@@ -54,7 +51,7 @@ export const useMissions = (params: MissionsParams = {}) => {
 // 단일 미션 조회
 export const useMission = (id: string) => {
   return useQuery({
-    queryKey: ["missions", id],
+    queryKey: missionKeys.detail(id),
     queryFn: async () => {
       const response = await missionsAPI.getMission(id);
       return response.data as Mission;
@@ -66,7 +63,7 @@ export const useMission = (id: string) => {
 // 날짜별 미션 조회
 export const useMissionByDate = (date: string) => {
   return useQuery({
-    queryKey: ["missions", "by-date", date],
+    queryKey: missionKeys.byDate(date),
     queryFn: async () => {
       const response = await missionsAPI.getMissionByDate(date);
       return response.data as Mission;
@@ -81,7 +78,7 @@ export const useCompletionStatus = (
   enabled: boolean = true
 ) => {
   return useQuery({
-    queryKey: ["missions", missionId, "completion-status"],
+    queryKey: missionKeys.completionStatus(missionId),
     queryFn: async () => {
       const response = await missionsAPI.getCompletionStatus(missionId);
       return response.data as { completed: boolean };
@@ -93,7 +90,7 @@ export const useCompletionStatus = (
 // 사용자 진행률 조회
 export const useUserProgress = (month?: string) => {
   return useQuery({
-    queryKey: ["missions", "user-progress", month],
+    queryKey: missionKeys.userProgress(month),
     queryFn: async () => {
       const response = await missionsAPI.getUserProgress(month);
       return response.data as UserProgress;
@@ -112,14 +109,11 @@ export const useToggleCompletion = () => {
     },
     onSuccess: ({ missionId, data }) => {
       // 완료 상태 캐시 업데이트
-      queryClient.setQueryData(
-        ["missions", missionId, "completion-status"],
-        data
-      );
+      queryClient.setQueryData(missionKeys.completionStatus(missionId), data);
 
       // 오늘 미션 완료 수 업데이트
       queryClient.setQueryData(
-        ["missions", "today"],
+        missionKeys.today(),
         (oldData: Mission | undefined) => {
           if (!oldData || oldData.id !== missionId) return oldData;
           return {
@@ -133,7 +127,7 @@ export const useToggleCompletion = () => {
 
       // 미션 목록의 완료 수 업데이트
       queryClient.setQueriesData(
-        { queryKey: ["missions", "list"], exact: false },
+        { queryKey: missionKeys.lists(), exact: false },
         (oldData: Mission[] | undefined) => {
           if (!oldData) return oldData;
           return oldData.map((mission) =>
@@ -151,7 +145,10 @@ export const useToggleCompletion = () => {
 
       // 사용자 진행률 캐시 무효화
       queryClient.invalidateQueries({
-        queryKey: ["missions", "user-progress"],
+        queryKey: missionKeys.all,
+        predicate: (query) =>
+          query.queryKey[0] === "missions" &&
+          query.queryKey[1] === "user-progress",
       });
     },
   });

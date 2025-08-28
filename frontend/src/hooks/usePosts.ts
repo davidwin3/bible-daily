@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { postsAPI } from "@/lib/api";
+import { postKeys } from "@/queries";
 
 export interface Post {
   id: string;
@@ -17,23 +18,19 @@ export interface Post {
 }
 
 export interface PostsResponse {
-  data: Post[];
+  posts: Post[];
   total: number;
   page: number;
   limit: number;
   totalPages: number;
 }
 
-export interface PostsParams {
-  page?: number;
-  limit?: number;
-  search?: string;
-}
-
 // Posts 목록 조회
-export const usePosts = (params: PostsParams = {}) => {
+export const usePosts = (
+  params: { page?: number; limit?: number; search?: string } = {}
+) => {
   return useQuery({
-    queryKey: ["posts", params],
+    queryKey: postKeys.list(params),
     queryFn: async () => {
       const response = await postsAPI.getPosts(params);
       return response.data as PostsResponse;
@@ -44,7 +41,7 @@ export const usePosts = (params: PostsParams = {}) => {
 // 단일 Post 조회
 export const usePost = (id: string) => {
   return useQuery({
-    queryKey: ["posts", id],
+    queryKey: postKeys.detail(id),
     queryFn: async () => {
       const response = await postsAPI.getPost(id);
       return response.data as Post;
@@ -56,7 +53,7 @@ export const usePost = (id: string) => {
 // 좋아요 상태 조회
 export const useLikeStatus = (postId: string, enabled: boolean = true) => {
   return useQuery({
-    queryKey: ["posts", postId, "like-status"],
+    queryKey: postKeys.likeStatus(postId),
     queryFn: async () => {
       const response = await postsAPI.getLikeStatus(postId);
       return response.data as { liked: boolean };
@@ -76,11 +73,11 @@ export const useToggleLike = () => {
     },
     onSuccess: (data, postId) => {
       // 좋아요 상태 캐시 업데이트
-      queryClient.setQueryData(["posts", postId, "like-status"], data);
+      queryClient.setQueryData(postKeys.likeStatus(postId), data);
 
       // 포스트 상세 정보의 좋아요 수 업데이트
       queryClient.setQueryData(
-        ["posts", postId],
+        postKeys.detail(postId),
         (oldData: Post | undefined) => {
           if (!oldData) return oldData;
           return {
@@ -94,12 +91,12 @@ export const useToggleLike = () => {
 
       // 포스트 목록의 좋아요 수도 업데이트
       queryClient.setQueriesData(
-        { queryKey: ["posts"], exact: false },
+        { queryKey: postKeys.all, exact: false },
         (oldData: PostsResponse | undefined) => {
           if (!oldData) return oldData;
           return {
             ...oldData,
-            data: oldData.data.map((post) =>
+            posts: oldData.posts.map((post) =>
               post.id === postId
                 ? {
                     ...post,
@@ -131,7 +128,7 @@ export const useCreatePost = () => {
     },
     onSuccess: () => {
       // 포스트 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: postKeys.all });
     },
   });
 };
@@ -153,9 +150,9 @@ export const useUpdatePost = () => {
     },
     onSuccess: (data) => {
       // 포스트 상세 캐시 업데이트
-      queryClient.setQueryData(["posts", data.id], data);
+      queryClient.setQueryData(postKeys.detail(data.id), data);
       // 포스트 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: postKeys.all });
     },
   });
 };
@@ -171,9 +168,9 @@ export const useDeletePost = () => {
     },
     onSuccess: (id) => {
       // 포스트 관련 캐시 제거
-      queryClient.removeQueries({ queryKey: ["posts", id] });
+      queryClient.removeQueries({ queryKey: postKeys.detail(id) });
       // 포스트 목록 캐시 무효화
-      queryClient.invalidateQueries({ queryKey: ["posts"] });
+      queryClient.invalidateQueries({ queryKey: postKeys.all });
     },
   });
 };

@@ -93,7 +93,7 @@ export const PostsPage: React.FC = () => {
     );
   }
 
-  const posts = postsData?.data || [];
+  const posts = postsData?.posts || [];
   const total = postsData?.total || 0;
   const totalPages = postsData?.totalPages || 1;
 
