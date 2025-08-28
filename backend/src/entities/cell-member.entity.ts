@@ -25,6 +25,9 @@ export class CellMember {
   @Column({ type: 'datetime', nullable: true })
   leftAt: Date;
 
+  @Column({ default: 'member' })
+  role: string;
+
   // Relations
   @ManyToOne(() => User, (user) => user.cellMemberships, {
     nullable: false,

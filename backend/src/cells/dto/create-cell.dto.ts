@@ -1,12 +1,15 @@
-import { IsNotEmpty, IsString, IsOptional, MaxLength } from 'class-validator';
+import { IsString, IsOptional, IsUUID, Length } from 'class-validator';
 
 export class CreateCellDto {
-  @IsNotEmpty()
   @IsString()
-  @MaxLength(100)
+  @Length(1, 100)
   name: string;
 
   @IsOptional()
   @IsString()
+  @Length(1, 1000)
   description?: string;
+
+  @IsUUID()
+  leaderId: string;
 }

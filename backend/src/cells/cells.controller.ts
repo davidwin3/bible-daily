@@ -8,12 +8,16 @@ import {
   Delete,
   UseGuards,
   Request,
+  Put,
+  ValidationPipe,
 } from '@nestjs/common';
 import { CellsService } from './cells.service';
 import { CreateCellDto } from './dto/create-cell.dto';
 import { UpdateCellDto } from './dto/update-cell.dto';
 import { AddMemberDto } from './dto/add-member.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { AdminGuard } from '../auth/admin.guard';
+import { TeacherGuard } from '../auth/teacher.guard';
 import { Public } from '../auth/public.decorator';
 
 @Controller('cells')
@@ -94,5 +98,65 @@ export class CellsController {
   async isMember(@Param('id') id: string, @Request() req) {
     const isMember = await this.cellsService.isMember(id, req.user.id);
     return { isMember };
+  }
+
+  // Admin only endpoints
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Post('admin')
+  async createCell(@Body(ValidationPipe) createCellDto: CreateCellDto) {
+    return await this.cellsService.createCell(createCellDto);
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Put('admin/:id')
+  async updateCell(
+    @Param('id') id: string,
+    @Body(ValidationPipe) updateCellDto: UpdateCellDto,
+  ) {
+    return await this.cellsService.updateCell(id, updateCellDto);
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Delete('admin/:id')
+  async deleteCell(@Param('id') id: string) {
+    await this.cellsService.deleteCell(id);
+    return { message: 'Cell deleted successfully' };
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Get('admin/all')
+  async getAllCellsForAdmin() {
+    return await this.cellsService.getAllCellsForAdmin();
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Get('admin/statistics')
+  async getCellStatistics() {
+    return await this.cellsService.getCellStatistics();
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Get('admin/:id/detail')
+  async getCellDetailForAdmin(@Param('id') id: string) {
+    return await this.cellsService.getCellDetailForAdmin(id);
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Post('admin/:id/members')
+  async addMemberToCell(
+    @Param('id') id: string,
+    @Body(ValidationPipe) addMemberDto: AddMemberDto,
+  ) {
+    return await this.cellsService.addMemberToCell(id, addMemberDto);
+  }
+
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @Delete('admin/:cellId/members/:userId')
+  async removeMemberFromCell(
+    @Param('cellId') cellId: string,
+    @Param('userId') userId: string,
+  ) {
+    await this.cellsService.removeMemberFromCell(cellId, userId);
+    return { message: 'Member removed from cell successfully' };
   }
 }
