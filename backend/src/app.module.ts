@@ -7,6 +7,7 @@ import { AuthModule } from './auth/auth.module';
 import { MissionsModule } from './missions/missions.module';
 import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
+import { CellsModule } from './cells/cells.module';
 import { User } from './entities/user.entity';
 import { Post } from './entities/post.entity';
 import { Like } from './entities/like.entity';
@@ -40,6 +41,7 @@ import { CellMember } from './entities/cell-member.entity';
     UsersModule,
     PostsModule,
     MissionsModule,
+    CellsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
