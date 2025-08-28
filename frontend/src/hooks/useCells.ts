@@ -157,7 +157,7 @@ export const useAddCellMember = () => {
       const response = await cellsAPI.addMember(cellId, { userId });
       return response.data as CellMember;
     },
-    onSuccess: (data, variables) => {
+    onSuccess: (_, variables) => {
       // 셀 상세 정보 새로고침
       queryClient.invalidateQueries({
         queryKey: cellKeys.detail(variables.cellId),

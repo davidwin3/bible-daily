@@ -1,8 +1,8 @@
-import { useAuth } from '@/contexts/auth';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Link, useNavigate } from 'react-router-dom';
-import { LogOut, User } from 'lucide-react';
+import { useAuth } from "@/contexts/auth";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Link, useNavigate } from "react-router-dom";
+import { LogOut, User, Settings } from "lucide-react";
 
 export const Header: React.FC = () => {
   const { user, logout } = useAuth();
@@ -11,9 +11,9 @@ export const Header: React.FC = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate("/login");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   };
 
@@ -27,6 +27,14 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-4">
           {user ? (
             <>
+              {user.role === "admin" && (
+                <Link to="/admin">
+                  <Button variant="ghost" size="sm">
+                    <Settings className="h-4 w-4 mr-2" />
+                    관리자
+                  </Button>
+                </Link>
+              )}
               <Link to="/profile">
                 <Avatar className="h-8 w-8">
                   <AvatarImage src={user.profileImage} alt={user.name} />

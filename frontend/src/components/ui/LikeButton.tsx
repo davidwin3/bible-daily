@@ -18,7 +18,7 @@ export function LikeButton({
   className,
 }: LikeButtonProps) {
   const { user } = useAuth();
-  const { data: likeStatus, isLoading: isLoadingStatus } = useLikeStatus(
+  const { data: likeStatus } = useLikeStatus(
     postId,
     !!user && user.id !== authorId
   );

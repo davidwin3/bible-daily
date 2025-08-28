@@ -191,18 +191,12 @@ export const PostDetailPage: React.FC = () => {
 
             {/* Like Button */}
             {user && !isAuthor && (
-              <Button
-                variant={liked ? "default" : "outline"}
-                size="sm"
-                onClick={handleLike}
-                disabled={toggleLikeMutation.isPending}
+              <LikeButton
+                postId={post.id}
+                likeCount={post.likeCount || 0}
+                authorId={post.author.id}
                 className="flex items-center gap-2"
-              >
-                <HeartIcon
-                  className={`h-4 w-4 ${liked ? "fill-current" : ""}`}
-                />
-                {post.likeCount}
-              </Button>
+              />
             )}
 
             {/* Like Count (for non-logged in users or author) */}

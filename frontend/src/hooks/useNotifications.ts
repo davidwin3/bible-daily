@@ -74,7 +74,7 @@ export const useNotifications = () => {
         await state.registration.showNotification(title, {
           icon: "/vite.svg",
           badge: "/vite.svg",
-          vibrate: [100, 50, 100],
+          // vibrate: [100, 50, 100], // TypeScript에서 지원하지 않는 속성
           ...options,
         });
       } catch (error) {

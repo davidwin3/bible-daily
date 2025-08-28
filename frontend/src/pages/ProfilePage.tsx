@@ -84,7 +84,10 @@ export const ProfilePage: React.FC = () => {
               <div className="flex items-center gap-2 text-muted-foreground mt-1">
                 <CalendarIcon className="h-4 w-4" />
                 <span>
-                  {new Date(user.createdAt).toLocaleDateString("ko-KR")} 가입
+                  {user.createdAt
+                    ? new Date(user.createdAt).toLocaleDateString("ko-KR")
+                    : "알 수 없음"}{" "}
+                  가입
                 </span>
               </div>
             </div>

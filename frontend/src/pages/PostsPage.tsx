@@ -14,13 +14,7 @@ import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/auth";
 import { usePosts } from "@/hooks/usePosts";
 import { LikeButton } from "@/components/ui/LikeButton";
-import {
-  PlusIcon,
-  SearchIcon,
-  HeartIcon,
-  CalendarIcon,
-  UserIcon,
-} from "lucide-react";
+import { PlusIcon, SearchIcon, CalendarIcon, UserIcon } from "lucide-react";
 
 export const PostsPage: React.FC = () => {
   const navigate = useNavigate();

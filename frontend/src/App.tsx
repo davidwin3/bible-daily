@@ -12,7 +12,12 @@ import { ProfilePage } from "@/pages/ProfilePage";
 import { CellsPage } from "@/pages/CellsPage";
 import { CellDetailPage } from "@/pages/CellDetailPage";
 import { NotificationSettingsPage } from "@/pages/NotificationSettingsPage";
+import { AdminDashboardPage } from "@/pages/AdminDashboardPage";
+import { AdminMissionsPage } from "@/pages/AdminMissionsPage";
+import { AdminCellsPage } from "@/pages/AdminCellsPage";
+import { AdminUsersPage } from "@/pages/AdminUsersPage";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +64,39 @@ function App() {
                   <ProtectedRoute>
                     <ProfilePage />
                   </ProtectedRoute>
+                }
+              />
+              {/* Admin Routes */}
+              <Route
+                path="admin"
+                element={
+                  <AdminRoute>
+                    <AdminDashboardPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/missions"
+                element={
+                  <AdminRoute>
+                    <AdminMissionsPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/cells"
+                element={
+                  <AdminRoute>
+                    <AdminCellsPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/users"
+                element={
+                  <AdminRoute>
+                    <AdminUsersPage />
+                  </AdminRoute>
                 }
               />
             </Route>
