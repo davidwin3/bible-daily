@@ -239,7 +239,7 @@ export const MissionsPage: React.FC = () => {
             onSelect={(date) => date && setSelectedDate(date)}
             month={currentMonth}
             onMonthChange={setCurrentMonth}
-            className="rounded-md border"
+            className="w-full h-fit"
             modifiers={{
               mission: (date: Date) => !!getMissionForDate(date),
               completed: (date: Date) => {
