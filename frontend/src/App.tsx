@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/auth";
 import { Layout } from "@/components/layout/Layout";
@@ -22,8 +23,13 @@ import { AdminRoute } from "@/components/auth/AdminRoute";
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      retry: 1,
+      retry: 2,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5분간 fresh 상태 유지
+      gcTime: 10 * 60 * 1000, // 10분간 캐시 유지 (구 cacheTime)
+    },
+    mutations: {
+      retry: 1,
     },
   },
 });
@@ -104,6 +110,8 @@ function App() {
           </Routes>
         </BrowserRouter>
       </AuthProvider>
+      {/* React Query 개발자 도구 (개발 환경에서만) */}
+      {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 }

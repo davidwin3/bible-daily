@@ -45,6 +45,8 @@ export const postsAPI = {
   deletePost: (id: string) => api.delete(`/posts/${id}`),
   toggleLike: (id: string) => api.post(`/posts/${id}/like`),
   getLikeStatus: (id: string) => api.get(`/posts/${id}/like-status`),
+  getPopularPosts: (limit?: number) =>
+    api.get("/posts/popular", { params: { limit } }),
 };
 
 // Missions API

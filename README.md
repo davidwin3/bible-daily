@@ -2,10 +2,10 @@
 
 중고등학생을 위한 성경말씀 소감 공유 플랫폼
 
-[![CI/CD](https://github.com/your-org/bible-daily/actions/workflows/frontend-ci-cd.yml/badge.svg)](https://github.com/your-org/bible-daily/actions/workflows/frontend-ci-cd.yml)
-[![Backend CI/CD](https://github.com/your-org/bible-daily/actions/workflows/backend-ci-cd.yml/badge.svg)](https://github.com/your-org/bible-daily/actions/workflows/backend-ci-cd.yml)
-[![Security](https://github.com/your-org/bible-daily/actions/workflows/security-quality.yml/badge.svg)](https://github.com/your-org/bible-daily/actions/workflows/security-quality.yml)
-[![codecov](https://codecov.io/gh/your-org/bible-daily/branch/main/graph/badge.svg)](https://codecov.io/gh/your-org/bible-daily)
+[![CI/CD](https://github.com/davidwin3/bible-daily/actions/workflows/frontend-ci-cd.yml/badge.svg)](https://github.com/davidwin3/bible-daily/actions/workflows/frontend-ci-cd.yml)
+[![Backend CI/CD](https://github.com/davidwin3/bible-daily/actions/workflows/backend-ci-cd.yml/badge.svg)](https://github.com/davidwin3/bible-daily/actions/workflows/backend-ci-cd.yml)
+[![Security](https://github.com/davidwin3/bible-daily/actions/workflows/security-quality.yml/badge.svg)](https://github.com/davidwin3/bible-daily/actions/workflows/security-quality.yml)
+[![codecov](https://codecov.io/gh/davidwin3/bible-daily/branch/main/graph/badge.svg)](https://codecov.io/gh/davidwin3/bible-daily)
 
 ## 🌟 프로젝트 소개
 
@@ -23,6 +23,7 @@ Bible Daily는 중고등학생들이 매일 성경을 읽고 소감을 나누며
 ## 🏗️ 기술 스택
 
 ### Frontend
+
 - **React 18** + **TypeScript**
 - **Vite** (빌드 도구)
 - **TailwindCSS** + **Shadcn/ui**
@@ -30,6 +31,7 @@ Bible Daily는 중고등학생들이 매일 성경을 읽고 소감을 나누며
 - **PWA** (Service Worker, Push Notifications)
 
 ### Backend
+
 - **NestJS** + **TypeScript**
 - **TypeORM** + **MySQL**
 - **JWT** 인증
@@ -37,6 +39,7 @@ Bible Daily는 중고등학생들이 매일 성경을 읽고 소감을 나누며
 - **Firebase** (푸시 알림)
 
 ### DevOps & Infrastructure
+
 - **GitHub Actions** (CI/CD)
 - **Docker** (컨테이너화)
 - **Vercel** (Frontend 배포)
@@ -46,6 +49,7 @@ Bible Daily는 중고등학생들이 매일 성경을 읽고 소감을 나누며
 ## 🚀 빠른 시작
 
 ### 사전 요구사항
+
 - Node.js 20+
 - pnpm 8+
 - MySQL 8.0+
@@ -54,43 +58,48 @@ Bible Daily는 중고등학생들이 매일 성경을 읽고 소감을 나누며
 ### 로컬 개발 환경 설정
 
 1. **저장소 클론**
+
    ```bash
-   git clone https://github.com/your-org/bible-daily.git
+   git clone https://github.com/davidwin3/bible-daily.git
    cd bible-daily
    ```
 
 2. **의존성 설치**
+
    ```bash
    pnpm install
    ```
 
 3. **환경 변수 설정**
+
    ```bash
    # Backend 환경 변수
    cp backend/env.example backend/.env
-   
-   # Frontend 환경 변수  
+
+   # Frontend 환경 변수
    cp frontend/env.example frontend/.env
-   
+
    # 실제 값으로 수정
    vim backend/.env
    vim frontend/.env
    ```
 
 4. **데이터베이스 설정**
+
    ```bash
    # 데이터베이스 마이그레이션
    pnpm --filter backend migration:run
-   
+
    # 시드 데이터 생성 (선택사항)
    pnpm --filter backend seed:run
    ```
 
 5. **개발 서버 실행**
+
    ```bash
    # Backend 서버 (포트 3000)
    pnpm --filter backend start:dev
-   
+
    # Frontend 서버 (포트 5173)
    pnpm --filter frontend dev
    ```
@@ -152,11 +161,11 @@ bible-daily/
 
 ### 배포 환경
 
-| 환경 | 브랜치 | 도메인 | 배포 방식 |
-|------|--------|--------|-----------|
-| Development | `develop` | `dev.bible-daily.com` | 자동 배포 |
-| Staging | `main` | `staging.bible-daily.com` | 자동 배포 |
-| Production | `main` | `bible-daily.com` | 수동 승인 후 배포 |
+| 환경        | 브랜치    | 도메인                    | 배포 방식         |
+| ----------- | --------- | ------------------------- | ----------------- |
+| Development | `develop` | `dev.bible-daily.com`     | 자동 배포         |
+| Staging     | `main`    | `staging.bible-daily.com` | 자동 배포         |
+| Production  | `main`    | `bible-daily.com`         | 수동 승인 후 배포 |
 
 ### 설정 가이드
 
@@ -199,7 +208,7 @@ pnpm --filter frontend test:e2e
 ### 대시보드
 
 - [Grafana 대시보드](https://grafana.bible-daily.com)
-- [GitHub Actions](https://github.com/your-org/bible-daily/actions)
+- [GitHub Actions](https://github.com/davdwin3/bible-daily/actions)
 
 ## 🤝 기여하기
 
@@ -238,8 +247,8 @@ chore: 빌드 설정 변경
 ## 📞 연락처
 
 - **개발팀**: dev@bible-daily.com
-- **이슈 리포트**: [GitHub Issues](https://github.com/your-org/bible-daily/issues)
-- **문서**: [Wiki](https://github.com/your-org/bible-daily/wiki)
+- **이슈 리포트**: [GitHub Issues](https://github.com/davdwin3/bible-daily/issues)
+- **문서**: [Wiki](https://github.com/davidwin3/bible-daily/wiki)
 
 ## 🙏 감사의 말
 
