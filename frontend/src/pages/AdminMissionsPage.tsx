@@ -5,6 +5,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+  SelectGroup,
+  SelectLabel,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogHeader,
@@ -23,6 +32,13 @@ import {
 import { AdminNav } from "@/components/layout/AdminNav";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
+import {
+  OLD_TESTAMENT_BOOKS,
+  NEW_TESTAMENT_BOOKS,
+  findBookByName,
+  getChapterNumbers,
+  getVerseNumbersForChapter,
+} from "@/lib/bible-data";
 
 interface MissionFormData {
   date: string;
@@ -36,13 +52,30 @@ interface MissionFormData {
   description?: string;
 }
 
+interface Mission {
+  id: string;
+  date: string;
+  startBook: string;
+  startChapter: number;
+  startVerse?: number;
+  endBook?: string;
+  endChapter?: number;
+  endVerse?: number;
+  title?: string;
+  description?: string;
+  isActive: boolean;
+  completionCount?: number;
+  totalUsers?: number;
+  completionRate?: number;
+}
+
 export const AdminMissionsPage: React.FC = () => {
   const [filters, setFilters] = useState({
     month: format(new Date(), "yyyy-MM"),
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingMission, setEditingMission] = useState<any>(null);
+  const [editingMission, setEditingMission] = useState<Mission | null>(null);
   const [formData, setFormData] = useState<MissionFormData>({
     date: format(new Date(), "yyyy-MM-dd"),
     startBook: "",
@@ -111,7 +144,7 @@ export const AdminMissionsPage: React.FC = () => {
     }
   };
 
-  const openEditDialog = (mission: any) => {
+  const openEditDialog = (mission: Mission) => {
     setEditingMission(mission);
     setFormData({
       date: format(new Date(mission.date), "yyyy-MM-dd"),
@@ -238,12 +271,20 @@ export const AdminMissionsPage: React.FC = () => {
                     <h3 className="text-lg font-semibold mb-2">
                       {mission.title ||
                         `${mission.startBook} ${mission.startChapter}장`}
-                      {mission.startVerse && ` ${mission.startVerse}절`}
+                      {mission.startVerse &&
+                        ` ${
+                          mission.startVerse === -1
+                            ? "전체"
+                            : mission.startVerse
+                        }절`}
                       {mission.endBook &&
                         mission.endBook !== mission.startBook &&
                         ` - ${mission.endBook}`}
                       {mission.endChapter && ` ${mission.endChapter}장`}
-                      {mission.endVerse && ` ${mission.endVerse}절`}
+                      {mission.endVerse &&
+                        ` ${
+                          mission.endVerse === -1 ? "전체" : mission.endVerse
+                        }절`}
                     </h3>
 
                     {mission.description && (
@@ -343,6 +384,26 @@ const MissionForm: React.FC<MissionFormProps> = ({
   isLoading,
   submitText,
 }) => {
+  // 선택된 성경책에 따른 장 수 계산
+  const startBook = findBookByName(formData.startBook);
+  const endBook = findBookByName(formData.endBook || "");
+  const startChapterOptions = startBook
+    ? getChapterNumbers(startBook.chapters)
+    : [];
+  const endChapterOptions = endBook ? getChapterNumbers(endBook.chapters) : [];
+
+  // 선택된 성경책과 장에 따른 정확한 절 수 계산
+  const startVerseOptions =
+    formData.startBook && formData.startChapter
+      ? getVerseNumbersForChapter(formData.startBook, formData.startChapter)
+      : [];
+  const endVerseOptions =
+    formData.endBook && formData.endChapter
+      ? getVerseNumbersForChapter(formData.endBook, formData.endChapter)
+      : formData.startBook && formData.endChapter
+      ? getVerseNumbersForChapter(formData.startBook, formData.endChapter)
+      : [];
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
@@ -356,100 +417,181 @@ const MissionForm: React.FC<MissionFormProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-2">
         <div>
-          <Label htmlFor="startBook">시작 성경책</Label>
-          <Input
-            id="startBook"
+          <Label>시작 성경책</Label>
+          <Select
             value={formData.startBook}
-            onChange={(e) =>
-              setFormData({ ...formData, startBook: e.target.value })
-            }
-            placeholder="예: 창세기"
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="startChapter">시작 장</Label>
-          <Input
-            id="startChapter"
-            type="number"
-            min="1"
-            value={formData.startChapter}
-            onChange={(e) =>
+            onValueChange={(value: string) =>
               setFormData({
                 ...formData,
-                startChapter: parseInt(e.target.value),
+                startBook: value,
+                startChapter: 1,
+                startVerse: undefined, // 성경책이 변경되면 절 선택 초기화
               })
             }
-            required
-          />
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="성경책 선택" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>구약</SelectLabel>
+                {OLD_TESTAMENT_BOOKS.map((book) => (
+                  <SelectItem key={book.id} value={book.name}>
+                    {book.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+              <SelectGroup>
+                <SelectLabel>신약</SelectLabel>
+                {NEW_TESTAMENT_BOOKS.map((book) => (
+                  <SelectItem key={book.id} value={book.name}>
+                    {book.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>시작 장</Label>
+          <Select
+            value={formData.startChapter.toString()}
+            onValueChange={(value: string) =>
+              setFormData({
+                ...formData,
+                startChapter: parseInt(value),
+                startVerse: undefined, // 장이 변경되면 절 선택 초기화
+              })
+            }
+            disabled={!formData.startBook}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="장" />
+            </SelectTrigger>
+            <SelectContent>
+              {startChapterOptions.map((chapter) => (
+                <SelectItem key={chapter} value={chapter.toString()}>
+                  {chapter}장
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>시작 절 (선택)</Label>
+          <Select
+            value={formData.startVerse?.toString() || ""}
+            onValueChange={(value: string) =>
+              setFormData({
+                ...formData,
+                startVerse: value ? parseInt(value) : undefined,
+              })
+            }
+            disabled={!formData.startBook || !formData.startChapter}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="절" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="-1">전체</SelectItem>
+              {startVerseOptions.map((verse) => (
+                <SelectItem key={verse} value={verse.toString()}>
+                  {verse}절
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-3 gap-2">
         <div>
-          <Label htmlFor="startVerse">시작 절 (선택)</Label>
-          <Input
-            id="startVerse"
-            type="number"
-            min="1"
-            value={formData.startVerse || ""}
-            onChange={(e) =>
-              setFormData({
-                ...formData,
-                startVerse: e.target.value
-                  ? parseInt(e.target.value)
-                  : undefined,
-              })
-            }
-          />
-        </div>
-        <div>
-          <Label htmlFor="endBook">끝 성경책 (선택)</Label>
-          <Input
-            id="endBook"
+          <Label>끝 성경책 (선택)</Label>
+          <Select
             value={formData.endBook || ""}
-            onChange={(e) =>
-              setFormData({ ...formData, endBook: e.target.value })
-            }
-            placeholder="다른 책까지 읽는 경우"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="endChapter">끝 장 (선택)</Label>
-          <Input
-            id="endChapter"
-            type="number"
-            min="1"
-            value={formData.endChapter || ""}
-            onChange={(e) =>
+            onValueChange={(value: string) =>
               setFormData({
                 ...formData,
-                endChapter: e.target.value
-                  ? parseInt(e.target.value)
-                  : undefined,
+                endBook: value || undefined,
+                endChapter: undefined,
+                endVerse: undefined, // 성경책이 변경되면 절 선택 초기화
               })
             }
-          />
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="선택" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectLabel>구약</SelectLabel>
+                {OLD_TESTAMENT_BOOKS.map((book) => (
+                  <SelectItem key={book.id} value={book.name}>
+                    {book.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+              <SelectGroup>
+                <SelectLabel>신약</SelectLabel>
+                {NEW_TESTAMENT_BOOKS.map((book) => (
+                  <SelectItem key={book.id} value={book.name}>
+                    {book.name}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
         </div>
         <div>
-          <Label htmlFor="endVerse">끝 절 (선택)</Label>
-          <Input
-            id="endVerse"
-            type="number"
-            min="1"
-            value={formData.endVerse || ""}
-            onChange={(e) =>
+          <Label>끝 장 (선택)</Label>
+          <Select
+            value={formData.endChapter?.toString() || ""}
+            onValueChange={(value: string) =>
               setFormData({
                 ...formData,
-                endVerse: e.target.value ? parseInt(e.target.value) : undefined,
+                endChapter: value ? parseInt(value) : undefined,
+                endVerse: undefined, // 장이 변경되면 절 선택 초기화
               })
             }
-          />
+            disabled={!formData.endBook}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="장" />
+            </SelectTrigger>
+            <SelectContent>
+              {endChapterOptions.map((chapter) => (
+                <SelectItem key={chapter} value={chapter.toString()}>
+                  {chapter}장
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div>
+          <Label>끝 절 (선택)</Label>
+          <Select
+            value={formData.endVerse?.toString() || ""}
+            onValueChange={(value: string) =>
+              setFormData({
+                ...formData,
+                endVerse: value ? parseInt(value) : undefined,
+              })
+            }
+            disabled={!formData.endChapter}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="절" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="-1">전체</SelectItem>
+              {endVerseOptions.map((verse) => (
+                <SelectItem key={verse} value={verse.toString()}>
+                  {verse}절
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
