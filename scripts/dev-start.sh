@@ -123,3 +123,4 @@ echo "🔧 유용한 명령어:"
 echo "  서비스 중지: ./scripts/dev-stop.sh"
 echo "  로그 확인: ./scripts/dev-logs.sh"
 echo "  데이터베이스 리셋: ./scripts/dev-reset.sh"
+

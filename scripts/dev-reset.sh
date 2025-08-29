@@ -176,3 +176,4 @@ echo ""
 echo "🔧 유용한 명령어:"
 echo "  로그 확인: ./scripts/dev-logs.sh"
 echo "  환경 중지: ./scripts/dev-stop.sh"
+
