@@ -4,17 +4,17 @@ on:
   push:
     branches: [main, develop]
     paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci-cd.yml'
+      - "backend/**"
+      - ".github/workflows/backend-ci-cd.yml"
   pull_request:
     branches: [main, develop]
     paths:
-      - 'backend/**'
-      - '.github/workflows/backend-ci-cd.yml'
+      - "backend/**"
+      - ".github/workflows/backend-ci-cd.yml"
 
 env:
-  NODE_VERSION: '20'
-  PNPM_VERSION: '8'
+  NODE_VERSION: "20"
+  PNPM_VERSION: "8"
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}/backend
 
@@ -23,7 +23,7 @@ jobs:
   test:
     name: Test & Lint
     runs-on: ubuntu-latest
-    
+
     services:
       mysql:
         image: mysql:8.0
@@ -47,7 +47,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -102,7 +102,7 @@ jobs:
     name: Security Scan
     runs-on: ubuntu-latest
     needs: test
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -110,15 +110,15 @@ jobs:
       - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          scan-type: 'fs'
-          scan-ref: './backend'
-          format: 'sarif'
-          output: 'trivy-results.sarif'
+          scan-type: "fs"
+          scan-ref: "./backend"
+          format: "sarif"
+          output: "trivy-results.sarif"
 
       - name: Upload Trivy scan results to GitHub Security tab
         uses: github/codeql-action/upload-sarif@v2
         with:
-          sarif_file: 'trivy-results.sarif'
+          sarif_file: "trivy-results.sarif"
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v2
@@ -129,7 +129,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -143,11 +143,11 @@ jobs:
     runs-on: ubuntu-latest
     needs: [test, security]
     if: github.event_name == 'push'
-    
+
     outputs:
       image-digest: ${{ steps.build.outputs.digest }}
       image-tag: ${{ steps.meta.outputs.tags }}
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -193,7 +193,7 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
     environment: development
-    
+
     steps:
       - name: Deploy to Railway (Development)
         uses: railway-app/railway-action@v1
@@ -226,7 +226,7 @@ jobs:
     needs: build
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: staging
-    
+
     steps:
       - name: Deploy to Railway (Staging)
         uses: railway-app/railway-action@v1
@@ -264,7 +264,7 @@ jobs:
     needs: [build, deploy-staging]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     environment: production
-    
+
     steps:
       - name: Create database backup
         run: |
@@ -318,8 +318,8 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: success
-          channel: '#deployments'
-          text: '🚀 Backend가 프로덕션에 성공적으로 배포되었습니다!'
+          channel: "#deployments"
+          text: "🚀 Backend가 프로덕션에 성공적으로 배포되었습니다!"
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         if: success()
@@ -328,8 +328,8 @@ jobs:
         uses: 8398a7/action-slack@v3
         with:
           status: failure
-          channel: '#deployments'
-          text: '❌ Backend 프로덕션 배포에 실패했습니다.'
+          channel: "#deployments"
+          text: "❌ Backend 프로덕션 배포에 실패했습니다."
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         if: failure()
