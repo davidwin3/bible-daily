@@ -7,11 +7,13 @@ alwaysApply: true
 # Bible Daily 프로젝트 구조
 
 ## 프로젝트 개요
+
 중고등학생을 위한 성경말씀 소감 공유 플랫폼으로, PWA 기반의 모바일 우선 설계
 
 ## 기술 스택
 
 ### Frontend
+
 - **React 18**: 사용자 인터페이스 구축
 - **Vite**: 빠른 개발 환경 및 빌드 도구
 - **TypeScript**: 타입 안전성 보장
@@ -23,6 +25,7 @@ alwaysApply: true
 - **패키지 매니저**: pnpm
 
 ### Backend
+
 - **NestJS**: Node.js 기반 서버 프레임워크
 - **TypeScript**: 타입 안전성 보장
 - **TypeORM**: TypeScript 기반 ORM
@@ -33,6 +36,7 @@ alwaysApply: true
 ## 프로젝트 구조
 
 ### Frontend 디렉토리 구조
+
 ```
 frontend/
 ├── src/
@@ -71,6 +75,7 @@ frontend/
 ```
 
 ### Backend 디렉토리 구조
+
 ```
 backend/
 ├── src/
@@ -100,26 +105,31 @@ backend/
 ## 주요 기능 모듈
 
 ### 1. 인증 시스템
+
 - Google OAuth 2.0 연동
 - JWT 토큰 기반 인증
 - 역할 기반 접근 제어 (학생, 교사, 관리자)
 
 ### 2. 게시물 시스템
+
 - CRUD 기능
 - 좋아요 기능
 - 페이징 및 검색
 
 ### 3. 미션 시스템
+
 - 일일 성경 읽기 미션
 - 진행률 추적
 - 달력 형태 히스토리
 
 ### 4. 셀 관리 시스템
+
 - 소그룹 구성원 관리
 - 담당자 권한 관리
 - 독려 메시지 기능
 
 ### 5. PWA 기능
+
 - Service Worker
 - 푸시 알림
 - 오프라인 지원
@@ -128,12 +138,14 @@ backend/
 ## 개발 가이드라인
 
 ### 네이밍 컨벤션
+
 - **컴포넌트**: PascalCase (예: `PostCard.tsx`)
 - **훅**: camelCase with use prefix (예: `useGetPosts.ts`)
 - **파일명**: kebab-case 또는 PascalCase
 - **API 엔드포인트**: RESTful 패턴 준수
 
 ### 코드 구조
+
 - 모바일 우선 반응형 디자인
 - 접근성 고려 (WCAG 2.1 AA 준수)
 - 타입 안전성 보장

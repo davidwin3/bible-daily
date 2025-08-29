@@ -12,14 +12,16 @@ alwaysApply: true
 ## 디자인 시스템
 
 ### 1. 모바일 우선 설계 (Mobile First)
+
 - **기본 뷰포트**: 375px (iPhone SE 기준)
-- **브레이크포인트**: 
+- **브레이크포인트**:
   - `sm`: 640px (모바일 가로)
   - `md`: 768px (태블릿)
   - `lg`: 1024px (데스크톱)
   - `xl`: 1280px (대형 데스크톱)
 
 ### 2. 색상 시스템
+
 ```css
 /* Primary Colors - 성경적 느낌의 따뜻한 색상 */
 --primary-50: #fef7ee;
@@ -42,33 +44,36 @@ alwaysApply: true
 ```
 
 ### 3. 타이포그래피
+
 ```css
 /* 한글 폰트 스택 */
-font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+font-family: "Pretendard", -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 
 /* 크기 시스템 */
---text-xs: 0.75rem;    /* 12px */
---text-sm: 0.875rem;   /* 14px */
---text-base: 1rem;     /* 16px */
---text-lg: 1.125rem;   /* 18px */
---text-xl: 1.25rem;    /* 20px */
---text-2xl: 1.5rem;    /* 24px */
---text-3xl: 1.875rem;  /* 30px */
+--text-xs: 0.75rem; /* 12px */
+--text-sm: 0.875rem; /* 14px */
+--text-base: 1rem; /* 16px */
+--text-lg: 1.125rem; /* 18px */
+--text-xl: 1.25rem; /* 20px */
+--text-2xl: 1.5rem; /* 24px */
+--text-3xl: 1.875rem; /* 30px */
 ```
 
 ### 4. 간격 시스템
+
 ```css
 /* Tailwind 기본 스페이싱 사용 */
---spacing-1: 0.25rem;  /* 4px */
---spacing-2: 0.5rem;   /* 8px */
---spacing-4: 1rem;     /* 16px */
---spacing-6: 1.5rem;   /* 24px */
---spacing-8: 2rem;     /* 32px */
+--spacing-1: 0.25rem; /* 4px */
+--spacing-2: 0.5rem; /* 8px */
+--spacing-4: 1rem; /* 16px */
+--spacing-6: 1.5rem; /* 24px */
+--spacing-8: 2rem; /* 32px */
 ```
 
 ## 컴포넌트 구조
 
 ### 1. 컴포넌트 분류
+
 ```
 components/
 ├── ui/              # shadcn/ui 기본 컴포넌트
@@ -98,11 +103,13 @@ components/
 ```
 
 ### 2. 컴포넌트 네이밍 규칙
+
 - **컴포넌트**: PascalCase (예: `PostCard`, `MissionCalendar`)
 - **Props 인터페이스**: `{ComponentName}Props`
 - **스타일 클래스**: kebab-case 또는 Tailwind 클래스
 
 ### 3. 컴포넌트 템플릿
+
 ```typescript
 interface PostCardProps {
   post: Post;
@@ -135,17 +142,19 @@ export function PostCard({ post, onLike, onEdit, className }: PostCardProps) {
           )}
         </div>
       </CardHeader>
-      
+
       <CardContent>
         <h3 className="font-semibold mb-2">{post.title}</h3>
         <p className="text-sm text-muted-foreground mb-3">{post.content}</p>
         {post.bibleVerse && (
           <div className="bg-primary/10 p-3 rounded-md mb-3">
-            <p className="text-sm font-medium text-primary">{post.bibleVerse}</p>
+            <p className="text-sm font-medium text-primary">
+              {post.bibleVerse}
+            </p>
           </div>
         )}
       </CardContent>
-      
+
       <CardFooter className="flex justify-between">
         <Button
           variant="ghost"
@@ -153,10 +162,15 @@ export function PostCard({ post, onLike, onEdit, className }: PostCardProps) {
           onClick={() => onLike?.(post.id)}
           className="flex items-center space-x-1"
         >
-          <Heart className={cn("h-4 w-4", post.isLiked && "fill-red-500 text-red-500")} />
+          <Heart
+            className={cn(
+              "h-4 w-4",
+              post.isLiked && "fill-red-500 text-red-500"
+            )}
+          />
           <span>{post.likeCount}</span>
         </Button>
-        
+
         <Button variant="ghost" size="sm">
           <Share className="h-4 w-4" />
         </Button>
@@ -169,11 +183,13 @@ export function PostCard({ post, onLike, onEdit, className }: PostCardProps) {
 ## 페이지 컴포넌트 구조
 
 ### 1. 페이지 템플릿
+
 ```typescript
 interface HomePageProps {}
 
 export function HomePage({}: HomePageProps) {
-  const { data: todayMission, isLoading: missionLoading } = useGetTodayMission();
+  const { data: todayMission, isLoading: missionLoading } =
+    useGetTodayMission();
   const { data: recentPosts, isLoading: postsLoading } = useGetRecentPosts();
 
   if (missionLoading || postsLoading) {
@@ -201,9 +217,9 @@ export function HomePage({}: HomePageProps) {
               <Link to="/posts">더보기</Link>
             </Button>
           </div>
-          
+
           <div className="space-y-4">
-            {recentPosts?.map(post => (
+            {recentPosts?.map((post) => (
               <PostCard key={post.id} post={post} />
             ))}
           </div>
@@ -215,6 +231,7 @@ export function HomePage({}: HomePageProps) {
 ```
 
 ### 2. 레이아웃 컴포넌트
+
 ```typescript
 interface LayoutProps {
   children: React.ReactNode;
@@ -225,11 +242,9 @@ export function Layout({ children, showNavigation = true }: LayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
-      <main className="pb-16 md:pb-0">
-        {children}
-      </main>
-      
+
+      <main className="pb-16 md:pb-0">{children}</main>
+
       {showNavigation && <BottomNavigation />}
     </div>
   );
@@ -237,7 +252,7 @@ export function Layout({ children, showNavigation = true }: LayoutProps) {
 
 export function Header() {
   const { user, logout } = useAuth();
-  
+
   return (
     <header className="sticky top-0 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b">
       <div className="container mx-auto px-4 h-14 flex items-center justify-between">
@@ -245,14 +260,14 @@ export function Header() {
           <BookOpen className="h-6 w-6 text-primary" />
           <span className="font-bold text-lg">Bible Daily</span>
         </Link>
-        
+
         <div className="flex items-center space-x-2">
           <Button variant="ghost" size="sm" asChild>
             <Link to="/notifications">
               <Bell className="h-5 w-5" />
             </Link>
           </Button>
-          
+
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="sm">
@@ -270,9 +285,7 @@ export function Header() {
                 <Link to="/settings">설정</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={logout}>
-                로그아웃
-              </DropdownMenuItem>
+              <DropdownMenuItem onClick={logout}>로그아웃</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -283,15 +296,16 @@ export function Header() {
 ```
 
 ### 3. 하단 네비게이션
+
 ```typescript
 export function BottomNavigation() {
   const location = useLocation();
-  
+
   const navItems = [
-    { path: '/', icon: Home, label: '홈' },
-    { path: '/posts', icon: MessageSquare, label: '소감' },
-    { path: '/missions', icon: BookOpen, label: '미션' },
-    { path: '/cell', icon: Users, label: '셀' },
+    { path: "/", icon: Home, label: "홈" },
+    { path: "/posts", icon: MessageSquare, label: "소감" },
+    { path: "/missions", icon: BookOpen, label: "미션" },
+    { path: "/cell", icon: Users, label: "셀" },
   ];
 
   return (
@@ -321,10 +335,17 @@ export function BottomNavigation() {
 ## 폼 컴포넌트 설계
 
 ### 1. React Hook Form + Zod 패턴
+
 ```typescript
 const postSchema = z.object({
-  title: z.string().min(1, '제목을 입력해주세요').max(100, '제목은 100자 이내로 입력해주세요'),
-  content: z.string().min(1, '내용을 입력해주세요').max(1000, '내용은 1000자 이내로 입력해주세요'),
+  title: z
+    .string()
+    .min(1, "제목을 입력해주세요")
+    .max(100, "제목은 100자 이내로 입력해주세요"),
+  content: z
+    .string()
+    .min(1, "내용을 입력해주세요")
+    .max(1000, "내용은 1000자 이내로 입력해주세요"),
   bibleVerse: z.string().optional(),
 });
 
@@ -393,7 +414,7 @@ export function PostForm({ initialData, onSubmit, isLoading }: PostFormProps) {
 
         <div className="flex gap-2">
           <Button type="submit" disabled={isLoading} className="flex-1">
-            {isLoading ? '저장 중...' : '저장'}
+            {isLoading ? "저장 중..." : "저장"}
           </Button>
           <Button type="button" variant="outline">
             취소
@@ -408,17 +429,18 @@ export function PostForm({ initialData, onSubmit, isLoading }: PostFormProps) {
 ## 상태 관리 및 로딩 처리
 
 ### 1. 로딩 상태 컴포넌트
+
 ```typescript
-export function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
+export function LoadingSpinner({ size = "md" }: { size?: "sm" | "md" | "lg" }) {
   const sizeClasses = {
-    sm: 'h-4 w-4',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
+    sm: "h-4 w-4",
+    md: "h-8 w-8",
+    lg: "h-12 w-12",
   };
 
   return (
     <div className="flex items-center justify-center p-4">
-      <Loader2 className={cn('animate-spin', sizeClasses[size])} />
+      <Loader2 className={cn("animate-spin", sizeClasses[size])} />
     </div>
   );
 }
@@ -446,6 +468,7 @@ export function LoadingSkeleton() {
 ```
 
 ### 2. 에러 상태 처리
+
 ```typescript
 interface ErrorStateProps {
   error: Error;
@@ -467,7 +490,13 @@ export function ErrorState({ error, retry }: ErrorStateProps) {
   );
 }
 
-export function EmptyState({ message, action }: { message: string; action?: React.ReactNode }) {
+export function EmptyState({
+  message,
+  action,
+}: {
+  message: string;
+  action?: React.ReactNode;
+}) {
   return (
     <div className="flex flex-col items-center justify-center p-8 text-center">
       <FileX className="h-12 w-12 text-muted-foreground mb-4" />
@@ -481,11 +510,13 @@ export function EmptyState({ message, action }: { message: string; action?: Reac
 ## 접근성 (Accessibility) 가이드라인
 
 ### 1. 키보드 네비게이션
+
 - 모든 인터랙티브 요소는 키보드로 접근 가능
 - Tab 순서가 논리적이어야 함
 - Focus 상태가 명확하게 표시되어야 함
 
 ### 2. 스크린 리더 지원
+
 ```typescript
 // ARIA 레이블 사용
 <Button aria-label="게시물에 좋아요 추가">
@@ -507,6 +538,7 @@ export function EmptyState({ message, action }: { message: string; action?: Reac
 ```
 
 ### 3. 색상 대비 및 텍스트 크기
+
 - WCAG 2.1 AA 기준 준수 (4.5:1 대비율)
 - 최소 텍스트 크기: 16px (1rem)
 - 터치 타겟 최소 크기: 44px
@@ -514,6 +546,7 @@ export function EmptyState({ message, action }: { message: string; action?: Reac
 ## 반응형 디자인 패턴
 
 ### 1. 컨테이너 및 그리드
+
 ```typescript
 // 반응형 컨테이너
 <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -526,6 +559,7 @@ export function EmptyState({ message, action }: { message: string; action?: Reac
 ```
 
 ### 2. 조건부 렌더링
+
 ```typescript
 // 모바일에서만 표시
 <div className="md:hidden">

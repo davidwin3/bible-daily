@@ -12,6 +12,7 @@ alwaysApply: true
 ## PWA 기본 설정
 
 ### 1. Web App Manifest
+
 ```json
 // frontend/public/manifest.json
 {
@@ -95,37 +96,37 @@ alwaysApply: true
 ```
 
 ### 2. Service Worker 기본 구조
+
 ```javascript
 // frontend/public/sw.js
-const CACHE_NAME = 'bible-daily-v1';
+const CACHE_NAME = "bible-daily-v1";
 const urlsToCache = [
-  '/',
-  '/static/js/bundle.js',
-  '/static/css/main.css',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png'
+  "/",
+  "/static/js/bundle.js",
+  "/static/css/main.css",
+  "/manifest.json",
+  "/icons/icon-192x192.png",
+  "/icons/icon-512x512.png",
 ];
 
 // 설치 이벤트
-self.addEventListener('install', (event) => {
+self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
+    caches.open(CACHE_NAME).then((cache) => {
+      console.log("Opened cache");
+      return cache.addAll(urlsToCache);
+    })
   );
 });
 
 // 활성화 이벤트
-self.addEventListener('activate', (event) => {
+self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== CACHE_NAME) {
-            console.log('Deleting old cache:', cacheName);
+            console.log("Deleting old cache:", cacheName);
             return caches.delete(cacheName);
           }
         })
@@ -135,111 +136,104 @@ self.addEventListener('activate', (event) => {
 });
 
 // 네트워크 요청 가로채기
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // 캐시에 있으면 캐시에서 반환
-        if (response) {
+    caches.match(event.request).then((response) => {
+      // 캐시에 있으면 캐시에서 반환
+      if (response) {
+        return response;
+      }
+
+      // 네트워크에서 가져오기
+      return fetch(event.request).then((response) => {
+        // 유효한 응답인지 확인
+        if (!response || response.status !== 200 || response.type !== "basic") {
           return response;
         }
-        
-        // 네트워크에서 가져오기
-        return fetch(event.request).then((response) => {
-          // 유효한 응답인지 확인
-          if (!response || response.status !== 200 || response.type !== 'basic') {
-            return response;
-          }
 
-          // 응답 복사 (스트림은 한 번만 사용 가능)
-          const responseToCache = response.clone();
+        // 응답 복사 (스트림은 한 번만 사용 가능)
+        const responseToCache = response.clone();
 
-          caches.open(CACHE_NAME)
-            .then((cache) => {
-              cache.put(event.request, responseToCache);
-            });
-
-          return response;
+        caches.open(CACHE_NAME).then((cache) => {
+          cache.put(event.request, responseToCache);
         });
-      })
+
+        return response;
+      });
+    })
   );
 });
 
 // 푸시 알림 수신
-self.addEventListener('push', (event) => {
-  console.log('Push event received:', event);
-  
+self.addEventListener("push", (event) => {
+  console.log("Push event received:", event);
+
   const options = {
-    body: 'Bible Daily에서 새로운 알림이 있습니다.',
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/badge-72x72.png',
+    body: "Bible Daily에서 새로운 알림이 있습니다.",
+    icon: "/icons/icon-192x192.png",
+    badge: "/icons/badge-72x72.png",
     vibrate: [100, 50, 100],
     data: {
       dateOfArrival: Date.now(),
-      primaryKey: 1
+      primaryKey: 1,
     },
     actions: [
       {
-        action: 'explore',
-        title: '확인하기',
-        icon: '/icons/checkmark.png'
+        action: "explore",
+        title: "확인하기",
+        icon: "/icons/checkmark.png",
       },
       {
-        action: 'close',
-        title: '닫기',
-        icon: '/icons/xmark.png'
-      }
-    ]
+        action: "close",
+        title: "닫기",
+        icon: "/icons/xmark.png",
+      },
+    ],
   };
 
   if (event.data) {
     const data = event.data.json();
     options.body = data.body || options.body;
-    options.title = data.title || 'Bible Daily';
+    options.title = data.title || "Bible Daily";
     options.data = { ...options.data, ...data };
   }
 
-  event.waitUntil(
-    self.registration.showNotification('Bible Daily', options)
-  );
+  event.waitUntil(self.registration.showNotification("Bible Daily", options));
 });
 
 // 알림 클릭 처리
-self.addEventListener('notificationclick', (event) => {
-  console.log('Notification click received:', event);
-  
+self.addEventListener("notificationclick", (event) => {
+  console.log("Notification click received:", event);
+
   event.notification.close();
 
-  if (event.action === 'explore') {
+  if (event.action === "explore") {
     // 앱 열기 또는 포커스
-    event.waitUntil(
-      clients.openWindow('/')
-    );
-  } else if (event.action === 'close') {
+    event.waitUntil(clients.openWindow("/"));
+  } else if (event.action === "close") {
     // 알림만 닫기
     return;
   } else {
     // 기본 동작: 앱 열기
-    event.waitUntil(
-      clients.openWindow('/')
-    );
+    event.waitUntil(clients.openWindow("/"));
   }
 });
 
 // 백그라운드 동기화
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'background-sync') {
+self.addEventListener("sync", (event) => {
+  if (event.tag === "background-sync") {
     event.waitUntil(doBackgroundSync());
   }
 });
 
 async function doBackgroundSync() {
   // 오프라인 상태에서 저장된 데이터 동기화
-  console.log('Background sync triggered');
+  console.log("Background sync triggered");
 }
 ```
 
 ### 3. PWA 설치 프롬프트
+
 ```typescript
 // hooks/usePWAInstall.ts
 export function usePWAInstall() {
@@ -262,17 +256,20 @@ export function usePWAInstall() {
       setDeferredPrompt(null);
     };
 
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
+    window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+    window.addEventListener("appinstalled", handleAppInstalled);
 
     // 이미 설치되었는지 확인
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (window.matchMedia("(display-mode: standalone)").matches) {
       setIsInstalled(true);
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
+      window.removeEventListener(
+        "beforeinstallprompt",
+        handleBeforeInstallPrompt
+      );
+      window.removeEventListener("appinstalled", handleAppInstalled);
     };
   }, []);
 
@@ -281,13 +278,13 @@ export function usePWAInstall() {
 
     deferredPrompt.prompt();
     const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
+
+    if (outcome === "accepted") {
       setDeferredPrompt(null);
       setIsInstallable(false);
       return true;
     }
-    
+
     return false;
   };
 
@@ -348,15 +345,17 @@ export function PWAInstallPrompt() {
 ## 푸시 알림 시스템
 
 ### 1. 알림 권한 관리
+
 ```typescript
 // hooks/useNotificationPermission.ts
 export function useNotificationPermission() {
-  const [permission, setPermission] = useState<NotificationPermission>('default');
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
   const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {
-    setIsSupported('Notification' in window && 'serviceWorker' in navigator);
-    
+    setIsSupported("Notification" in window && "serviceWorker" in navigator);
+
     if (isSupported) {
       setPermission(Notification.permission);
     }
@@ -368,9 +367,9 @@ export function useNotificationPermission() {
     try {
       const result = await Notification.requestPermission();
       setPermission(result);
-      return result === 'granted';
+      return result === "granted";
     } catch (error) {
-      console.error('알림 권한 요청 실패:', error);
+      console.error("알림 권한 요청 실패:", error);
       return false;
     }
   };
@@ -378,23 +377,26 @@ export function useNotificationPermission() {
   return {
     permission,
     isSupported,
-    isGranted: permission === 'granted',
-    isDenied: permission === 'denied',
+    isGranted: permission === "granted",
+    isDenied: permission === "denied",
     requestPermission,
   };
 }
 ```
 
 ### 2. 푸시 구독 관리
+
 ```typescript
 // hooks/usePushSubscription.ts
 export function usePushSubscription() {
-  const [subscription, setSubscription] = useState<PushSubscription | null>(null);
+  const [subscription, setSubscription] = useState<PushSubscription | null>(
+    null
+  );
   const [isLoading, setIsLoading] = useState(false);
 
   const subscribe = async (): Promise<PushSubscription | null> => {
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.error('Push messaging is not supported');
+    if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+      console.error("Push messaging is not supported");
       return null;
     }
 
@@ -402,7 +404,7 @@ export function usePushSubscription() {
 
     try {
       const registration = await navigator.serviceWorker.ready;
-      
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: urlBase64ToUint8Array(
@@ -411,15 +413,15 @@ export function usePushSubscription() {
       });
 
       setSubscription(subscription);
-      
+
       // 서버에 구독 정보 전송
-      await api.post('/notifications/subscribe', {
+      await api.post("/notifications/subscribe", {
         subscription: subscription.toJSON(),
       });
 
       return subscription;
     } catch (error) {
-      console.error('Push subscription failed:', error);
+      console.error("Push subscription failed:", error);
       return null;
     } finally {
       setIsLoading(false);
@@ -433,16 +435,16 @@ export function usePushSubscription() {
 
     try {
       await subscription.unsubscribe();
-      
+
       // 서버에서 구독 정보 제거
-      await api.delete('/notifications/unsubscribe', {
+      await api.delete("/notifications/unsubscribe", {
         data: { endpoint: subscription.endpoint },
       });
 
       setSubscription(null);
       return true;
     } catch (error) {
-      console.error('Push unsubscription failed:', error);
+      console.error("Push unsubscription failed:", error);
       return false;
     } finally {
       setIsLoading(false);
@@ -452,9 +454,10 @@ export function usePushSubscription() {
   useEffect(() => {
     // 기존 구독 확인
     const checkExistingSubscription = async () => {
-      if ('serviceWorker' in navigator) {
+      if ("serviceWorker" in navigator) {
         const registration = await navigator.serviceWorker.ready;
-        const existingSubscription = await registration.pushManager.getSubscription();
+        const existingSubscription =
+          await registration.pushManager.getSubscription();
         setSubscription(existingSubscription);
       }
     };
@@ -473,10 +476,8 @@ export function usePushSubscription() {
 
 // VAPID 키 변환 유틸리티
 function urlBase64ToUint8Array(base64String: string): Uint8Array {
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding)
-    .replace(/-/g, '+')
-    .replace(/_/g, '/');
+  const padding = "=".repeat((4 - (base64String.length % 4)) % 4);
+  const base64 = (base64String + padding).replace(/-/g, "+").replace(/_/g, "/");
 
   const rawData = window.atob(base64);
   const outputArray = new Uint8Array(rawData.length);
@@ -489,6 +490,7 @@ function urlBase64ToUint8Array(base64String: string): Uint8Array {
 ```
 
 ### 3. 로컬 알림 시스템
+
 ```typescript
 // hooks/useLocalNotifications.ts
 export function useLocalNotifications() {
@@ -504,15 +506,15 @@ export function useLocalNotifications() {
 
     setTimeout(() => {
       new Notification(title, {
-        icon: '/icons/icon-192x192.png',
-        badge: '/icons/badge-72x72.png',
+        icon: "/icons/icon-192x192.png",
+        badge: "/icons/badge-72x72.png",
         ...notificationOptions,
       });
     }, delay);
   };
 
   const scheduleDailyReminder = (time: string) => {
-    const [hours, minutes] = time.split(':').map(Number);
+    const [hours, minutes] = time.split(":").map(Number);
     const now = new Date();
     const scheduledTime = new Date();
     scheduledTime.setHours(hours, minutes, 0, 0);
@@ -525,9 +527,9 @@ export function useLocalNotifications() {
     const delay = scheduledTime.getTime() - now.getTime();
 
     setTimeout(() => {
-      scheduleNotification('성경 읽기 시간입니다! 📖', {
-        body: '오늘의 말씀을 읽고 소감을 나누어보세요.',
-        tag: 'daily-reminder',
+      scheduleNotification("성경 읽기 시간입니다! 📖", {
+        body: "오늘의 말씀을 읽고 소감을 나누어보세요.",
+        tag: "daily-reminder",
         requireInteraction: true,
       });
 
@@ -544,18 +546,20 @@ export function useLocalNotifications() {
 ```
 
 ### 4. 알림 설정 컴포넌트
+
 ```typescript
 // components/NotificationSettings.tsx
 interface NotificationSettingsProps {}
 
 export function NotificationSettings({}: NotificationSettingsProps) {
-  const { permission, isGranted, requestPermission } = useNotificationPermission();
+  const { permission, isGranted, requestPermission } =
+    useNotificationPermission();
   const { isSubscribed, subscribe, unsubscribe } = usePushSubscription();
   const { scheduleDailyReminder } = useLocalNotifications();
-  
+
   const [settings, setSettings] = useState({
     dailyReminder: true,
-    reminderTime: '20:00',
+    reminderTime: "20:00",
     newMission: true,
     cellMessages: true,
     postLikes: true,
@@ -569,11 +573,14 @@ export function NotificationSettings({}: NotificationSettingsProps) {
     }
   };
 
-  const handleSettingChange = (key: keyof typeof settings, value: boolean | string) => {
-    setSettings(prev => ({ ...prev, [key]: value }));
-    
+  const handleSettingChange = (
+    key: keyof typeof settings,
+    value: boolean | string
+  ) => {
+    setSettings((prev) => ({ ...prev, [key]: value }));
+
     // 일일 알림 시간 변경 시 스케줄 업데이트
-    if (key === 'reminderTime' && settings.dailyReminder) {
+    if (key === "reminderTime" && settings.dailyReminder) {
       scheduleDailyReminder(value as string);
     }
   };
@@ -586,15 +593,18 @@ export function NotificationSettings({}: NotificationSettingsProps) {
           원하는 알림을 설정하여 더 나은 경험을 만들어보세요.
         </CardDescription>
       </CardHeader>
-      
+
       <CardContent className="space-y-6">
         {/* 알림 권한 */}
         <div className="space-y-2">
           <Label>알림 권한</Label>
           <div className="flex items-center justify-between">
             <span className="text-sm text-muted-foreground">
-              {permission === 'granted' ? '허용됨' : 
-               permission === 'denied' ? '거부됨' : '미설정'}
+              {permission === "granted"
+                ? "허용됨"
+                : permission === "denied"
+                ? "거부됨"
+                : "미설정"}
             </span>
             {!isGranted && (
               <Button onClick={handlePermissionRequest} size="sm">
@@ -611,14 +621,14 @@ export function NotificationSettings({}: NotificationSettingsProps) {
               <Label>푸시 알림</Label>
               <div className="flex items-center justify-between">
                 <span className="text-sm text-muted-foreground">
-                  {isSubscribed ? '구독 중' : '구독 안함'}
+                  {isSubscribed ? "구독 중" : "구독 안함"}
                 </span>
                 <Button
                   onClick={isSubscribed ? unsubscribe : subscribe}
                   size="sm"
-                  variant={isSubscribed ? 'outline' : 'default'}
+                  variant={isSubscribed ? "outline" : "default"}
                 >
-                  {isSubscribed ? '구독 해제' : '구독하기'}
+                  {isSubscribed ? "구독 해제" : "구독하기"}
                 </Button>
               </div>
             </div>
@@ -630,10 +640,12 @@ export function NotificationSettings({}: NotificationSettingsProps) {
                 <Switch
                   id="daily-reminder"
                   checked={settings.dailyReminder}
-                  onCheckedChange={(checked) => handleSettingChange('dailyReminder', checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange("dailyReminder", checked)
+                  }
                 />
               </div>
-              
+
               {settings.dailyReminder && (
                 <div className="ml-4">
                   <Label htmlFor="reminder-time">알림 시간</Label>
@@ -641,7 +653,9 @@ export function NotificationSettings({}: NotificationSettingsProps) {
                     id="reminder-time"
                     type="time"
                     value={settings.reminderTime}
-                    onChange={(e) => handleSettingChange('reminderTime', e.target.value)}
+                    onChange={(e) =>
+                      handleSettingChange("reminderTime", e.target.value)
+                    }
                     className="w-32"
                   />
                 </div>
@@ -655,7 +669,9 @@ export function NotificationSettings({}: NotificationSettingsProps) {
                 <Switch
                   id="new-mission"
                   checked={settings.newMission}
-                  onCheckedChange={(checked) => handleSettingChange('newMission', checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange("newMission", checked)
+                  }
                 />
               </div>
 
@@ -664,7 +680,9 @@ export function NotificationSettings({}: NotificationSettingsProps) {
                 <Switch
                   id="cell-messages"
                   checked={settings.cellMessages}
-                  onCheckedChange={(checked) => handleSettingChange('cellMessages', checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange("cellMessages", checked)
+                  }
                 />
               </div>
 
@@ -673,7 +691,9 @@ export function NotificationSettings({}: NotificationSettingsProps) {
                 <Switch
                   id="post-likes"
                   checked={settings.postLikes}
-                  onCheckedChange={(checked) => handleSettingChange('postLikes', checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange("postLikes", checked)
+                  }
                 />
               </div>
 
@@ -682,7 +702,9 @@ export function NotificationSettings({}: NotificationSettingsProps) {
                 <Switch
                   id="weekly-report"
                   checked={settings.weeklyReport}
-                  onCheckedChange={(checked) => handleSettingChange('weeklyReport', checked)}
+                  onCheckedChange={(checked) =>
+                    handleSettingChange("weeklyReport", checked)
+                  }
                 />
               </div>
             </div>
@@ -697,21 +719,22 @@ export function NotificationSettings({}: NotificationSettingsProps) {
 ## 백엔드 푸시 알림 서비스
 
 ### 1. 푸시 알림 서비스
+
 ```typescript
 // backend/src/notifications/notifications.service.ts
-import * as webpush from 'web-push';
+import * as webpush from "web-push";
 
 @Injectable()
 export class NotificationsService {
   constructor(
     @InjectRepository(PushSubscription)
     private readonly subscriptionRepository: Repository<PushSubscription>,
-    private readonly configService: ConfigService,
+    private readonly configService: ConfigService
   ) {
     webpush.setVapidDetails(
-      'mailto:admin@bible-daily.com',
-      this.configService.get('VAPID_PUBLIC_KEY'),
-      this.configService.get('VAPID_PRIVATE_KEY')
+      "mailto:admin@bible-daily.com",
+      this.configService.get("VAPID_PUBLIC_KEY"),
+      this.configService.get("VAPID_PRIVATE_KEY")
     );
   }
 
@@ -745,8 +768,8 @@ export class NotificationsService {
     const payload = JSON.stringify({
       title,
       body,
-      icon: '/icons/icon-192x192.png',
-      badge: '/icons/badge-72x72.png',
+      icon: "/icons/icon-192x192.png",
+      badge: "/icons/badge-72x72.png",
       data,
     });
 
@@ -763,8 +786,8 @@ export class NotificationsService {
           payload
         );
       } catch (error) {
-        console.error('Push notification failed:', error);
-        
+        console.error("Push notification failed:", error);
+
         // 구독이 유효하지 않으면 삭제
         if (error.statusCode === 410) {
           await this.subscriptionRepository.remove(subscription);
@@ -781,7 +804,7 @@ export class NotificationsService {
     body: string,
     data?: any
   ): Promise<void> {
-    const promises = userIds.map(userId =>
+    const promises = userIds.map((userId) =>
       this.sendNotification(userId, title, body, data)
     );
 
@@ -791,13 +814,14 @@ export class NotificationsService {
 ```
 
 ### 2. 알림 트리거
+
 ```typescript
 // 새 미션 등록 시 알림
 @Injectable()
 export class MissionsService {
   constructor(
     private readonly notificationsService: NotificationsService,
-    private readonly usersService: UsersService,
+    private readonly usersService: UsersService
   ) {}
 
   async createMission(createMissionDto: CreateMissionDto): Promise<Mission> {
@@ -805,13 +829,13 @@ export class MissionsService {
 
     // 모든 활성 사용자에게 알림 전송
     const activeUsers = await this.usersService.getActiveUsers();
-    const userIds = activeUsers.map(user => user.id);
+    const userIds = activeUsers.map((user) => user.id);
 
     await this.notificationsService.sendBulkNotification(
       userIds,
-      '새로운 미션이 등록되었습니다! 📖',
-      `${mission.title || '오늘의 말씀'}을 확인해보세요.`,
-      { type: 'new_mission', missionId: mission.id }
+      "새로운 미션이 등록되었습니다! 📖",
+      `${mission.title || "오늘의 말씀"}을 확인해보세요.`,
+      { type: "new_mission", missionId: mission.id }
     );
 
     return mission;
@@ -824,7 +848,7 @@ export class PostsService {
   async toggleLike(postId: number, userId: number): Promise<void> {
     const post = await this.postRepository.findOne({
       where: { id: postId },
-      relations: ['author'],
+      relations: ["author"],
     });
 
     if (!post || post.author.id === userId) {
@@ -842,13 +866,15 @@ export class PostsService {
       await this.likeRepository.save(like);
 
       // 게시물 작성자에게 알림 전송
-      const liker = await this.userRepository.findOne({ where: { id: userId } });
-      
+      const liker = await this.userRepository.findOne({
+        where: { id: userId },
+      });
+
       await this.notificationsService.sendNotification(
         post.author.id,
-        '새로운 좋아요! ❤️',
+        "새로운 좋아요! ❤️",
         `${liker.name}님이 회원님의 게시물을 좋아합니다.`,
-        { type: 'post_like', postId, likerId: userId }
+        { type: "post_like", postId, likerId: userId }
       );
     }
   }
@@ -858,6 +884,7 @@ export class PostsService {
 ## 오프라인 지원
 
 ### 1. 캐시 전략
+
 ```javascript
 // Service Worker에서 캐시 전략 구현
 const CACHE_STRATEGIES = {
@@ -870,7 +897,7 @@ const CACHE_STRATEGIES = {
       return response;
     } catch (error) {
       const cachedResponse = await caches.match(request);
-      return cachedResponse || new Response('Offline', { status: 503 });
+      return cachedResponse || new Response("Offline", { status: 503 });
     }
   },
 
@@ -880,25 +907,25 @@ const CACHE_STRATEGIES = {
     if (cachedResponse) {
       return cachedResponse;
     }
-    
+
     try {
       const response = await fetch(request);
       const cache = await caches.open(CACHE_NAME);
       cache.put(request, response.clone());
       return response;
     } catch (error) {
-      return new Response('Offline', { status: 503 });
+      return new Response("Offline", { status: 503 });
     }
   },
 };
 
 // 요청 타입별 캐시 전략 적용
-self.addEventListener('fetch', (event) => {
+self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
   // API 요청은 네트워크 우선
-  if (url.pathname.startsWith('/api/')) {
+  if (url.pathname.startsWith("/api/")) {
     event.respondWith(CACHE_STRATEGIES.networkFirst(request));
   }
   // 정적 리소스는 캐시 우선
@@ -913,6 +940,7 @@ self.addEventListener('fetch', (event) => {
 ```
 
 ### 2. 오프라인 데이터 동기화
+
 ```typescript
 // hooks/useOfflineSync.ts
 export function useOfflineSync() {
@@ -923,18 +951,21 @@ export function useOfflineSync() {
     const handleOnline = () => setIsOnline(true);
     const handleOffline = () => setIsOnline(false);
 
-    window.addEventListener('online', handleOnline);
-    window.addEventListener('offline', handleOffline);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
 
     return () => {
-      window.removeEventListener('online', handleOnline);
-      window.removeEventListener('offline', handleOffline);
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
     };
   }, []);
 
   const addPendingAction = (action: any) => {
-    setPendingActions(prev => [...prev, action]);
-    localStorage.setItem('pendingActions', JSON.stringify([...pendingActions, action]));
+    setPendingActions((prev) => [...prev, action]);
+    localStorage.setItem(
+      "pendingActions",
+      JSON.stringify([...pendingActions, action])
+    );
   };
 
   const syncPendingActions = async () => {
@@ -944,11 +975,11 @@ export function useOfflineSync() {
       for (const action of pendingActions) {
         await api.request(action);
       }
-      
+
       setPendingActions([]);
-      localStorage.removeItem('pendingActions');
+      localStorage.removeItem("pendingActions");
     } catch (error) {
-      console.error('Sync failed:', error);
+      console.error("Sync failed:", error);
     }
   };
 

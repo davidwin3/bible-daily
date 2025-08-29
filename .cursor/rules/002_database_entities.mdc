@@ -11,8 +11,9 @@ alwaysApply: true
 ## 엔티티 구조
 
 ### 1. User (사용자)
+
 ```typescript
-@Entity('users')
+@Entity("users")
 export class User {
   @PrimaryGeneratedColumn()
   id: number;
@@ -29,10 +30,10 @@ export class User {
   @Column({ nullable: true })
   profileImage?: string;
 
-  @Column({ 
-    type: 'enum', 
-    enum: UserRole, 
-    default: UserRole.STUDENT 
+  @Column({
+    type: "enum",
+    enum: UserRole,
+    default: UserRole.STUDENT,
   })
   role: UserRole;
 
@@ -46,29 +47,30 @@ export class User {
   updatedAt: Date;
 
   // Relations
-  @OneToMany(() => Post, post => post.author)
+  @OneToMany(() => Post, (post) => post.author)
   posts: Post[];
 
-  @OneToMany(() => Like, like => like.user)
+  @OneToMany(() => Like, (like) => like.user)
   likes: Like[];
 
-  @OneToMany(() => UserMission, userMission => userMission.user)
+  @OneToMany(() => UserMission, (userMission) => userMission.user)
   userMissions: UserMission[];
 
-  @OneToOne(() => CellMember, cellMember => cellMember.user)
+  @OneToOne(() => CellMember, (cellMember) => cellMember.user)
   cellMember: CellMember;
 }
 
 enum UserRole {
-  STUDENT = 'student',
-  TEACHER = 'teacher',
-  ADMIN = 'admin'
+  STUDENT = "student",
+  TEACHER = "teacher",
+  ADMIN = "admin",
 }
 ```
 
 ### 2. Post (게시물)
+
 ```typescript
-@Entity('posts')
+@Entity("posts")
 export class Post {
   @PrimaryGeneratedColumn()
   id: number;
@@ -76,7 +78,7 @@ export class Post {
   @Column()
   title: string;
 
-  @Column('text')
+  @Column("text")
   content: string;
 
   @Column({ nullable: true })
@@ -92,29 +94,30 @@ export class Post {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => User, user => user.posts)
-  @JoinColumn({ name: 'authorId' })
+  @ManyToOne(() => User, (user) => user.posts)
+  @JoinColumn({ name: "authorId" })
   author: User;
 
   @Column()
   authorId: number;
 
-  @OneToMany(() => Like, like => like.post)
+  @OneToMany(() => Like, (like) => like.post)
   likes: Like[];
 
   // Computed properties
   @VirtualColumn({
-    query: (alias) => 
-      `SELECT COUNT(*) FROM likes WHERE likes.postId = ${alias}.id`
+    query: (alias) =>
+      `SELECT COUNT(*) FROM likes WHERE likes.postId = ${alias}.id`,
   })
   likeCount: number;
 }
 ```
 
 ### 3. Like (좋아요)
+
 ```typescript
-@Entity('likes')
-@Unique(['userId', 'postId'])
+@Entity("likes")
+@Unique(["userId", "postId"])
 export class Like {
   @PrimaryGeneratedColumn()
   id: number;
@@ -123,15 +126,15 @@ export class Like {
   createdAt: Date;
 
   // Relations
-  @ManyToOne(() => User, user => user.likes)
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne(() => User, (user) => user.likes)
+  @JoinColumn({ name: "userId" })
   user: User;
 
   @Column()
   userId: number;
 
-  @ManyToOne(() => Post, post => post.likes)
-  @JoinColumn({ name: 'postId' })
+  @ManyToOne(() => Post, (post) => post.likes)
+  @JoinColumn({ name: "postId" })
   post: Post;
 
   @Column()
@@ -140,13 +143,14 @@ export class Like {
 ```
 
 ### 4. Mission (미션)
+
 ```typescript
-@Entity('missions')
+@Entity("missions")
 export class Mission {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'date', unique: true })
+  @Column({ type: "date", unique: true })
   date: Date;
 
   @Column()
@@ -170,7 +174,7 @@ export class Mission {
   @Column({ nullable: true })
   title?: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   description?: string;
 
   @CreateDateColumn()
@@ -180,22 +184,23 @@ export class Mission {
   updatedAt: Date;
 
   // Relations
-  @OneToMany(() => UserMission, userMission => userMission.mission)
+  @OneToMany(() => UserMission, (userMission) => userMission.mission)
   userMissions: UserMission[];
 
   // Computed properties
   @VirtualColumn({
-    query: (alias) => 
-      `SELECT COUNT(*) FROM user_missions WHERE user_missions.missionId = ${alias}.id AND user_missions.isCompleted = true`
+    query: (alias) =>
+      `SELECT COUNT(*) FROM user_missions WHERE user_missions.missionId = ${alias}.id AND user_missions.isCompleted = true`,
   })
   completionCount: number;
 }
 ```
 
 ### 5. UserMission (사용자 미션 완료 현황)
+
 ```typescript
-@Entity('user_missions')
-@Unique(['userId', 'missionId'])
+@Entity("user_missions")
+@Unique(["userId", "missionId"])
 export class UserMission {
   @PrimaryGeneratedColumn()
   id: number;
@@ -213,15 +218,15 @@ export class UserMission {
   updatedAt: Date;
 
   // Relations
-  @ManyToOne(() => User, user => user.userMissions)
-  @JoinColumn({ name: 'userId' })
+  @ManyToOne(() => User, (user) => user.userMissions)
+  @JoinColumn({ name: "userId" })
   user: User;
 
   @Column()
   userId: number;
 
-  @ManyToOne(() => Mission, mission => mission.userMissions)
-  @JoinColumn({ name: 'missionId' })
+  @ManyToOne(() => Mission, (mission) => mission.userMissions)
+  @JoinColumn({ name: "missionId" })
   mission: Mission;
 
   @Column()
@@ -230,8 +235,9 @@ export class UserMission {
 ```
 
 ### 6. Cell (셀/소그룹)
+
 ```typescript
-@Entity('cells')
+@Entity("cells")
 export class Cell {
   @PrimaryGeneratedColumn()
   id: number;
@@ -239,7 +245,7 @@ export class Cell {
   @Column()
   name: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: "text", nullable: true })
   description?: string;
 
   @Column({ default: true })
@@ -252,30 +258,31 @@ export class Cell {
   updatedAt: Date;
 
   // Relations
-  @OneToMany(() => CellMember, cellMember => cellMember.cell)
+  @OneToMany(() => CellMember, (cellMember) => cellMember.cell)
   members: CellMember[];
 
   // Computed properties
   @VirtualColumn({
-    query: (alias) => 
-      `SELECT COUNT(*) FROM cell_members WHERE cell_members.cellId = ${alias}.id AND cell_members.isActive = true`
+    query: (alias) =>
+      `SELECT COUNT(*) FROM cell_members WHERE cell_members.cellId = ${alias}.id AND cell_members.isActive = true`,
   })
   memberCount: number;
 }
 ```
 
 ### 7. CellMember (셀 구성원)
+
 ```typescript
-@Entity('cell_members')
-@Unique(['userId', 'cellId'])
+@Entity("cell_members")
+@Unique(["userId", "cellId"])
 export class CellMember {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ 
-    type: 'enum', 
-    enum: CellRole, 
-    default: CellRole.MEMBER 
+  @Column({
+    type: "enum",
+    enum: CellRole,
+    default: CellRole.MEMBER,
   })
   role: CellRole;
 
@@ -292,15 +299,15 @@ export class CellMember {
   updatedAt: Date;
 
   // Relations
-  @OneToOne(() => User, user => user.cellMember)
-  @JoinColumn({ name: 'userId' })
+  @OneToOne(() => User, (user) => user.cellMember)
+  @JoinColumn({ name: "userId" })
   user: User;
 
   @Column()
   userId: number;
 
-  @ManyToOne(() => Cell, cell => cell.members)
-  @JoinColumn({ name: 'cellId' })
+  @ManyToOne(() => Cell, (cell) => cell.members)
+  @JoinColumn({ name: "cellId" })
   cell: Cell;
 
   @Column()
@@ -308,21 +315,24 @@ export class CellMember {
 }
 
 enum CellRole {
-  MEMBER = 'member',
-  LEADER = 'leader'
+  MEMBER = "member",
+  LEADER = "leader",
 }
 ```
 
 ## 데이터베이스 설계 원칙
 
 ### 1. 네이밍 컨벤션
+
 - **테이블명**: snake_case 복수형 (예: `users`, `cell_members`)
 - **컬럼명**: camelCase (예: `createdAt`, `isActive`)
 - **외래키**: `{테이블명}Id` 형식 (예: `userId`, `postId`)
 - **인덱스**: `idx_{테이블명}_{컬럼명}` 형식
 
 ### 2. 공통 필드
+
 모든 엔티티는 다음 필드를 포함해야 합니다:
+
 ```typescript
 @CreateDateColumn()
 createdAt: Date;
@@ -332,19 +342,23 @@ updatedAt: Date;
 ```
 
 ### 3. 소프트 삭제
+
 중요한 데이터는 물리적 삭제 대신 논리적 삭제를 사용:
+
 ```typescript
 @Column({ default: false })
 isDeleted: boolean;
 ```
 
 ### 4. 관계 설정 규칙
+
 - **일대다 관계**: `@OneToMany`와 `@ManyToOne` 사용
 - **다대다 관계**: 중간 테이블 생성하여 일대다로 분해
 - **외래키 제약조건**: 항상 명시적으로 설정
 - **Cascade 옵션**: 신중하게 사용 (주로 `['remove']`는 피함)
 
 ### 5. 인덱스 전략
+
 ```typescript
 // 복합 인덱스
 @Index(['userId', 'createdAt'])
@@ -358,6 +372,7 @@ isDeleted: boolean;
 ```
 
 ### 6. 데이터 타입 가이드라인
+
 - **ID**: `number` (auto increment)
 - **문자열**: `string` (기본 VARCHAR(255))
 - **긴 텍스트**: `'text'` 타입 명시
@@ -366,11 +381,13 @@ isDeleted: boolean;
 - **열거형**: TypeScript enum 활용
 
 ### 7. 성능 최적화
+
 - **가상 컬럼**: 계산된 값은 `@VirtualColumn` 사용
 - **지연 로딩**: 기본값으로 사용, 필요시 eager loading
 - **배치 처리**: N+1 문제 방지를 위한 적절한 join 사용
 
 ### 8. 보안 고려사항
+
 - **민감 정보**: 별도 암호화 처리
 - **사용자 입력**: 항상 검증 및 이스케이프
 - **권한 확인**: 엔티티 레벨에서 접근 제어 로직 구현
