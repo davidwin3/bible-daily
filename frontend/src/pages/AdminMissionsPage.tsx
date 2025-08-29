@@ -269,22 +269,7 @@ export const AdminMissionsPage: React.FC = () => {
                     </div>
 
                     <h3 className="text-lg font-semibold mb-2">
-                      {mission.title ||
-                        `${mission.startBook} ${mission.startChapter}장`}
-                      {mission.startVerse &&
-                        ` ${
-                          mission.startVerse === -1
-                            ? "전체"
-                            : mission.startVerse
-                        }절`}
-                      {mission.endBook &&
-                        mission.endBook !== mission.startBook &&
-                        ` - ${mission.endBook}`}
-                      {mission.endChapter && ` ${mission.endChapter}장`}
-                      {mission.endVerse &&
-                        ` ${
-                          mission.endVerse === -1 ? "전체" : mission.endVerse
-                        }절`}
+                      {mission.title ? `${mission.title}` : "-"}
                     </h3>
 
                     {mission.description && (
@@ -302,6 +287,11 @@ export const AdminMissionsPage: React.FC = () => {
                         <BookOpen className="h-4 w-4" />
                         <span>
                           {mission.startBook} {mission.startChapter}
+                          {mission.startVerse && `:${mission.startVerse}`}
+                          {" - "}
+                          {mission.endBook && `${mission.endBook}`}
+                          {mission.endChapter && ` ${mission.endChapter}`}
+                          {mission.endVerse && `:${mission.endVerse}`}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -392,6 +382,19 @@ const MissionForm: React.FC<MissionFormProps> = ({
     : [];
   const endChapterOptions = endBook ? getChapterNumbers(endBook.chapters) : [];
 
+  // 시작 성경책의 인덱스 찾기
+  const startBookIndex = formData.startBook
+    ? [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS].findIndex(
+        (book) => book.name === formData.startBook
+      )
+    : -1;
+
+  // 끝 성경책 옵션 필터링 (시작 성경책 이후의 성경책들만)
+  const availableEndBooks =
+    startBookIndex >= 0
+      ? [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS].slice(startBookIndex)
+      : [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS];
+
   // 선택된 성경책과 장에 따른 정확한 절 수 계산
   const startVerseOptions =
     formData.startBook && formData.startChapter
@@ -422,14 +425,34 @@ const MissionForm: React.FC<MissionFormProps> = ({
           <Label>시작 성경책</Label>
           <Select
             value={formData.startBook}
-            onValueChange={(value: string) =>
+            onValueChange={(value: string) => {
+              const newStartBookIndex = [
+                ...OLD_TESTAMENT_BOOKS,
+                ...NEW_TESTAMENT_BOOKS,
+              ].findIndex((book) => book.name === value);
+              const currentEndBookIndex = formData.endBook
+                ? [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS].findIndex(
+                    (book) => book.name === formData.endBook
+                  )
+                : -1;
+
+              // 끝 성경책이 시작 성경책보다 앞에 있으면 초기화
+              const shouldResetEndBook =
+                currentEndBookIndex >= 0 &&
+                currentEndBookIndex < newStartBookIndex;
+
               setFormData({
                 ...formData,
                 startBook: value,
                 startChapter: 1,
                 startVerse: undefined, // 성경책이 변경되면 절 선택 초기화
-              })
-            }
+                endBook: shouldResetEndBook ? undefined : formData.endBook,
+                endChapter: shouldResetEndBook
+                  ? undefined
+                  : formData.endChapter,
+                endVerse: shouldResetEndBook ? undefined : formData.endVerse,
+              });
+            }}
           >
             <SelectTrigger>
               <SelectValue placeholder="성경책 선택" />
@@ -495,7 +518,6 @@ const MissionForm: React.FC<MissionFormProps> = ({
               <SelectValue placeholder="절" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="-1">전체</SelectItem>
               {startVerseOptions.map((verse) => (
                 <SelectItem key={verse} value={verse.toString()}>
                   {verse}절
@@ -519,6 +541,7 @@ const MissionForm: React.FC<MissionFormProps> = ({
                 endVerse: undefined, // 성경책이 변경되면 절 선택 초기화
               })
             }
+            disabled={!formData.startBook}
           >
             <SelectTrigger>
               <SelectValue placeholder="선택" />
@@ -526,19 +549,23 @@ const MissionForm: React.FC<MissionFormProps> = ({
             <SelectContent>
               <SelectGroup>
                 <SelectLabel>구약</SelectLabel>
-                {OLD_TESTAMENT_BOOKS.map((book) => (
-                  <SelectItem key={book.id} value={book.name}>
-                    {book.name}
-                  </SelectItem>
-                ))}
+                {availableEndBooks
+                  .filter((book) => book.testament === "old")
+                  .map((book) => (
+                    <SelectItem key={book.id} value={book.name}>
+                      {book.name}
+                    </SelectItem>
+                  ))}
               </SelectGroup>
               <SelectGroup>
                 <SelectLabel>신약</SelectLabel>
-                {NEW_TESTAMENT_BOOKS.map((book) => (
-                  <SelectItem key={book.id} value={book.name}>
-                    {book.name}
-                  </SelectItem>
-                ))}
+                {availableEndBooks
+                  .filter((book) => book.testament === "new")
+                  .map((book) => (
+                    <SelectItem key={book.id} value={book.name}>
+                      {book.name}
+                    </SelectItem>
+                  ))}
               </SelectGroup>
             </SelectContent>
           </Select>
@@ -584,7 +611,6 @@ const MissionForm: React.FC<MissionFormProps> = ({
               <SelectValue placeholder="절" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="-1">전체</SelectItem>
               {endVerseOptions.map((verse) => (
                 <SelectItem key={verse} value={verse.toString()}>
                   {verse}절
