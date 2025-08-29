@@ -1,0 +1,342 @@
+name: Backend CI/CD
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci-cd.yml'
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend-ci-cd.yml'
+
+env:
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8'
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}/backend
+
+jobs:
+  # 코드 품질 검사 및 테스트
+  test:
+    name: Test & Lint
+    runs-on: ubuntu-latest
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test_password
+          MYSQL_DATABASE: bible_daily_test
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint backend
+        run: pnpm --filter backend lint
+
+      - name: Type check
+        run: pnpm --filter backend build
+
+      - name: Create test environment file
+        run: |
+          cat > backend/.env.test << EOF
+          NODE_ENV=test
+          PORT=3001
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_USERNAME=root
+          DB_PASSWORD=test_password
+          DB_DATABASE=bible_daily_test
+          JWT_SECRET=test-jwt-secret-key-for-testing
+          JWT_REFRESH_SECRET=test-refresh-secret-key-for-testing
+          GOOGLE_CLIENT_ID=test-google-client-id
+          GOOGLE_CLIENT_SECRET=test-google-client-secret
+          GOOGLE_CALLBACK_URL=http://localhost:3001/auth/google/callback
+          FIREBASE_PROJECT_ID=test-project
+          FIREBASE_PRIVATE_KEY=test-private-key
+          FIREBASE_CLIENT_EMAIL=test@test.com
+          VAPID_PUBLIC_KEY=test-vapid-public-key
+          VAPID_PRIVATE_KEY=test-vapid-private-key
+          EOF
+
+      - name: Run database migrations
+        run: pnpm --filter backend migration:run
+        env:
+          NODE_ENV: test
+
+      - name: Run tests
+        run: pnpm --filter backend test:cov
+        env:
+          NODE_ENV: test
+
+      - name: Upload test coverage
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage/lcov.info
+          flags: backend
+          name: backend-coverage
+
+  # 보안 스캔
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: './backend'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run npm audit
+        run: pnpm --filter backend audit --audit-level moderate
+
+  # Docker 이미지 빌드
+  build:
+    name: Build Docker Image
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    if: github.event_name == 'push'
+    
+    outputs:
+      image-digest: ${{ steps.build.outputs.digest }}
+      image-tag: ${{ steps.meta.outputs.tags }}
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          platforms: linux/amd64,linux/arm64
+
+  # 개발 환경 배포
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
+    environment: development
+    
+    steps:
+      - name: Deploy to Railway (Development)
+        uses: railway-app/railway-action@v1
+        with:
+          api-token: ${{ secrets.RAILWAY_TOKEN }}
+          project-id: ${{ secrets.RAILWAY_PROJECT_ID_DEV }}
+          environment: development
+          service: backend
+          variables: |
+            NODE_ENV=development
+            PORT=3000
+            DB_HOST=${{ secrets.DB_HOST_DEV }}
+            DB_PORT=${{ secrets.DB_PORT_DEV }}
+            DB_USERNAME=${{ secrets.DB_USERNAME_DEV }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD_DEV }}
+            DB_DATABASE=${{ secrets.DB_DATABASE_DEV }}
+            JWT_SECRET=${{ secrets.JWT_SECRET_DEV }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_DEV }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID_DEV }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET_DEV }}
+            GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL_DEV }}
+            FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID_DEV }}
+            FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY_DEV }}
+            FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL_DEV }}
+
+  # 스테이징 환경 배포
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: staging
+    
+    steps:
+      - name: Deploy to Railway (Staging)
+        uses: railway-app/railway-action@v1
+        with:
+          api-token: ${{ secrets.RAILWAY_TOKEN }}
+          project-id: ${{ secrets.RAILWAY_PROJECT_ID_STAGING }}
+          environment: staging
+          service: backend
+          variables: |
+            NODE_ENV=staging
+            PORT=3000
+            DB_HOST=${{ secrets.DB_HOST_STAGING }}
+            DB_PORT=${{ secrets.DB_PORT_STAGING }}
+            DB_USERNAME=${{ secrets.DB_USERNAME_STAGING }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD_STAGING }}
+            DB_DATABASE=${{ secrets.DB_DATABASE_STAGING }}
+            JWT_SECRET=${{ secrets.JWT_SECRET_STAGING }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_STAGING }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID_STAGING }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET_STAGING }}
+            GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL_STAGING }}
+            FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID_STAGING }}
+            FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY_STAGING }}
+            FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL_STAGING }}
+
+      - name: Run database migrations (Staging)
+        run: |
+          curl -X POST "${{ secrets.RAILWAY_API_URL_STAGING }}/migrations/run" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}"
+
+  # 프로덕션 환경 배포 (수동 승인 필요)
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, deploy-staging]
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    environment: production
+    
+    steps:
+      - name: Create database backup
+        run: |
+          curl -X POST "${{ secrets.DB_BACKUP_API_URL }}" \
+            -H "Authorization: Bearer ${{ secrets.DB_BACKUP_TOKEN }}" \
+            -d '{"database": "${{ secrets.DB_DATABASE_PROD }}", "type": "pre-deployment"}'
+
+      - name: Deploy to Railway (Production)
+        uses: railway-app/railway-action@v1
+        with:
+          api-token: ${{ secrets.RAILWAY_TOKEN }}
+          project-id: ${{ secrets.RAILWAY_PROJECT_ID_PROD }}
+          environment: production
+          service: backend
+          variables: |
+            NODE_ENV=production
+            PORT=3000
+            DB_HOST=${{ secrets.DB_HOST_PROD }}
+            DB_PORT=${{ secrets.DB_PORT_PROD }}
+            DB_USERNAME=${{ secrets.DB_USERNAME_PROD }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD_PROD }}
+            DB_DATABASE=${{ secrets.DB_DATABASE_PROD }}
+            JWT_SECRET=${{ secrets.JWT_SECRET_PROD }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET_PROD }}
+            GOOGLE_CLIENT_ID=${{ secrets.GOOGLE_CLIENT_ID_PROD }}
+            GOOGLE_CLIENT_SECRET=${{ secrets.GOOGLE_CLIENT_SECRET_PROD }}
+            GOOGLE_CALLBACK_URL=${{ secrets.GOOGLE_CALLBACK_URL_PROD }}
+            FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID_PROD }}
+            FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY_PROD }}
+            FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL_PROD }}
+
+      - name: Run database migrations (Production)
+        run: |
+          curl -X POST "${{ secrets.RAILWAY_API_URL_PROD }}/migrations/run" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}"
+
+      - name: Health check
+        run: |
+          for i in {1..30}; do
+            if curl -f "${{ secrets.BACKEND_URL_PROD }}/health"; then
+              echo "Health check passed"
+              exit 0
+            fi
+            echo "Health check attempt $i failed, retrying in 10s..."
+            sleep 10
+          done
+          echo "Health check failed after 5 minutes"
+          exit 1
+
+      - name: Notify deployment success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          channel: '#deployments'
+          text: '🚀 Backend가 프로덕션에 성공적으로 배포되었습니다!'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: success()
+
+      - name: Notify deployment failure
+        uses: 8398a7/action-slack@v3
+        with:
+          status: failure
+          channel: '#deployments'
+          text: '❌ Backend 프로덕션 배포에 실패했습니다.'
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        if: failure()
+
+      - name: Rollback on failure
+        if: failure()
+        run: |
+          echo "Rolling back to previous version..."
+          curl -X POST "${{ secrets.RAILWAY_API_URL_PROD }}/rollback" \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_API_TOKEN }}"

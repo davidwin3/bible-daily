@@ -1,0 +1,150 @@
+# GitHub Actions Environment Variables Template
+# Copy this file and rename to match your environment needs
+# Add the actual values to GitHub Secrets
+
+name: Environment Template
+
+# This file serves as a template for environment variables
+# DO NOT put actual secrets here - use GitHub Secrets instead
+
+env:
+  # Node.js Configuration
+  NODE_VERSION: '20'
+  PNPM_VERSION: '8'
+  
+  # Container Registry
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+  
+  # Deployment Configuration
+  KUBECTL_TIMEOUT: 300s
+  ROLLOUT_TIMEOUT: 600s
+
+# Example of how to use secrets in workflows:
+# 
+# jobs:
+#   deploy:
+#     runs-on: ubuntu-latest
+#     environment: production  # This references the GitHub Environment
+#     steps:
+#       - name: Deploy
+#         env:
+#           # Database Configuration
+#           DB_HOST: ${{ secrets.DB_HOST_PRODUCTION }}
+#           DB_PORT: ${{ secrets.DB_PORT_PRODUCTION }}
+#           DB_USERNAME: ${{ secrets.DB_USERNAME_PRODUCTION }}
+#           DB_PASSWORD: ${{ secrets.DB_PASSWORD_PRODUCTION }}
+#           DB_DATABASE: ${{ secrets.DB_DATABASE_PRODUCTION }}
+#           
+#           # JWT Configuration
+#           JWT_SECRET: ${{ secrets.JWT_SECRET_PRODUCTION }}
+#           JWT_REFRESH_SECRET: ${{ secrets.JWT_REFRESH_SECRET_PRODUCTION }}
+#           
+#           # Google OAuth
+#           GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID_PRODUCTION }}
+#           GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET_PRODUCTION }}
+#           
+#           # Firebase
+#           FIREBASE_PROJECT_ID: ${{ secrets.FIREBASE_PROJECT_ID_PRODUCTION }}
+#           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY_PRODUCTION }}
+#           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL_PRODUCTION }}
+
+# Required GitHub Secrets by Environment:
+#
+# DEVELOPMENT:
+# - DB_HOST_DEVELOPMENT
+# - DB_PORT_DEVELOPMENT  
+# - DB_USERNAME_DEVELOPMENT
+# - DB_PASSWORD_DEVELOPMENT
+# - DB_DATABASE_DEVELOPMENT
+# - DB_ROOT_PASSWORD_DEVELOPMENT
+# - REDIS_PASSWORD_DEVELOPMENT
+# - JWT_SECRET_DEVELOPMENT
+# - JWT_REFRESH_SECRET_DEVELOPMENT
+# - GOOGLE_CLIENT_ID_DEVELOPMENT
+# - GOOGLE_CLIENT_SECRET_DEVELOPMENT
+# - GOOGLE_CALLBACK_URL_DEVELOPMENT
+# - FIREBASE_PROJECT_ID_DEVELOPMENT
+# - FIREBASE_PRIVATE_KEY_DEVELOPMENT
+# - FIREBASE_CLIENT_EMAIL_DEVELOPMENT
+# - VAPID_PUBLIC_KEY_DEVELOPMENT
+# - VAPID_PRIVATE_KEY_DEVELOPMENT
+# - VITE_API_URL_DEVELOPMENT
+# - VITE_GOOGLE_CLIENT_ID_DEVELOPMENT
+# - VITE_VAPID_PUBLIC_KEY_DEVELOPMENT
+# - VITE_FIREBASE_CONFIG_DEVELOPMENT
+#
+# STAGING:
+# - DB_HOST_STAGING
+# - DB_PORT_STAGING
+# - DB_USERNAME_STAGING
+# - DB_PASSWORD_STAGING
+# - DB_DATABASE_STAGING
+# - DB_ROOT_PASSWORD_STAGING
+# - REDIS_PASSWORD_STAGING
+# - JWT_SECRET_STAGING
+# - JWT_REFRESH_SECRET_STAGING
+# - GOOGLE_CLIENT_ID_STAGING
+# - GOOGLE_CLIENT_SECRET_STAGING
+# - GOOGLE_CALLBACK_URL_STAGING
+# - FIREBASE_PROJECT_ID_STAGING
+# - FIREBASE_PRIVATE_KEY_STAGING
+# - FIREBASE_CLIENT_EMAIL_STAGING
+# - VAPID_PUBLIC_KEY_STAGING
+# - VAPID_PRIVATE_KEY_STAGING
+# - VITE_API_URL_STAGING
+# - VITE_GOOGLE_CLIENT_ID_STAGING
+# - VITE_VAPID_PUBLIC_KEY_STAGING
+# - VITE_FIREBASE_CONFIG_STAGING
+#
+# PRODUCTION:
+# - DB_HOST_PRODUCTION
+# - DB_PORT_PRODUCTION
+# - DB_USERNAME_PRODUCTION
+# - DB_PASSWORD_PRODUCTION
+# - DB_DATABASE_PRODUCTION
+# - DB_ROOT_PASSWORD_PRODUCTION
+# - REDIS_PASSWORD_PRODUCTION
+# - JWT_SECRET_PRODUCTION
+# - JWT_REFRESH_SECRET_PRODUCTION
+# - GOOGLE_CLIENT_ID_PRODUCTION
+# - GOOGLE_CLIENT_SECRET_PRODUCTION
+# - GOOGLE_CALLBACK_URL_PRODUCTION
+# - FIREBASE_PROJECT_ID_PRODUCTION
+# - FIREBASE_PRIVATE_KEY_PRODUCTION
+# - FIREBASE_CLIENT_EMAIL_PRODUCTION
+# - VAPID_PUBLIC_KEY_PRODUCTION
+# - VAPID_PRIVATE_KEY_PRODUCTION
+# - VITE_API_URL_PRODUCTION
+# - VITE_GOOGLE_CLIENT_ID_PRODUCTION
+# - VITE_VAPID_PUBLIC_KEY_PRODUCTION
+# - VITE_FIREBASE_CONFIG_PRODUCTION
+#
+# COMMON SECRETS:
+# - GITHUB_TOKEN (automatically provided)
+# - VERCEL_TOKEN
+# - VERCEL_ORG_ID
+# - VERCEL_PROJECT_ID
+# - RAILWAY_TOKEN
+# - RAILWAY_PROJECT_ID_DEV
+# - RAILWAY_PROJECT_ID_STAGING
+# - RAILWAY_PROJECT_ID_PROD
+# - SLACK_WEBHOOK_URL
+# - SONAR_TOKEN
+# - SNYK_TOKEN
+# - SEMGREP_APP_TOKEN
+# - LHCI_GITHUB_APP_TOKEN
+# - CHROMATIC_PROJECT_TOKEN
+# - GRAFANA_ADMIN_PASSWORD
+
+on:
+  workflow_dispatch:  # This template should not run automatically
+
+jobs:
+  template:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Environment Template
+        run: |
+          echo "This is a template file for environment variables."
+          echo "Please refer to DEPLOYMENT.md for setup instructions."

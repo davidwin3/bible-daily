@@ -1,0 +1,175 @@
+# Staging Environment Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bible-daily-staging-config
+  namespace: staging
+data:
+  # Application Configuration
+  NODE_ENV: "staging"
+  PORT: "3000"
+  
+  # Database Configuration
+  DB_HOST: "mysql-staging.bible-daily.svc.cluster.local"
+  DB_PORT: "3306"
+  DB_DATABASE: "bible_daily_staging"
+  
+  # Redis Configuration
+  REDIS_HOST: "redis-staging.bible-daily.svc.cluster.local"
+  REDIS_PORT: "6379"
+  
+  # External Services
+  GOOGLE_CALLBACK_URL: "https://api-staging.bible-daily.com/auth/google/callback"
+  
+  # Frontend Configuration
+  VITE_API_URL: "https://api-staging.bible-daily.com/api"
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bible-daily-backend-staging
+  namespace: staging
+  labels:
+    app: bible-daily-backend
+    environment: staging
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: bible-daily-backend
+      environment: staging
+  template:
+    metadata:
+      labels:
+        app: bible-daily-backend
+        environment: staging
+    spec:
+      containers:
+      - name: backend
+        image: ghcr.io/your-org/bible-daily/backend:main
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NODE_ENV
+          valueFrom:
+            configMapKeyRef:
+              name: bible-daily-staging-config
+              key: NODE_ENV
+        - name: PORT
+          valueFrom:
+            configMapKeyRef:
+              name: bible-daily-staging-config
+              key: PORT
+        - name: DB_HOST
+          valueFrom:
+            configMapKeyRef:
+              name: bible-daily-staging-config
+              key: DB_HOST
+        - name: DB_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: bible-daily-staging-secrets
+              key: DB_USERNAME
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: bible-daily-staging-secrets
+              key: DB_PASSWORD
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: bible-daily-staging-secrets
+              key: JWT_SECRET
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "500m"
+          limits:
+            memory: "1Gi"
+            cpu: "1000m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 5
+          periodSeconds: 5
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bible-daily-backend-staging
+  namespace: staging
+spec:
+  selector:
+    app: bible-daily-backend
+    environment: staging
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+  type: ClusterIP
+
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: bible-daily-backend-staging
+  namespace: staging
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://staging.bible-daily.com"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "Content-Type, Authorization"
+    nginx.ingress.kubernetes.io/rate-limit: "100"
+spec:
+  tls:
+  - hosts:
+    - api-staging.bible-daily.com
+    secretName: bible-daily-backend-staging-tls
+  rules:
+  - host: api-staging.bible-daily.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: bible-daily-backend-staging
+            port:
+              number: 80
+
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: bible-daily-backend-staging-hpa
+  namespace: staging
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: bible-daily-backend-staging
+  minReplicas: 2
+  maxReplicas: 5
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
