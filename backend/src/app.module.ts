@@ -9,6 +9,7 @@ import { PostsModule } from './posts/posts.module';
 import { UsersModule } from './users/users.module';
 import { CellsModule } from './cells/cells.module';
 import { AdminModule } from './admin/admin.module';
+import { CacheModule } from './cache/cache.module';
 import { User } from './entities/user.entity';
 import { Post } from './entities/post.entity';
 import { Like } from './entities/like.entity';
@@ -16,6 +17,7 @@ import { Mission } from './entities/mission.entity';
 import { UserMission } from './entities/user-mission.entity';
 import { Cell } from './entities/cell.entity';
 import { CellMember } from './entities/cell-member.entity';
+import { getDatabaseConfig } from './config/database.config';
 
 @Module({
   imports: [
@@ -25,19 +27,11 @@ import { CellMember } from './entities/cell-member.entity';
     }),
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        type: 'mysql',
-        host: configService.get('DB_HOST'),
-        port: parseInt(configService.get('DB_PORT') || '3306'),
-        username: configService.get('DB_USERNAME'),
-        password: configService.get('DB_PASSWORD'),
-        database: configService.get('DB_DATABASE'),
-        entities: [User, Post, Like, Mission, UserMission, Cell, CellMember],
-        synchronize: configService.get('NODE_ENV') === 'development',
-        logging: configService.get('NODE_ENV') === 'development',
-      }),
+      useFactory: (configService: ConfigService) =>
+        getDatabaseConfig(configService),
       inject: [ConfigService],
     }),
+    CacheModule,
     AuthModule,
     UsersModule,
     PostsModule,
