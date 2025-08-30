@@ -6,18 +6,18 @@ on:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
-  
+
   # 스케줄 실행 (매일 오전 2시)
   schedule:
-    - cron: '0 2 * * *'
-  
+    - cron: "0 2 * * *"
+
   # 수동 실행 트리거
   workflow_dispatch:
     inputs:
       scan_type:
-        description: '실행할 스캔 타입을 선택하세요'
+        description: "실행할 스캔 타입을 선택하세요"
         required: true
-        default: 'all'
+        default: "all"
         type: choice
         options:
           - all
@@ -28,9 +28,9 @@ on:
           - secrets
           - infrastructure
       severity_threshold:
-        description: '보안 취약점 심각도 임계값'
+        description: "보안 취약점 심각도 임계값"
         required: false
-        default: 'medium'
+        default: "medium"
         type: choice
         options:
           - low
@@ -38,14 +38,14 @@ on:
           - high
           - critical
       fail_on_issues:
-        description: '이슈 발견 시 워크플로우 실패 여부'
+        description: "이슈 발견 시 워크플로우 실패 여부"
         required: false
         default: false
         type: boolean
 
 env:
-  NODE_VERSION: '20'
-  PNPM_VERSION: '10'
+  NODE_VERSION: "20"
+  PNPM_VERSION: "10"
 
 jobs:
   # 설정 및 변경사항 감지
@@ -123,7 +123,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -152,7 +152,7 @@ jobs:
         if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PUBLISH_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
@@ -187,7 +187,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -244,7 +244,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -317,9 +317,9 @@ jobs:
         uses: aquasecurity/trivy-action@master
         with:
           image-ref: bible-daily-${{ matrix.component }}:scan
-          format: 'sarif'
-          output: 'trivy-${{ matrix.component }}.sarif'
-          severity: 'CRITICAL,HIGH,MEDIUM'
+          format: "sarif"
+          output: "trivy-${{ matrix.component }}.sarif"
+          severity: "CRITICAL,HIGH,MEDIUM"
 
       - name: Upload Trivy scan results
         uses: github/codeql-action/upload-sarif@v3
@@ -365,7 +365,7 @@ jobs:
       - name: Run GitLeaks
         uses: gitleaks/gitleaks-action@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GH_PUBLISH_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Run detect-secrets
@@ -405,9 +405,9 @@ jobs:
       - name: Run Terrascan
         uses: tenable/terrascan-action@main
         with:
-          iac_type: 'docker'
-          iac_version: 'v1'
-          policy_type: 'docker'
+          iac_type: "docker"
+          iac_version: "v1"
+          policy_type: "docker"
           only_warn: true
           sarif_upload: true
         continue-on-error: true
@@ -432,7 +432,7 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
+          cache: "pnpm"
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -520,7 +520,17 @@ jobs:
   security-report:
     name: Generate Security Report
     runs-on: ubuntu-latest
-    needs: [setup, code-quality, security-scan, dependency-scan, container-scan, secrets-scan, infrastructure-scan, license-compliance]
+    needs:
+      [
+        setup,
+        code-quality,
+        security-scan,
+        dependency-scan,
+        container-scan,
+        secrets-scan,
+        infrastructure-scan,
+        license-compliance,
+      ]
     if: always()
     steps:
       - name: Checkout code
@@ -535,7 +545,7 @@ jobs:
         run: |
           cat > security-report.md << EOF
           # 보안 및 품질 분석 결과
-          
+
           ## 실행 정보
           - **Scan Type**: ${{ needs.setup.outputs.scan_type }}
           - **Severity Threshold**: ${{ needs.setup.outputs.severity }}
@@ -543,7 +553,7 @@ jobs:
           - **Branch**: ${{ github.ref_name }}
           - **Commit**: ${{ github.sha }}
           - **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
-          
+
           ## 스캔 결과
           - **Code Quality**: ${{ needs.code-quality.result }}
           - **Security Scan**: ${{ needs.security-scan.result }}
@@ -552,7 +562,7 @@ jobs:
           - **Secrets Scan**: ${{ needs.secrets-scan.result }}
           - **Infrastructure Scan**: ${{ needs.infrastructure-scan.result }}
           - **License Compliance**: ${{ needs.license-compliance.result }}
-          
+
           ## 권장사항
           1. 발견된 모든 보안 취약점을 검토하고 수정하세요.
           2. 의존성을 정기적으로 업데이트하세요.
@@ -570,7 +580,16 @@ jobs:
   notify:
     name: Send Security Notifications
     runs-on: ubuntu-latest
-    needs: [setup, code-quality, security-scan, dependency-scan, container-scan, secrets-scan, infrastructure-scan]
+    needs:
+      [
+        setup,
+        code-quality,
+        security-scan,
+        dependency-scan,
+        container-scan,
+        secrets-scan,
+        infrastructure-scan,
+      ]
     if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
     steps:
       - name: Determine overall status
@@ -578,7 +597,7 @@ jobs:
         run: |
           # 보안 관련 중요 스캔들의 결과 확인
           CRITICAL_SCANS=("${{ needs.security-scan.result }}" "${{ needs.dependency-scan.result }}" "${{ needs.secrets-scan.result }}")
-          
+
           FAILED=false
           for result in "${CRITICAL_SCANS[@]}"; do
             if [ "$result" = "failure" ]; then
@@ -586,7 +605,7 @@ jobs:
               break
             fi
           done
-          
+
           if [ "$FAILED" = true ]; then
             echo "status=failure" >> $GITHUB_OUTPUT
             echo "color=danger" >> $GITHUB_OUTPUT
