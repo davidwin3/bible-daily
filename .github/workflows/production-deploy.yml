@@ -425,52 +425,59 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup SSH key
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.ORACLE_CLOUD_SSH_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          ssh-keyscan -H ${{ secrets.ORACLE_CLOUD_SERVER_IP }} >> ~/.ssh/known_hosts
-
       - name: Create deployment directory on server
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_CLOUD_SERVER_IP }}
+          username: ${{ secrets.ORACLE_CLOUD_USER }}
+          key: ${{ secrets.ORACLE_CLOUD_SSH_KEY }}
+          script: |
             sudo mkdir -p /opt/bible-daily
             sudo chown ${{ secrets.ORACLE_CLOUD_USER }}:${{ secrets.ORACLE_CLOUD_USER }} /opt/bible-daily
-          "
 
       - name: Copy deployment files to server
-        run: |
-          scp -i ~/.ssh/id_rsa -r docker-compose.prod.yml ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }}:/opt/bible-daily/
-          scp -i ~/.ssh/id_rsa -r deployment/ ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }}:/opt/bible-daily/
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.ORACLE_CLOUD_SERVER_IP }}
+          username: ${{ secrets.ORACLE_CLOUD_USER }}
+          key: ${{ secrets.ORACLE_CLOUD_SSH_KEY }}
+          source: "docker-compose.prod.yml,deployment/"
+          target: "/opt/bible-daily/"
 
-      - name: Create environment file on server
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+      - name: Deploy services to production
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_CLOUD_SERVER_IP }}
+          username: ${{ secrets.ORACLE_CLOUD_USER }}
+          key: ${{ secrets.ORACLE_CLOUD_SSH_KEY }}
+          timeout: 30m
+          command_timeout: 30m
+          script: |
+            set -e  # Exit on any error
             cd /opt/bible-daily
-            
+
             # Create production environment file
             cat > .env.production << EOF
             # Application
             NODE_ENV=production
             PORT=3000
-            
+
             # Database
             DB_HOST=${{ secrets.DB_HOST }}
             DB_PORT=${{ secrets.DB_PORT }}
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DB_DATABASE=${{ secrets.DB_DATABASE }}
-            
+
             # Redis
             REDIS_HOST=${{ secrets.REDIS_HOST }}
             REDIS_PORT=${{ secrets.REDIS_PORT }}
             REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
-            
+
             # JWT
             JWT_SECRET=${{ secrets.JWT_SECRET }}
             JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
-            
+
             # Firebase
             FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}
             FIREBASE_PRIVATE_KEY_ID=${{ secrets.FIREBASE_PRIVATE_KEY_ID }}
@@ -479,49 +486,34 @@ jobs:
             FIREBASE_CLIENT_ID=${{ secrets.FIREBASE_CLIENT_ID }}
             FIREBASE_AUTH_URI=${{ secrets.FIREBASE_AUTH_URI }}
             FIREBASE_TOKEN_URI=${{ secrets.FIREBASE_TOKEN_URI }}
-            
+
             # CORS
             CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
-            
+
             # Images
-            BACKEND_IMAGE=${{ needs.build-backend.outputs.image || env.REGISTRY }}/\${{ env.BACKEND_IMAGE_NAME }}:latest
-            FRONTEND_IMAGE=${{ needs.build-frontend.outputs.image || env.REGISTRY }}/\${{ env.FRONTEND_IMAGE_NAME }}:latest
-            
+            BACKEND_IMAGE=${{ needs.build-backend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.BACKEND_IMAGE_NAME) }}
+            FRONTEND_IMAGE=${{ needs.build-frontend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.FRONTEND_IMAGE_NAME) }}
+
             # Registry
             REGISTRY=${{ env.REGISTRY }}
             GITHUB_TOKEN=${{ secrets.GHCR_TOKEN }}
             GITHUB_ACTOR=${{ github.actor }}
             EOF
-          "
 
-      - name: Login to GHCR on server and pull images
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
-            cd /opt/bible-daily
-            
             # Login to GHCR
             echo '${{ secrets.GHCR_TOKEN }}' | sudo docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
-            
+
             # Pull latest images
             if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ]; then
               echo 'Pulling backend image...'
               sudo docker pull ${{ needs.build-backend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.BACKEND_IMAGE_NAME) }}
             fi
-            
+
             if [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
               echo 'Pulling frontend image...'
               sudo docker pull ${{ needs.build-frontend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.FRONTEND_IMAGE_NAME) }}
             fi
-          "
 
-      - name: Deploy services with Docker Compose
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
-            cd /opt/bible-daily
-            
-            # Load environment variables
-            export \$(cat .env.production | xargs)
-            
             # Deploy services
             if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ] && [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
               echo 'Deploying all services...'
@@ -533,32 +525,59 @@ jobs:
               echo 'Deploying frontend service...'
               sudo docker-compose -f docker-compose.prod.yml --env-file .env.production up -d frontend
             fi
-            
+
             # Wait for services to start
             sleep 30
-            
+
             # Show running containers
             sudo docker-compose -f docker-compose.prod.yml ps
-          "
 
       - name: Run database migrations (if backend deployed)
         if: needs.setup.outputs.deploy_backend == 'true'
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_CLOUD_SERVER_IP }}
+          username: ${{ secrets.ORACLE_CLOUD_USER }}
+          key: ${{ secrets.ORACLE_CLOUD_SSH_KEY }}
+          timeout: 10m
+          command_timeout: 10m
+          script: |
+            set -e  # Exit on any error
             cd /opt/bible-daily
-            
-            # Run migrations
-            sudo docker-compose -f docker-compose.prod.yml --env-file .env.production exec -T backend npm run migration:run
-          "
 
-      - name: Health check
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+            # Run migrations with retry logic
+            echo "🔄 Running database migrations..."
+            for i in {1..3}; do
+              if sudo docker-compose -f docker-compose.prod.yml --env-file .env.production exec -T backend npm run migration:run; then
+                echo "✅ Database migrations completed successfully"
+                break
+              else
+                echo "❌ Migration attempt $i failed"
+                if [ $i -eq 3 ]; then
+                  echo "💥 All migration attempts failed"
+                  exit 1
+                fi
+                echo "⏳ Waiting 10 seconds before retry..."
+                sleep 10
+              fi
+            done
+
+      - name: Health check and cleanup
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.ORACLE_CLOUD_SERVER_IP }}
+          username: ${{ secrets.ORACLE_CLOUD_USER }}
+          key: ${{ secrets.ORACLE_CLOUD_SSH_KEY }}
+          timeout: 15m
+          command_timeout: 15m
+          script: |
+            set -e  # Exit on any error
             cd /opt/bible-daily
-            
+
             # Wait for services to be ready
+            echo "⏳ Waiting for services to be ready..."
             sleep 60
-            
+
             # Check backend health
             if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ]; then
               for i in {1..10}; do
@@ -566,11 +585,11 @@ jobs:
                   echo '✅ Backend health check passed'
                   break
                 fi
-                echo \"Backend health check attempt \$i failed, retrying in 10s...\"
+                echo "Backend health check attempt $i failed, retrying in 10s..."
                 sleep 10
               done
             fi
-            
+
             # Check frontend health
             if [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
               for i in {1..10}; do
@@ -578,26 +597,24 @@ jobs:
                   echo '✅ Frontend health check passed'
                   break
                 fi
-                echo \"Frontend health check attempt \$i failed, retrying in 10s...\"
+                echo "Frontend health check attempt $i failed, retrying in 10s..."
                 sleep 10
               done
             fi
-            
+
             # Show final status
             sudo docker-compose -f docker-compose.prod.yml ps
             sudo docker system df
-          "
 
-      - name: Cleanup old images
-        run: |
-          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
-            # Remove unused images to save disk space
+            # Cleanup old images to save disk space
+            echo "🧹 Cleaning up old Docker images..."
             sudo docker image prune -f
-            
+
             # Remove old images (keep last 3 versions)
-            sudo docker images ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }} --format 'table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}' | tail -n +4 | head -n -3 | awk '{print \$1}' | xargs -r sudo docker rmi || true
-            sudo docker images ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }} --format 'table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}' | tail -n +4 | head -n -3 | awk '{print \$1}' | xargs -r sudo docker rmi || true
-          "
+            sudo docker images ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }} --format 'table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}' | tail -n +4 | head -n -3 | awk '{print $1}' | xargs -r sudo docker rmi || true
+            sudo docker images ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }} --format 'table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}' | tail -n +4 | head -n -3 | awk '{print $1}' | xargs -r sudo docker rmi || true
+
+            echo "✅ Deployment completed successfully!"
 
   # 배포 후 통합 테스트
   post-deploy-tests:
