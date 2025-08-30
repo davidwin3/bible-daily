@@ -45,7 +45,7 @@ on:
 
 env:
   NODE_VERSION: '20'
-  PNPM_VERSION: '8'
+  PNPM_VERSION: '10'
 
 jobs:
   # 설정 및 변경사항 감지

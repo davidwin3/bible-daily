@@ -2,20 +2,25 @@
 FROM node:20-alpine AS base
 
 # Install pnpm globally
-RUN npm install -g pnpm@8
+RUN npm install -g pnpm@10
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml ./
+# Copy workspace configuration and lock file from root
+COPY pnpm-workspace.yaml pnpm-lock.yaml ./
 
-# Install dependencies
+# Copy package.json files
+COPY package.json ./
+COPY frontend/package.json ./frontend/
+
+# Install dependencies for the entire workspace
 RUN pnpm install --frozen-lockfile
 
 # Development stage
 FROM base AS development
-COPY . .
+COPY frontend/ ./frontend/
+WORKDIR /app/frontend
 EXPOSE 5173
 CMD ["pnpm", "dev", "--host"]
 
@@ -23,9 +28,10 @@ CMD ["pnpm", "dev", "--host"]
 FROM base AS build
 
 # Copy source code
-COPY . .
+COPY frontend/ ./frontend/
 
-# Build the application
+# Change to frontend directory and build
+WORKDIR /app/frontend
 RUN pnpm build
 
 # Production stage - using nginx to serve static files
@@ -35,14 +41,14 @@ FROM nginx:alpine AS production
 RUN apk add --no-cache curl
 
 # Copy custom nginx configuration
-COPY nginx.conf /etc/nginx/nginx.conf
+COPY frontend/nginx.conf /etc/nginx/nginx.conf
 
 # Copy built application from build stage
-COPY --from=build /app/dist /usr/share/nginx/html
+COPY --from=build /app/frontend/dist /usr/share/nginx/html
 
 # Copy PWA files to root
-COPY --from=build /app/dist/manifest.json /usr/share/nginx/html/
-COPY --from=build /app/dist/sw.js /usr/share/nginx/html/
+COPY --from=build /app/frontend/dist/manifest.json /usr/share/nginx/html/
+COPY --from=build /app/frontend/dist/sw.js /usr/share/nginx/html/
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nginx-user

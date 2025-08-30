@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # MySQL Database
   mysql:
@@ -42,8 +40,8 @@ services:
   # Backend API
   backend:
     build:
-      context: ./backend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: backend/Dockerfile
       target: development
     container_name: bible-daily-backend
     restart: unless-stopped
@@ -70,7 +68,7 @@ services:
     ports:
       - "${BACKEND_PORT:-3000}:3000"
     volumes:
-      - ./backend:/app
+      - ./backend:/app/backend
       - /app/node_modules
     networks:
       - bible-daily-network
@@ -88,8 +86,8 @@ services:
   # Frontend Application
   frontend:
     build:
-      context: ./frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: frontend/Dockerfile
       target: development
     container_name: bible-daily-frontend
     restart: unless-stopped
@@ -101,7 +99,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-5173}:5173"
     volumes:
-      - ./frontend:/app
+      - ./frontend:/app/frontend
       - /app/node_modules
     networks:
       - bible-daily-network

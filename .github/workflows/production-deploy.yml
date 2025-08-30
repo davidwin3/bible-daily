@@ -41,7 +41,7 @@ env:
   BACKEND_IMAGE_NAME: ${{ github.repository }}/backend
   FRONTEND_IMAGE_NAME: ${{ github.repository }}/frontend
   NODE_VERSION: "20"
-  PNPM_VERSION: "8"
+  PNPM_VERSION: "10"
 
 jobs:
   # 변경사항 감지 및 환경 설정
