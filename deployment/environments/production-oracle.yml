@@ -1,7 +1,13 @@
+# Oracle Cloud ARM64 Production Environment Configuration
+# Bible Daily Production Deployment
+
+# 이 파일은 Oracle Cloud ARM64 서버에서 사용할 환경 설정 템플릿입니다.
+# GitHub Actions에서 실제 환경 변수 값으로 대체됩니다.
+
 version: "3.8"
 
 services:
-  # MySQL Database
+  # MySQL 데이터베이스
   mysql:
     image: mysql:8.0
     platform: linux/arm64
@@ -13,13 +19,11 @@ services:
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - mysql_prod_data:/var/lib/mysql
-      - ./backend/database/init:/docker-entrypoint-initdb.d
+      - mysql_data:/var/lib/mysql
+      - ./mysql/conf.d:/etc/mysql/conf.d:ro
       - /opt/bible-daily/backups:/backups
     ports:
       - "3306:3306"
-    networks:
-      - bible-daily-prod-network
     command: >
       --default-authentication-plugin=mysql_native_password
       --character-set-server=utf8mb4
@@ -29,6 +33,8 @@ services:
       --slow-query-log=1
       --slow-query-log-file=/var/log/mysql/slow.log
       --long-query-time=2
+    networks:
+      - bible-daily-network
     healthcheck:
       test:
         [
@@ -44,14 +50,8 @@ services:
       timeout: 20s
       retries: 10
       interval: 30s
-    deploy:
-      resources:
-        limits:
-          memory: 1G
-        reservations:
-          memory: 512M
 
-  # Redis for caching and sessions
+  # Redis 캐시
   redis:
     image: redis:7-alpine
     platform: linux/arm64
@@ -66,52 +66,59 @@ services:
       --save 300 10
       --save 60 10000
     volumes:
-      - redis_prod_data:/data
+      - redis_data:/data
       - /opt/bible-daily/logs:/var/log/redis
     ports:
       - "6379:6379"
     networks:
-      - bible-daily-prod-network
+      - bible-daily-network
     healthcheck:
       test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
       timeout: 3s
       retries: 5
       interval: 30s
-    deploy:
-      resources:
-        limits:
-          memory: 256M
-        reservations:
-          memory: 128M
 
-  # Backend API
+  # Backend API 서버
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/your-repo/bible-daily/backend:latest}
+    image: ${BACKEND_IMAGE}
     platform: linux/arm64
     container_name: bible-daily-backend-prod
     restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
+      # Application
       NODE_ENV: production
       PORT: 3000
+
+      # Database
       DB_HOST: mysql
       DB_PORT: 3306
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       DB_DATABASE: ${DB_DATABASE}
+
+      # Redis
       REDIS_HOST: redis
       REDIS_PORT: 6379
       REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      # JWT
       JWT_SECRET: ${JWT_SECRET}
       JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
-      GOOGLE_CALLBACK_URL: ${GOOGLE_CALLBACK_URL}
+
+      # Firebase
       FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
       FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
       FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
-      VAPID_PUBLIC_KEY: ${VAPID_PUBLIC_KEY}
-      VAPID_PRIVATE_KEY: ${VAPID_PRIVATE_KEY}
+
+      # CORS
       CORS_ORIGIN: ${CORS_ORIGIN}
+
+      # Logging
       LOG_LEVEL: info
       LOG_FORMAT: json
     volumes:
@@ -120,12 +127,7 @@ services:
     ports:
       - "3000:3000"
     networks:
-      - bible-daily-prod-network
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
+      - bible-daily-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
       timeout: 10s
@@ -141,12 +143,15 @@ services:
           memory: 512M
           cpus: "0.25"
 
-  # Frontend Application
+  # Frontend 웹 서버
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/your-repo/bible-daily/frontend:latest}
+    image: ${FRONTEND_IMAGE}
     platform: linux/arm64
     container_name: bible-daily-frontend-prod
     restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
     environment:
       NODE_ENV: production
       REACT_APP_API_URL: https://${DOMAIN}/api
@@ -156,10 +161,7 @@ services:
     ports:
       - "80:80"
     networks:
-      - bible-daily-prod-network
-    depends_on:
-      backend:
-        condition: service_healthy
+      - bible-daily-network
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:80"]
       timeout: 10s
@@ -190,17 +192,17 @@ services:
       LOGROTATE_COPIES: 7
       LOGROTATE_SIZE: 100M
     networks:
-      - bible-daily-prod-network
+      - bible-daily-network
 
 volumes:
-  mysql_prod_data:
+  mysql_data:
     driver: local
     driver_opts:
       type: none
       o: bind
       device: /opt/bible-daily/data/mysql
 
-  redis_prod_data:
+  redis_data:
     driver: local
     driver_opts:
       type: none
@@ -208,7 +210,7 @@ volumes:
       device: /opt/bible-daily/data/redis
 
 networks:
-  bible-daily-prod-network:
+  bible-daily-network:
     driver: bridge
     ipam:
       config:

@@ -3,7 +3,7 @@ version: "3.8"
 services:
   # MySQL Database
   mysql:
-    image: mysql:8.0.39
+    image: mysql:8.0
     container_name: bible-daily-mysql
     restart: unless-stopped
     environment:

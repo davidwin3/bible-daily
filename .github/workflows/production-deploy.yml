@@ -1,0 +1,743 @@
+name: Production Deployment to OCI
+
+on:
+  # 수동 실행 트리거
+  workflow_dispatch:
+    inputs:
+      service:
+        description: "배포할 서비스를 선택하세요"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - backend
+          - frontend
+      force_rebuild:
+        description: "강제로 이미지를 다시 빌드할지 선택하세요"
+        required: false
+        default: false
+        type: boolean
+      skip_tests:
+        description: "테스트를 건너뛸지 선택하세요"
+        required: false
+        default: false
+        type: boolean
+
+  # main 브랜치에 푸시될 때 자동 배포 (프로덕션 태그가 있는 경우)
+  push:
+    tags:
+      - "v*.*.*"
+    branches:
+      - main
+    paths:
+      - "backend/**"
+      - "frontend/**"
+      - "docker-compose.prod.yml"
+      - ".github/workflows/production-deploy.yml"
+
+env:
+  REGISTRY: ghcr.io
+  BACKEND_IMAGE_NAME: ${{ github.repository }}/backend
+  FRONTEND_IMAGE_NAME: ${{ github.repository }}/frontend
+  NODE_VERSION: "20"
+  PNPM_VERSION: "8"
+
+jobs:
+  # 변경사항 감지 및 환경 설정
+  setup:
+    name: Setup and Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      backend_changed: ${{ steps.changes.outputs.backend }}
+      frontend_changed: ${{ steps.changes.outputs.frontend }}
+      deploy_backend: ${{ steps.deploy.outputs.backend }}
+      deploy_frontend: ${{ steps.deploy.outputs.frontend }}
+      version: ${{ steps.version.outputs.version }}
+      backend_image_tag: ${{ steps.backend_meta.outputs.tags }}
+      frontend_image_tag: ${{ steps.frontend_meta.outputs.tags }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'docker-compose.prod.yml'
+            frontend:
+              - 'frontend/**'
+              - 'docker-compose.prod.yml'
+
+      - name: Determine deployment targets
+        id: deploy
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            SERVICE="${{ github.event.inputs.service }}"
+            FORCE_REBUILD="${{ github.event.inputs.force_rebuild }}"
+            
+            if [ "$SERVICE" = "all" ] || [ "$SERVICE" = "backend" ]; then
+              if [ "$FORCE_REBUILD" = "true" ] || [ "${{ steps.changes.outputs.backend }}" = "true" ]; then
+                echo "backend=true" >> $GITHUB_OUTPUT
+              else
+                echo "backend=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "backend=false" >> $GITHUB_OUTPUT
+            fi
+            
+            if [ "$SERVICE" = "all" ] || [ "$SERVICE" = "frontend" ]; then
+              if [ "$FORCE_REBUILD" = "true" ] || [ "${{ steps.changes.outputs.frontend }}" = "true" ]; then
+                echo "frontend=true" >> $GITHUB_OUTPUT
+              else
+                echo "frontend=false" >> $GITHUB_OUTPUT
+              fi
+            else
+              echo "frontend=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            # 자동 배포의 경우 변경된 서비스만 배포
+            echo "backend=${{ steps.changes.outputs.backend }}" >> $GITHUB_OUTPUT
+            echo "frontend=${{ steps.changes.outputs.frontend }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Extract version
+        id: version
+        run: |
+          if [[ $GITHUB_REF == refs/tags/* ]]; then
+            VERSION=${GITHUB_REF#refs/tags/}
+          else
+            VERSION=$(date +%Y%m%d)-${GITHUB_SHA::8}
+          fi
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Extract backend metadata
+        id: backend_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=raw,value=latest
+            type=raw,value=prod-${{ steps.version.outputs.version }}
+            type=sha,prefix=prod-
+
+      - name: Extract frontend metadata
+        id: frontend_meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}
+          tags: |
+            type=ref,event=tag
+            type=raw,value=latest
+            type=raw,value=prod-${{ steps.version.outputs.version }}
+            type=sha,prefix=prod-
+
+  # Backend 테스트
+  backend-test:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    if: |
+      needs.setup.outputs.deploy_backend == 'true' && 
+      github.event.inputs.skip_tests != 'true'
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test_password
+          MYSQL_DATABASE: bible_daily_test
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm --filter backend lint
+
+      - name: Run TypeScript check
+        run: pnpm --filter backend build
+
+      - name: Create test environment file
+        run: |
+          cd backend
+          cat > .env.test << EOF
+          NODE_ENV=test
+          DB_HOST=localhost
+          DB_PORT=3306
+          DB_USERNAME=root
+          DB_PASSWORD=test_password
+          DB_DATABASE=bible_daily_test
+          REDIS_HOST=localhost
+          REDIS_PORT=6379
+          JWT_SECRET=test_jwt_secret
+          JWT_REFRESH_SECRET=test_refresh_secret
+          EOF
+
+      - name: Run database migrations
+        run: pnpm --filter backend migration:run
+        env:
+          NODE_ENV: test
+
+      - name: Run tests
+        run: |
+          pnpm --filter backend test
+          pnpm --filter backend test:e2e
+        env:
+          NODE_ENV: test
+          CI: true
+
+  # Frontend 테스트
+  frontend-test:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    needs: setup
+    if: |
+      needs.setup.outputs.deploy_frontend == 'true' && 
+      github.event.inputs.skip_tests != 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run ESLint
+        run: pnpm --filter frontend lint
+
+      - name: Run TypeScript check
+        run: pnpm --filter frontend build
+
+      - name: Run tests
+        run: pnpm --filter frontend test
+        env:
+          CI: true
+
+  # Backend Docker 이미지 빌드 (ARM64)
+  build-backend:
+    name: Build Backend ARM64 Image
+    runs-on: ubuntu-latest
+    needs: [setup, backend-test]
+    if: |
+      always() && 
+      needs.setup.outputs.deploy_backend == 'true' &&
+      (needs.backend-test.result == 'success' || needs.backend-test.result == 'skipped')
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Backend Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          platforms: linux/arm64
+          tags: ${{ needs.setup.outputs.backend_image_tag }}
+          labels: |
+            org.opencontainers.image.title=Bible Daily Backend (Production ARM64)
+            org.opencontainers.image.description=Backend API for Bible Daily application - Production ARM64
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.setup.outputs.version }}
+          cache-from: type=gha,scope=backend-arm64
+          cache-to: type=gha,mode=max,scope=backend-arm64
+          build-args: |
+            NODE_ENV=production
+            BUILD_VERSION=${{ needs.setup.outputs.version }}
+
+      - name: Output image
+        id: image
+        run: echo "image=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}@${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.image.outputs.image }}
+          format: "sarif"
+          output: "trivy-backend-results.sarif"
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-backend-results.sarif"
+
+  # Frontend Docker 이미지 빌드 (ARM64)
+  build-frontend:
+    name: Build Frontend ARM64 Image
+    runs-on: ubuntu-latest
+    needs: [setup, frontend-test]
+    if: |
+      always() && 
+      needs.setup.outputs.deploy_frontend == 'true' &&
+      (needs.frontend-test.result == 'success' || needs.frontend-test.result == 'skipped')
+    outputs:
+      image: ${{ steps.image.outputs.image }}
+      digest: ${{ steps.build.outputs.digest }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/arm64
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Frontend Docker image
+        id: build
+        uses: docker/build-push-action@v5
+        with:
+          context: ./frontend
+          file: ./frontend/Dockerfile
+          push: true
+          platforms: linux/arm64
+          tags: ${{ needs.setup.outputs.frontend_image_tag }}
+          labels: |
+            org.opencontainers.image.title=Bible Daily Frontend (Production ARM64)
+            org.opencontainers.image.description=Frontend application for Bible Daily - Production ARM64
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.version=${{ needs.setup.outputs.version }}
+          cache-from: type=gha,scope=frontend-arm64
+          cache-to: type=gha,mode=max,scope=frontend-arm64
+          build-args: |
+            NODE_ENV=production
+            BUILD_VERSION=${{ needs.setup.outputs.version }}
+
+      - name: Output image
+        id: image
+        run: echo "image=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}@${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ steps.image.outputs.image }}
+          format: "sarif"
+          output: "trivy-frontend-results.sarif"
+
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: "trivy-frontend-results.sarif"
+
+  # Oracle Cloud ARM64 서버 배포
+  deploy-production:
+    name: Deploy to Oracle Cloud ARM64
+    runs-on: ubuntu-latest
+    needs: [setup, build-backend, build-frontend]
+    if: |
+      always() && 
+      (needs.build-backend.result == 'success' || needs.build-backend.result == 'skipped') &&
+      (needs.build-frontend.result == 'success' || needs.build-frontend.result == 'skipped') &&
+      (needs.setup.outputs.deploy_backend == 'true' || needs.setup.outputs.deploy_frontend == 'true')
+    environment: production
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH key
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.ORACLE_CLOUD_SSH_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          ssh-keyscan -H ${{ secrets.ORACLE_CLOUD_SERVER_IP }} >> ~/.ssh/known_hosts
+
+      - name: Create deployment directory on server
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+            sudo mkdir -p /opt/bible-daily
+            sudo chown ${{ secrets.ORACLE_CLOUD_USER }}:${{ secrets.ORACLE_CLOUD_USER }} /opt/bible-daily
+          "
+
+      - name: Copy deployment files to server
+        run: |
+          scp -i ~/.ssh/id_rsa -r docker-compose.prod.yml ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }}:/opt/bible-daily/
+          scp -i ~/.ssh/id_rsa -r deployment/ ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }}:/opt/bible-daily/
+
+      - name: Create environment file on server
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+            cd /opt/bible-daily
+            
+            # Create production environment file
+            cat > .env.production << EOF
+            # Application
+            NODE_ENV=production
+            PORT=3000
+            
+            # Database
+            DB_HOST=${{ secrets.DB_HOST }}
+            DB_PORT=${{ secrets.DB_PORT }}
+            DB_USERNAME=${{ secrets.DB_USERNAME }}
+            DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_DATABASE=${{ secrets.DB_DATABASE }}
+            
+            # Redis
+            REDIS_HOST=${{ secrets.REDIS_HOST }}
+            REDIS_PORT=${{ secrets.REDIS_PORT }}
+            REDIS_PASSWORD=${{ secrets.REDIS_PASSWORD }}
+            
+            # JWT
+            JWT_SECRET=${{ secrets.JWT_SECRET }}
+            JWT_REFRESH_SECRET=${{ secrets.JWT_REFRESH_SECRET }}
+            
+            # Firebase
+            FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}
+            FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}
+            FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL }}
+            
+            # CORS
+            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            
+            # Images
+            BACKEND_IMAGE=${{ needs.build-backend.outputs.image || env.REGISTRY }}/\${{ env.BACKEND_IMAGE_NAME }}:latest
+            FRONTEND_IMAGE=${{ needs.build-frontend.outputs.image || env.REGISTRY }}/\${{ env.FRONTEND_IMAGE_NAME }}:latest
+            
+            # Registry
+            REGISTRY=${{ env.REGISTRY }}
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+            GITHUB_ACTOR=${{ github.actor }}
+            EOF
+          "
+
+      - name: Login to GHCR on server and pull images
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+            cd /opt/bible-daily
+            
+            # Login to GHCR
+            echo '${{ secrets.GITHUB_TOKEN }}' | sudo docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            
+            # Pull latest images
+            if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ]; then
+              echo 'Pulling backend image...'
+              sudo docker pull ${{ needs.build-backend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.BACKEND_IMAGE_NAME) }}
+            fi
+            
+            if [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
+              echo 'Pulling frontend image...'
+              sudo docker pull ${{ needs.build-frontend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.FRONTEND_IMAGE_NAME) }}
+            fi
+          "
+
+      - name: Deploy services with Docker Compose
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+            cd /opt/bible-daily
+            
+            # Load environment variables
+            export \$(cat .env.production | xargs)
+            
+            # Deploy services
+            if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ] && [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
+              echo 'Deploying all services...'
+              sudo docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+            elif [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ]; then
+              echo 'Deploying backend service...'
+              sudo docker-compose -f docker-compose.prod.yml --env-file .env.production up -d backend
+            elif [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
+              echo 'Deploying frontend service...'
+              sudo docker-compose -f docker-compose.prod.yml --env-file .env.production up -d frontend
+            fi
+            
+            # Wait for services to start
+            sleep 30
+            
+            # Show running containers
+            sudo docker-compose -f docker-compose.prod.yml ps
+          "
+
+      - name: Run database migrations (if backend deployed)
+        if: needs.setup.outputs.deploy_backend == 'true'
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+            cd /opt/bible-daily
+            
+            # Run migrations
+            sudo docker-compose -f docker-compose.prod.yml --env-file .env.production exec -T backend npm run migration:run
+          "
+
+      - name: Health check
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+            cd /opt/bible-daily
+            
+            # Wait for services to be ready
+            sleep 60
+            
+            # Check backend health
+            if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ]; then
+              for i in {1..10}; do
+                if curl -f http://localhost:3000/health; then
+                  echo '✅ Backend health check passed'
+                  break
+                fi
+                echo \"Backend health check attempt \$i failed, retrying in 10s...\"
+                sleep 10
+              done
+            fi
+            
+            # Check frontend health
+            if [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
+              for i in {1..10}; do
+                if curl -f http://localhost:80; then
+                  echo '✅ Frontend health check passed'
+                  break
+                fi
+                echo \"Frontend health check attempt \$i failed, retrying in 10s...\"
+                sleep 10
+              done
+            fi
+            
+            # Show final status
+            sudo docker-compose -f docker-compose.prod.yml ps
+            sudo docker system df
+          "
+
+      - name: Cleanup old images
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.ORACLE_CLOUD_USER }}@${{ secrets.ORACLE_CLOUD_SERVER_IP }} "
+            # Remove unused images to save disk space
+            sudo docker image prune -f
+            
+            # Remove old images (keep last 3 versions)
+            sudo docker images ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }} --format 'table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}' | tail -n +4 | head -n -3 | awk '{print \$1}' | xargs -r sudo docker rmi || true
+            sudo docker images ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }} --format 'table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}' | tail -n +4 | head -n -3 | awk '{print \$1}' | xargs -r sudo docker rmi || true
+          "
+
+  # 배포 후 통합 테스트
+  post-deploy-tests:
+    name: Post-deployment Integration Tests
+    runs-on: ubuntu-latest
+    needs: [setup, deploy-production]
+    if: |
+      always() && 
+      needs.deploy-production.result == 'success' &&
+      github.event.inputs.skip_tests != 'true'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run production API tests
+        run: pnpm --filter backend test:api
+        env:
+          API_BASE_URL: https://${{ secrets.ORACLE_CLOUD_SERVER_IP }}:3000
+          CI: true
+        continue-on-error: true
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: production-test-results
+          path: |
+            backend/test-results/
+            backend/coverage/
+
+  # 배포 알림
+  notify:
+    name: Send Deployment Notifications
+    runs-on: ubuntu-latest
+    needs:
+      [
+        setup,
+        build-backend,
+        build-frontend,
+        deploy-production,
+        post-deploy-tests,
+      ]
+    if: always()
+    steps:
+      - name: Determine deployment status
+        id: status
+        run: |
+          if [ "${{ needs.deploy-production.result }}" = "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.deploy-production.result }}" = "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+          else
+            echo "status=cancelled" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+            echo "emoji=⚠️" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
+        uses: 8398a7/action-slack@v3
+        with:
+          status: custom
+          custom_payload: |
+            {
+              "text": "${{ steps.status.outputs.emoji }} Production 배포 ${{ steps.status.outputs.status }}",
+              "attachments": [
+                {
+                  "color": "${{ steps.status.outputs.color }}",
+                  "fields": [
+                    {
+                      "title": "Environment",
+                      "value": "Oracle Cloud ARM64 Production",
+                      "short": true
+                    },
+                    {
+                      "title": "Version",
+                      "value": "${{ needs.setup.outputs.version }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Services Deployed",
+                      "value": "${{ needs.setup.outputs.deploy_backend == 'true' && 'Backend' || '' }} ${{ needs.setup.outputs.deploy_frontend == 'true' && 'Frontend' || '' }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Branch",
+                      "value": "${{ github.ref_name }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Backend Image",
+                      "value": "${{ needs.build-backend.outputs.image || 'Not deployed' }}",
+                      "short": false
+                    },
+                    {
+                      "title": "Frontend Image", 
+                      "value": "${{ needs.build-frontend.outputs.image || 'Not deployed' }}",
+                      "short": false
+                    },
+                    {
+                      "title": "Commit",
+                      "value": "<https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>",
+                      "short": true
+                    },
+                    {
+                      "title": "Actor",
+                      "value": "${{ github.actor }}",
+                      "short": true
+                    }
+                  ]
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Status:** ${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.status }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Oracle Cloud ARM64 Production" >> $GITHUB_STEP_SUMMARY
+          echo "**Version:** ${{ needs.setup.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+          echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Services Deployed" >> $GITHUB_STEP_SUMMARY
+          if [ "${{ needs.setup.outputs.deploy_backend }}" = "true" ]; then
+            echo "- ✅ **Backend:** ${{ needs.build-backend.outputs.image }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⏭️ **Backend:** Not deployed" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ needs.setup.outputs.deploy_frontend }}" = "true" ]; then
+            echo "- ✅ **Frontend:** ${{ needs.build-frontend.outputs.image }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ⏭️ **Frontend:** Not deployed" >> $GITHUB_STEP_SUMMARY
+          fi
