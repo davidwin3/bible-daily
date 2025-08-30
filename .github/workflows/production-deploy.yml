@@ -432,8 +432,30 @@ jobs:
           username: ${{ secrets.ORACLE_CLOUD_USER }}
           key: ${{ secrets.ORACLE_CLOUD_SSH_KEY }}
           script: |
+            # Create main deployment directory
             sudo mkdir -p /opt/bible-daily
             sudo chown ${{ secrets.ORACLE_CLOUD_USER }}:${{ secrets.ORACLE_CLOUD_USER }} /opt/bible-daily
+
+            # Create required data directories for Docker volumes
+            mkdir -p /opt/bible-daily/data/mysql
+            mkdir -p /opt/bible-daily/data/redis
+            mkdir -p /opt/bible-daily/logs
+            mkdir -p /opt/bible-daily/uploads
+            mkdir -p /opt/bible-daily/backups
+
+            # Set proper permissions
+            chmod 755 /opt/bible-daily/data/mysql
+            chmod 755 /opt/bible-daily/data/redis
+            chmod 755 /opt/bible-daily/logs
+            chmod 755 /opt/bible-daily/uploads
+            chmod 755 /opt/bible-daily/backups
+
+            # Ensure MySQL data directory has correct ownership for container
+            # MySQL container runs as mysql user (uid 999)
+            sudo chown -R 999:999 /opt/bible-daily/data/mysql
+
+            # Redis runs as redis user (uid 999 in alpine)
+            sudo chown -R 999:999 /opt/bible-daily/data/redis
 
       - name: Copy deployment files to server
         uses: appleboy/scp-action@v0.1.7
@@ -455,6 +477,22 @@ jobs:
           script: |
             set -e  # Exit on any error
             cd /opt/bible-daily
+
+            # Ensure all required directories exist with proper permissions
+            echo "🔧 Ensuring all required directories exist..."
+            mkdir -p /opt/bible-daily/data/mysql
+            mkdir -p /opt/bible-daily/data/redis
+            mkdir -p /opt/bible-daily/logs
+            mkdir -p /opt/bible-daily/uploads
+            mkdir -p /opt/bible-daily/backups
+
+            # Set proper ownership for container users
+            sudo chown -R 999:999 /opt/bible-daily/data/mysql 2>/dev/null || true
+            sudo chown -R 999:999 /opt/bible-daily/data/redis 2>/dev/null || true
+
+            # Verify directories exist
+            ls -la /opt/bible-daily/data/
+            echo "✅ Directory structure verified"
 
             # Create production environment file
             cat > .env.production << EOF
@@ -514,15 +552,26 @@ jobs:
               docker pull ${{ needs.build-frontend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.FRONTEND_IMAGE_NAME) }}
             fi
 
+            # Check and create Docker volumes if needed
+            echo "🔍 Checking Docker volumes..."
+            if ! docker volume ls | grep -q "bible-daily_mysql_prod_data"; then
+              echo "📦 Creating MySQL volume..."
+              docker volume create bible-daily_mysql_prod_data
+            fi
+            if ! docker volume ls | grep -q "bible-daily_redis_prod_data"; then
+              echo "📦 Creating Redis volume..."
+              docker volume create bible-daily_redis_prod_data
+            fi
+
             # Deploy services
             if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ] && [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
-              echo 'Deploying all services...'
+              echo '🚀 Deploying all services...'
               docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
             elif [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ]; then
-              echo 'Deploying backend service...'
-              docker-compose -f docker-compose.prod.yml --env-file .env.production up -d backend
+              echo '🚀 Deploying backend service...'
+              docker-compose -f docker-compose.prod.yml --env-file .env.production up -d mysql redis backend
             elif [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
-              echo 'Deploying frontend service...'
+              echo '🚀 Deploying frontend service...'
               docker-compose -f docker-compose.prod.yml --env-file .env.production up -d frontend
             fi
 
