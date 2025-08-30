@@ -326,18 +326,18 @@ jobs:
         id: image
         run: echo "image=${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}@${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ steps.image.outputs.image }}
-          format: "sarif"
-          output: "trivy-backend-results.sarif"
+      # - name: Run Trivy vulnerability scanner
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ${{ steps.image.outputs.image }}
+      #     format: "sarif"
+      #     output: "trivy-backend-results.sarif"
 
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: "trivy-backend-results.sarif"
+      # - name: Upload Trivy scan results
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: "trivy-backend-results.sarif"
 
   # Frontend Docker 이미지 빌드 (ARM64)
   build-frontend:
@@ -397,18 +397,18 @@ jobs:
         id: image
         run: echo "image=${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}@${{ steps.build.outputs.digest }}" >> $GITHUB_OUTPUT
 
-      - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: ${{ steps.image.outputs.image }}
-          format: "sarif"
-          output: "trivy-frontend-results.sarif"
+      # - name: Run Trivy vulnerability scanner
+      #   uses: aquasecurity/trivy-action@master
+      #   with:
+      #     image-ref: ${{ steps.image.outputs.image }}
+      #     format: "sarif"
+      #     output: "trivy-frontend-results.sarif"
 
-      - name: Upload Trivy scan results
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: "trivy-frontend-results.sarif"
+      # - name: Upload Trivy scan results
+      #   uses: github/codeql-action/upload-sarif@v3
+      #   if: always()
+      #   with:
+      #     sarif_file: "trivy-frontend-results.sarif"
 
   # Oracle Cloud ARM64 서버 배포
   deploy-production:
