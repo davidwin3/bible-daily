@@ -465,11 +465,15 @@ jobs:
             
             # Firebase
             FIREBASE_PROJECT_ID=${{ secrets.FIREBASE_PROJECT_ID }}
+            FIREBASE_PRIVATE_KEY_ID=${{ secrets.FIREBASE_PRIVATE_KEY_ID }}
             FIREBASE_PRIVATE_KEY=${{ secrets.FIREBASE_PRIVATE_KEY }}
             FIREBASE_CLIENT_EMAIL=${{ secrets.FIREBASE_CLIENT_EMAIL }}
+            FIREBASE_CLIENT_ID=${{ secrets.FIREBASE_CLIENT_ID }}
+            FIREBASE_AUTH_URI=${{ secrets.FIREBASE_AUTH_URI }}
+            FIREBASE_TOKEN_URI=${{ secrets.FIREBASE_TOKEN_URI }}
             
             # CORS
-            CORS_ORIGIN=${{ secrets.CORS_ORIGIN }}
+            CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
             
             # Images
             BACKEND_IMAGE=${{ needs.build-backend.outputs.image || env.REGISTRY }}/\${{ env.BACKEND_IMAGE_NAME }}:latest

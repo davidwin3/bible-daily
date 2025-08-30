@@ -8,19 +8,19 @@ data:
   # Application Configuration
   NODE_ENV: "production"
   PORT: "3000"
-  
+
   # Database Configuration
   DB_HOST: "mysql-prod.bible-daily.svc.cluster.local"
   DB_PORT: "3306"
   DB_DATABASE: "bible_daily_prod"
-  
+
   # Redis Configuration
   REDIS_HOST: "redis-prod.bible-daily.svc.cluster.local"
   REDIS_PORT: "6379"
-  
+
   # External Services
   GOOGLE_CALLBACK_URL: "https://api.bible-daily.com/auth/google/callback"
-  
+
   # Frontend Configuration
   VITE_API_URL: "https://api.bible-daily.com/api"
 
@@ -55,104 +55,128 @@ spec:
         prometheus.io/path: "/metrics"
     spec:
       containers:
-      - name: backend
-        image: ghcr.io/your-org/bible-daily/backend:latest
-        ports:
-        - containerPort: 3000
-        env:
-        - name: NODE_ENV
-          valueFrom:
-            configMapKeyRef:
-              name: bible-daily-prod-config
-              key: NODE_ENV
-        - name: PORT
-          valueFrom:
-            configMapKeyRef:
-              name: bible-daily-prod-config
-              key: PORT
-        - name: DB_HOST
-          valueFrom:
-            configMapKeyRef:
-              name: bible-daily-prod-config
-              key: DB_HOST
-        - name: DB_USERNAME
-          valueFrom:
-            secretKeyRef:
-              name: bible-daily-prod-secrets
-              key: DB_USERNAME
-        - name: DB_PASSWORD
-          valueFrom:
-            secretKeyRef:
-              name: bible-daily-prod-secrets
-              key: DB_PASSWORD
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: bible-daily-prod-secrets
-              key: JWT_SECRET
-        - name: JWT_REFRESH_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: bible-daily-prod-secrets
-              key: JWT_REFRESH_SECRET
-        - name: GOOGLE_CLIENT_ID
-          valueFrom:
-            secretKeyRef:
-              name: bible-daily-prod-secrets
-              key: GOOGLE_CLIENT_ID
-        - name: GOOGLE_CLIENT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: bible-daily-prod-secrets
-              key: GOOGLE_CLIENT_SECRET
-        - name: FIREBASE_PRIVATE_KEY
-          valueFrom:
-            secretKeyRef:
-              name: bible-daily-prod-secrets
-              key: FIREBASE_PRIVATE_KEY
-        resources:
-          requests:
-            memory: "1Gi"
-            cpu: "1000m"
-          limits:
-            memory: "2Gi"
-            cpu: "2000m"
-        livenessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 60
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          httpGet:
-            path: /health
-            port: 3000
-          initialDelaySeconds: 10
-          periodSeconds: 5
-          timeoutSeconds: 3
-          failureThreshold: 3
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 1001
-          allowPrivilegeEscalation: false
-          readOnlyRootFilesystem: true
-          capabilities:
-            drop:
-            - ALL
+        - name: backend
+          image: ghcr.io/your-org/bible-daily/backend:latest
+          ports:
+            - containerPort: 3000
+          env:
+            - name: NODE_ENV
+              valueFrom:
+                configMapKeyRef:
+                  name: bible-daily-prod-config
+                  key: NODE_ENV
+            - name: PORT
+              valueFrom:
+                configMapKeyRef:
+                  name: bible-daily-prod-config
+                  key: PORT
+            - name: DB_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: bible-daily-prod-config
+                  key: DB_HOST
+            - name: DB_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: DB_USERNAME
+            - name: DB_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: DB_PASSWORD
+            - name: JWT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: JWT_SECRET
+            - name: JWT_REFRESH_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: JWT_REFRESH_SECRET
+            - name: GOOGLE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: GOOGLE_CLIENT_ID
+            - name: GOOGLE_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: GOOGLE_CLIENT_SECRET
+            - name: FIREBASE_PROJECT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: FIREBASE_PROJECT_ID
+            - name: FIREBASE_PRIVATE_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: FIREBASE_PRIVATE_KEY_ID
+            - name: FIREBASE_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: FIREBASE_PRIVATE_KEY
+            - name: FIREBASE_CLIENT_EMAIL
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: FIREBASE_CLIENT_EMAIL
+            - name: FIREBASE_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: bible-daily-prod-secrets
+                  key: FIREBASE_CLIENT_ID
+            - name: FIREBASE_AUTH_URI
+              value: "https://accounts.google.com/o/oauth2/auth"
+            - name: FIREBASE_TOKEN_URI
+              value: "https://oauth2.googleapis.com/token"
+          resources:
+            requests:
+              memory: "1Gi"
+              cpu: "1000m"
+            limits:
+              memory: "2Gi"
+              cpu: "2000m"
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 60
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 10
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 1001
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
       affinity:
         podAntiAffinity:
           preferredDuringSchedulingIgnoredDuringExecution:
-          - weight: 100
-            podAffinityTerm:
-              labelSelector:
-                matchExpressions:
-                - key: app
-                  operator: In
-                  values:
-                  - bible-daily-backend
-              topologyKey: kubernetes.io/hostname
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - bible-daily-backend
+                topologyKey: kubernetes.io/hostname
 
 ---
 apiVersion: v1
@@ -167,9 +191,9 @@ spec:
     app: bible-daily-backend
     environment: production
   ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 3000
+    - protocol: TCP
+      port: 80
+      targetPort: 3000
   type: LoadBalancer
 
 ---
@@ -190,20 +214,20 @@ metadata:
     nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
 spec:
   tls:
-  - hosts:
-    - api.bible-daily.com
-    secretName: bible-daily-backend-prod-tls
+    - hosts:
+        - api.bible-daily.com
+      secretName: bible-daily-backend-prod-tls
   rules:
-  - host: api.bible-daily.com
-    http:
-      paths:
-      - path: /
-        pathType: Prefix
-        backend:
-          service:
-            name: bible-daily-backend-prod
-            port:
-              number: 80
+    - host: api.bible-daily.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: bible-daily-backend-prod
+                port:
+                  number: 80
 
 ---
 apiVersion: autoscaling/v2
@@ -219,31 +243,31 @@ spec:
   minReplicas: 3
   maxReplicas: 10
   metrics:
-  - type: Resource
-    resource:
-      name: cpu
-      target:
-        type: Utilization
-        averageUtilization: 60
-  - type: Resource
-    resource:
-      name: memory
-      target:
-        type: Utilization
-        averageUtilization: 70
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 60
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 70
   behavior:
     scaleUp:
       stabilizationWindowSeconds: 60
       policies:
-      - type: Percent
-        value: 100
-        periodSeconds: 15
+        - type: Percent
+          value: 100
+          periodSeconds: 15
     scaleDown:
       stabilizationWindowSeconds: 300
       policies:
-      - type: Percent
-        value: 10
-        periodSeconds: 60
+        - type: Percent
+          value: 10
+          periodSeconds: 60
 
 ---
 apiVersion: policy/v1
@@ -270,29 +294,29 @@ spec:
       app: bible-daily-backend
       environment: production
   policyTypes:
-  - Ingress
-  - Egress
+    - Ingress
+    - Egress
   ingress:
-  - from:
-    - namespaceSelector:
-        matchLabels:
-          name: ingress-nginx
-    ports:
-    - protocol: TCP
-      port: 3000
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+      ports:
+        - protocol: TCP
+          port: 3000
   egress:
-  - to:
-    - namespaceSelector:
-        matchLabels:
-          name: production
-    ports:
-    - protocol: TCP
-      port: 3306  # MySQL
-    - protocol: TCP
-      port: 6379  # Redis
-  - to: []  # Allow external traffic for APIs
-    ports:
-    - protocol: TCP
-      port: 443
-    - protocol: TCP
-      port: 80
+    - to:
+        - namespaceSelector:
+            matchLabels:
+              name: production
+      ports:
+        - protocol: TCP
+          port: 3306 # MySQL
+        - protocol: TCP
+          port: 6379 # Redis
+    - to: [] # Allow external traffic for APIs
+      ports:
+        - protocol: TCP
+          port: 443
+        - protocol: TCP
+          port: 80
