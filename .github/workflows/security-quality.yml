@@ -152,7 +152,7 @@ jobs:
         if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarcloud-github-action@master
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PUBLISH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
@@ -365,7 +365,7 @@ jobs:
       - name: Run GitLeaks
         uses: gitleaks/gitleaks-action@v2
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_PUBLISH_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
           GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
       - name: Run detect-secrets

@@ -299,7 +299,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GH_PUBLISH_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build and push Backend Docker image
         id: build
@@ -370,7 +370,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GH_PUBLISH_TOKEN }}
+          password: ${{ secrets.GHCR_TOKEN }}
 
       - name: Build and push Frontend Docker image
         id: build
@@ -489,7 +489,7 @@ jobs:
             
             # Registry
             REGISTRY=${{ env.REGISTRY }}
-            GITHUB_TOKEN=${{ secrets.GH_PUBLISH_TOKEN }}
+            GITHUB_TOKEN=${{ secrets.GHCR_TOKEN }}
             GITHUB_ACTOR=${{ github.actor }}
             EOF
           "
@@ -500,7 +500,7 @@ jobs:
             cd /opt/bible-daily
             
             # Login to GHCR
-            echo '${{ secrets.GH_PUBLISH_TOKEN }}' | sudo docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            echo '${{ secrets.GHCR_TOKEN }}' | sudo docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
             
             # Pull latest images
             if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ]; then
