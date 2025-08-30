@@ -1,9 +1,9 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # MySQL Database
   mysql:
-    image: mysql:8.0
+    image: mysql:8.0.39
     container_name: bible-daily-mysql-prod
     restart: always
     environment:
@@ -38,7 +38,15 @@ services:
     networks:
       - bible-daily-prod-network
     healthcheck:
-      test: ["CMD", "redis-cli", "--no-auth-warning", "-a", "${REDIS_PASSWORD}", "ping"]
+      test:
+        [
+          "CMD",
+          "redis-cli",
+          "--no-auth-warning",
+          "-a",
+          "${REDIS_PASSWORD}",
+          "ping",
+        ]
       timeout: 3s
       retries: 5
     deploy:
@@ -160,12 +168,12 @@ services:
     networks:
       - bible-daily-prod-network
     command:
-      - '--config.file=/etc/prometheus/prometheus.yml'
-      - '--storage.tsdb.path=/prometheus'
-      - '--web.console.libraries=/etc/prometheus/console_libraries'
-      - '--web.console.templates=/etc/prometheus/consoles'
-      - '--storage.tsdb.retention.time=200h'
-      - '--web.enable-lifecycle'
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--web.console.libraries=/etc/prometheus/console_libraries"
+      - "--web.console.templates=/etc/prometheus/consoles"
+      - "--storage.tsdb.retention.time=200h"
+      - "--web.enable-lifecycle"
 
   # Monitoring - Grafana
   grafana:
