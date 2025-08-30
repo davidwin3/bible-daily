@@ -178,21 +178,21 @@ services:
           cpus: "0.1"
 
   # 로그 수집기 (선택사항)
-  logrotate:
-    image: linkyard/docker-logrotate
-    platform: linux/arm64
-    container_name: bible-daily-logrotate-prod
-    restart: unless-stopped
-    volumes:
-      - /var/lib/docker/containers:/var/lib/docker/containers:ro
-      - /opt/bible-daily/logs:/logs
-    environment:
-      LOGS_DIRECTORIES: "/logs"
-      LOGROTATE_INTERVAL: daily
-      LOGROTATE_COPIES: 7
-      LOGROTATE_SIZE: 100M
-    networks:
-      - bible-daily-prod-network
+  # logrotate:
+  #   image: linkyard/docker-logrotate
+  #   platform: linux/arm64
+  #   container_name: bible-daily-logrotate-prod
+  #   restart: unless-stopped
+  #   volumes:
+  #     - /var/lib/docker/containers:/var/lib/docker/containers:ro
+  #     - /opt/bible-daily/logs:/logs
+  #   environment:
+  #     LOGS_DIRECTORIES: "/logs"
+  #     LOGROTATE_INTERVAL: daily
+  #     LOGROTATE_COPIES: 7
+  #     LOGROTATE_SIZE: 100M
+  #   networks:
+  #     - bible-daily-prod-network
 
 volumes:
   mysql_prod_data:
