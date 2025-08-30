@@ -84,7 +84,7 @@ services:
 
   # Backend API
   backend:
-    image: ${BACKEND_IMAGE:-ghcr.io/your-repo/bible-daily/backend:latest}
+    image: ${BACKEND_IMAGE:-ghcr.io/davidwin3/bible-daily/backend:latest}
     platform: linux/arm64
     container_name: bible-daily-backend-prod
     restart: unless-stopped
@@ -141,7 +141,7 @@ services:
 
   # Frontend Application
   frontend:
-    image: ${FRONTEND_IMAGE:-ghcr.io/your-repo/bible-daily/frontend:latest}
+    image: ${FRONTEND_IMAGE:-ghcr.io/davidwin3/bible-daily/frontend:latest}
     platform: linux/arm64
     container_name: bible-daily-frontend-prod
     restart: unless-stopped
