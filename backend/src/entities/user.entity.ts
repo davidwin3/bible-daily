@@ -10,6 +10,7 @@ import { Post } from './post.entity';
 import { Like } from './like.entity';
 import { UserMission } from './user-mission.entity';
 import { CellMember } from './cell-member.entity';
+import { RefreshToken } from './refresh-token.entity';
 
 export enum UserRole {
   STUDENT = 'student',
@@ -65,4 +66,7 @@ export class User {
 
   @OneToMany(() => CellMember, (cellMember) => cellMember.user)
   cellMemberships: CellMember[];
+
+  @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
+  refreshTokens: RefreshToken[];
 }
