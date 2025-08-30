@@ -297,7 +297,7 @@ jobs:
         id: build
         uses: docker/build-push-action@v5
         with:
-          context: ./backend
+          context: .
           file: ./backend/Dockerfile
           push: true
           platforms: linux/arm64
@@ -368,7 +368,7 @@ jobs:
         id: build
         uses: docker/build-push-action@v5
         with:
-          context: ./frontend
+          context: .
           file: ./frontend/Dockerfile
           push: true
           platforms: linux/arm64
