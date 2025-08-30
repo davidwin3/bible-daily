@@ -505,6 +505,7 @@ jobs:
             DB_PORT=${{ secrets.DB_PORT }}
             DB_USERNAME=${{ secrets.DB_USERNAME }}
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+            DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
             DB_DATABASE=${{ secrets.DB_DATABASE }}
 
             # Redis
@@ -527,6 +528,7 @@ jobs:
 
             # CORS
             CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
+            DOMAIN=${{ vars.DOMAIN }}
 
             # Images
             BACKEND_IMAGE=${{ needs.build-backend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.BACKEND_IMAGE_NAME) }}
@@ -536,6 +538,9 @@ jobs:
             REGISTRY=${{ env.REGISTRY }}
             GITHUB_TOKEN=${{ secrets.GHCR_TOKEN }}
             GITHUB_ACTOR=${{ github.actor }}
+
+            # Version
+            BUILD_VERSION=${{ needs.setup.outputs.version }}
             EOF
 
             # Login to GHCR
