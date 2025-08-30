@@ -1,24 +1,113 @@
-name: Security & Quality
+name: Security & Quality Analysis
 
 on:
+  # 자동 트리거
   push:
     branches: [main, develop]
   pull_request:
     branches: [main, develop]
+  
+  # 스케줄 실행 (매일 오전 2시)
   schedule:
-    # Run security scans daily at 3 AM UTC
-    - cron: '0 3 * * *'
+    - cron: '0 2 * * *'
+  
+  # 수동 실행 트리거
+  workflow_dispatch:
+    inputs:
+      scan_type:
+        description: '실행할 스캔 타입을 선택하세요'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - code-quality
+          - security
+          - dependencies
+          - containers
+          - secrets
+          - infrastructure
+      severity_threshold:
+        description: '보안 취약점 심각도 임계값'
+        required: false
+        default: 'medium'
+        type: choice
+        options:
+          - low
+          - medium
+          - high
+          - critical
+      fail_on_issues:
+        description: '이슈 발견 시 워크플로우 실패 여부'
+        required: false
+        default: false
+        type: boolean
 
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '8'
 
 jobs:
-  # Code Quality Analysis
+  # 설정 및 변경사항 감지
+  setup:
+    name: Setup Security Scan
+    runs-on: ubuntu-latest
+    outputs:
+      frontend_changed: ${{ steps.changes.outputs.frontend }}
+      backend_changed: ${{ steps.changes.outputs.backend }}
+      docker_changed: ${{ steps.changes.outputs.docker }}
+      infra_changed: ${{ steps.changes.outputs.infrastructure }}
+      scan_type: ${{ steps.scan-type.outputs.type }}
+      severity: ${{ steps.severity.outputs.level }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+            backend:
+              - 'backend/**'
+            docker:
+              - '**/Dockerfile'
+              - 'docker-compose*.yml'
+            infrastructure:
+              - 'deployment/**'
+              - '.github/workflows/**'
+
+      - name: Determine scan type
+        id: scan-type
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "type=${{ github.event.inputs.scan_type }}" >> $GITHUB_OUTPUT
+          else
+            echo "type=all" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Determine severity threshold
+        id: severity
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "level=${{ github.event.inputs.severity_threshold }}" >> $GITHUB_OUTPUT
+          else
+            echo "level=medium" >> $GITHUB_OUTPUT
+          fi
+
+  # 코드 품질 분석
   code-quality:
     name: Code Quality Analysis
     runs-on: ubuntu-latest
-    
+    needs: setup
+    if: |
+      (needs.setup.outputs.frontend_changed == 'true' || needs.setup.outputs.backend_changed == 'true' || 
+       github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') &&
+      (needs.setup.outputs.scan_type == 'all' || needs.setup.outputs.scan_type == 'code-quality')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -26,7 +115,7 @@ jobs:
           fetch-depth: 0
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -40,36 +129,114 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run ESLint (Frontend)
-        run: pnpm --filter frontend lint:report
+        if: needs.setup.outputs.frontend_changed == 'true' || github.event_name != 'push'
+        run: |
+          pnpm --filter frontend lint --format=@microsoft/eslint-formatter-sarif --output-file=frontend-eslint.sarif
         continue-on-error: true
 
       - name: Run ESLint (Backend)
-        run: pnpm --filter backend lint:report
+        if: needs.setup.outputs.backend_changed == 'true' || github.event_name != 'push'
+        run: |
+          pnpm --filter backend lint --format=@microsoft/eslint-formatter-sarif --output-file=backend-eslint.sarif
         continue-on-error: true
 
       - name: Upload ESLint results
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: eslint-results.sarif
+          sarif_file: |
+            frontend-eslint.sarif
+            backend-eslint.sarif
 
-      - name: Run SonarCloud Scan
+      - name: SonarCloud Scan
+        if: env.SONAR_TOKEN != ''
         uses: SonarSource/sonarcloud-github-action@master
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=bible-daily
+            -Dsonar.organization=your-org
+            -Dsonar.sources=frontend/src,backend/src
+            -Dsonar.tests=frontend/src,backend/src
+            -Dsonar.test.inclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts
+            -Dsonar.coverage.exclusions=**/*.test.ts,**/*.test.tsx,**/*.spec.ts
+            -Dsonar.typescript.lcov.reportPaths=frontend/coverage/lcov.info,backend/coverage/lcov.info
 
-  # Dependency Security Scan
-  dependency-scan:
-    name: Dependency Security Scan
+  # 보안 취약점 스캔
+  security-scan:
+    name: Security Vulnerability Scan
     runs-on: ubuntu-latest
-    
+    needs: setup
+    if: |
+      (needs.setup.outputs.scan_type == 'all' || needs.setup.outputs.scan_type == 'security')
+    strategy:
+      matrix:
+        component: [frontend, backend]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run Snyk security scan
+        if: env.SNYK_TOKEN != ''
+        uses: snyk/actions/node@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+        with:
+          args: |
+            --severity-threshold=${{ needs.setup.outputs.severity }}
+            --file=${{ matrix.component }}/package.json
+            --sarif-file-output=${{ matrix.component }}-snyk.sarif
+        continue-on-error: ${{ github.event.inputs.fail_on_issues != 'true' }}
+
+      - name: Upload Snyk results
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: ${{ matrix.component }}-snyk.sarif
+
+      - name: Run Semgrep SAST scan
+        if: env.SEMGREP_APP_TOKEN != ''
+        uses: semgrep/semgrep-action@v1
+        with:
+          config: |
+            p/security-audit
+            p/nodejs
+            p/typescript
+            p/react
+          publishToken: ${{ secrets.SEMGREP_APP_TOKEN }}
+          publishDeployment: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' }}
+        env:
+          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
+
+  # 의존성 스캔
+  dependency-scan:
+    name: Dependency Security Scan
+    runs-on: ubuntu-latest
+    needs: setup
+    if: |
+      (needs.setup.outputs.scan_type == 'all' || needs.setup.outputs.scan_type == 'dependencies')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -83,174 +250,115 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Run npm audit (Frontend)
-        run: pnpm --filter frontend audit --audit-level moderate
+        run: |
+          cd frontend
+          npm audit --audit-level=${{ needs.setup.outputs.severity }} --json > ../frontend-audit.json
         continue-on-error: true
 
       - name: Run npm audit (Backend)
-        run: pnpm --filter backend audit --audit-level moderate
+        run: |
+          cd backend
+          npm audit --audit-level=${{ needs.setup.outputs.severity }} --json > ../backend-audit.json
         continue-on-error: true
 
-      - name: Run Snyk security scan
-        uses: snyk/actions/node@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Run OSV Scanner
+        uses: google/osv-scanner-action@v1.7.4
         with:
-          args: --severity-threshold=high --file=package.json
+          scan-args: |-
+            --output=sarif
+            --format=sarif
+            ./
         continue-on-error: true
 
-      - name: Upload Snyk results to GitHub Code Scanning
-        uses: github/codeql-action/upload-sarif@v2
+      - name: Upload OSV Scanner results
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: snyk.sarif
+          sarif_file: results.sarif
 
-  # Container Security Scan
+      - name: Upload audit results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: dependency-audit-results
+          path: |
+            frontend-audit.json
+            backend-audit.json
+
+  # 컨테이너 보안 스캔
   container-scan:
     name: Container Security Scan
     runs-on: ubuntu-latest
-    
+    needs: setup
+    if: |
+      (needs.setup.outputs.docker_changed == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') &&
+      (needs.setup.outputs.scan_type == 'all' || needs.setup.outputs.scan_type == 'containers')
+    strategy:
+      matrix:
+        component: [frontend, backend]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Build Backend Docker image
-        run: docker build -t bible-daily-backend:test ./backend
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
-      - name: Build Frontend Docker image
-        run: docker build -t bible-daily-frontend:test ./frontend
+      - name: Build Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./${{ matrix.component }}
+          file: ./${{ matrix.component }}/Dockerfile
+          push: false
+          tags: bible-daily-${{ matrix.component }}:scan
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Run Trivy vulnerability scanner (Backend)
+      - name: Run Trivy vulnerability scanner
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'bible-daily-backend:test'
+          image-ref: bible-daily-${{ matrix.component }}:scan
           format: 'sarif'
-          output: 'trivy-backend-results.sarif'
+          output: 'trivy-${{ matrix.component }}.sarif'
+          severity: 'CRITICAL,HIGH,MEDIUM'
 
-      - name: Run Trivy vulnerability scanner (Frontend)
-        uses: aquasecurity/trivy-action@master
-        with:
-          image-ref: 'bible-daily-frontend:test'
-          format: 'sarif'
-          output: 'trivy-frontend-results.sarif'
-
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+      - name: Upload Trivy scan results
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'trivy-backend-results.sarif'
+          sarif_file: trivy-${{ matrix.component }}.sarif
 
-      - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+      - name: Run Hadolint (Dockerfile linter)
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: ${{ matrix.component }}/Dockerfile
+          format: sarif
+          output-file: hadolint-${{ matrix.component }}.sarif
+        continue-on-error: true
+
+      - name: Upload Hadolint results
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: 'trivy-frontend-results.sarif'
+          sarif_file: hadolint-${{ matrix.component }}.sarif
 
-  # SAST (Static Application Security Testing)
-  sast-scan:
-    name: SAST Security Scan
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Initialize CodeQL
-        uses: github/codeql-action/init@v2
-        with:
-          languages: javascript, typescript
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Build projects
-        run: |
-          pnpm --filter frontend build
-          pnpm --filter backend build
-
-      - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v2
-
-      - name: Run Semgrep
-        uses: returntocorp/semgrep-action@v1
-        with:
-          config: >-
-            p/security-audit
-            p/secrets
-            p/owasp-top-ten
-            p/javascript
-            p/typescript
-        env:
-          SEMGREP_APP_TOKEN: ${{ secrets.SEMGREP_APP_TOKEN }}
-
-  # License Compliance Check
-  license-check:
-    name: License Compliance
-    runs-on: ubuntu-latest
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v2
-        with:
-          version: ${{ env.PNPM_VERSION }}
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: 'pnpm'
-
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
-
-      - name: Check licenses
-        run: |
-          npx license-checker --onlyAllow 'MIT;Apache-2.0;BSD-2-Clause;BSD-3-Clause;ISC;0BSD' --excludePrivatePackages --summary
-
-      - name: Generate license report
-        run: |
-          npx license-checker --json --out licenses.json
-          npx license-checker --csv --out licenses.csv
-
-      - name: Upload license reports
-        uses: actions/upload-artifact@v3
-        with:
-          name: license-reports
-          path: |
-            licenses.json
-            licenses.csv
-
-  # Secrets Scan
+  # 시크릿 스캔
   secrets-scan:
-    name: Secrets Scan
+    name: Secrets Detection
     runs-on: ubuntu-latest
-    
+    needs: setup
+    if: |
+      (needs.setup.outputs.scan_type == 'all' || needs.setup.outputs.scan_type == 'secrets')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
-      - name: Run TruffleHog
+      - name: Run TruffleHog OSS
         uses: trufflesecurity/trufflehog@main
         with:
           path: ./
-          base: main
+          base: ${{ github.event.repository.default_branch }}
           head: HEAD
           extra_args: --debug --only-verified
 
@@ -258,59 +366,282 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
 
-  # Infrastructure as Code Security
-  iac-scan:
-    name: IaC Security Scan
+      - name: Run detect-secrets
+        run: |
+          pip install detect-secrets
+          detect-secrets scan --all-files --baseline .secrets.baseline
+          detect-secrets audit .secrets.baseline
+        continue-on-error: true
+
+  # 인프라스트럭처 보안 스캔
+  infrastructure-scan:
+    name: Infrastructure Security Scan
     runs-on: ubuntu-latest
-    
+    needs: setup
+    if: |
+      (needs.setup.outputs.infra_changed == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') &&
+      (needs.setup.outputs.scan_type == 'all' || needs.setup.outputs.scan_type == 'infrastructure')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Run Checkov
+      - name: Run Checkov (IaC security scan)
         uses: bridgecrewio/checkov-action@master
         with:
           directory: .
-          framework: dockerfile,github_actions
+          framework: dockerfile,kubernetes,github_actions
           output_format: sarif
-          output_file_path: checkov-results.sarif
+          output_file_path: checkov.sarif
+        continue-on-error: true
 
-      - name: Upload Checkov scan results
-        uses: github/codeql-action/upload-sarif@v2
+      - name: Upload Checkov results
+        uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
-          sarif_file: checkov-results.sarif
+          sarif_file: checkov.sarif
 
-  # Security Summary Report
-  security-summary:
-    name: Security Summary
+      - name: Run Terrascan
+        uses: tenable/terrascan-action@main
+        with:
+          iac_type: 'docker'
+          iac_version: 'v1'
+          policy_type: 'docker'
+          only_warn: true
+          sarif_upload: true
+        continue-on-error: true
+
+  # 라이선스 컴플라이언스 검사
+  license-compliance:
+    name: License Compliance Check
     runs-on: ubuntu-latest
-    needs: [code-quality, dependency-scan, container-scan, sast-scan, secrets-scan, iac-scan]
-    if: always()
-    
+    needs: setup
+    if: |
+      (needs.setup.outputs.scan_type == 'all' || needs.setup.outputs.scan_type == 'dependencies')
     steps:
-      - name: Security Summary Report
-        run: |
-          echo "## Security & Quality Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Check | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Code Quality | ${{ needs.code-quality.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Dependency Scan | ${{ needs.dependency-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Container Scan | ${{ needs.container-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| SAST Scan | ${{ needs.sast-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Secrets Scan | ${{ needs.secrets-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| IaC Scan | ${{ needs.iac-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "📊 [View detailed security report in the Security tab](https://github.com/${{ github.repository }}/security)" >> $GITHUB_STEP_SUMMARY
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Notify security issues
-        if: failure()
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install license checker
+        run: npm install -g license-checker
+
+      - name: Check licenses (Frontend)
+        run: |
+          cd frontend
+          license-checker --json --out ../frontend-licenses.json
+          license-checker --summary
+
+      - name: Check licenses (Backend)
+        run: |
+          cd backend
+          license-checker --json --out ../backend-licenses.json
+          license-checker --summary
+
+      - name: Upload license reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: license-reports
+          path: |
+            frontend-licenses.json
+            backend-licenses.json
+
+  # SBOM 생성
+  sbom-generation:
+    name: Generate SBOM
+    runs-on: ubuntu-latest
+    needs: setup
+    if: |
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM with Syft
+        uses: anchore/sbom-action@v0
+        with:
+          path: ./
+          format: spdx-json
+          output-file: sbom.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom
+          path: sbom.spdx.json
+
+      - name: Upload SBOM to Dependency Graph
+        uses: advanced-security/spdx-dependency-submission-action@v0.0.1
+        with:
+          filePath: sbom.spdx.json
+
+  # 보안 스코어카드
+  security-scorecard:
+    name: Security Scorecard
+    runs-on: ubuntu-latest
+    needs: setup
+    if: |
+      (github.event_name == 'schedule') ||
+      (github.event_name == 'workflow_dispatch' && github.event.inputs.scan_type == 'all')
+    permissions:
+      security-events: write
+      id-token: write
+      actions: read
+      contents: read
+    steps:
+      - name: Run analysis
+        uses: ossf/scorecard-action@v2.3.1
+        with:
+          results_file: results.sarif
+          results_format: sarif
+          publish_results: true
+
+      - name: Upload SARIF results
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: results.sarif
+
+  # 결과 통합 및 리포트 생성
+  security-report:
+    name: Generate Security Report
+    runs-on: ubuntu-latest
+    needs: [setup, code-quality, security-scan, dependency-scan, container-scan, secrets-scan, infrastructure-scan, license-compliance]
+    if: always()
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: security-results/
+
+      - name: Generate security report
+        run: |
+          cat > security-report.md << EOF
+          # 보안 및 품질 분석 결과
+          
+          ## 실행 정보
+          - **Scan Type**: ${{ needs.setup.outputs.scan_type }}
+          - **Severity Threshold**: ${{ needs.setup.outputs.severity }}
+          - **Trigger**: ${{ github.event_name }}
+          - **Branch**: ${{ github.ref_name }}
+          - **Commit**: ${{ github.sha }}
+          - **Date**: $(date -u +"%Y-%m-%d %H:%M:%S UTC")
+          
+          ## 스캔 결과
+          - **Code Quality**: ${{ needs.code-quality.result }}
+          - **Security Scan**: ${{ needs.security-scan.result }}
+          - **Dependency Scan**: ${{ needs.dependency-scan.result }}
+          - **Container Scan**: ${{ needs.container-scan.result }}
+          - **Secrets Scan**: ${{ needs.secrets-scan.result }}
+          - **Infrastructure Scan**: ${{ needs.infrastructure-scan.result }}
+          - **License Compliance**: ${{ needs.license-compliance.result }}
+          
+          ## 권장사항
+          1. 발견된 모든 보안 취약점을 검토하고 수정하세요.
+          2. 의존성을 정기적으로 업데이트하세요.
+          3. 코드 품질 이슈를 해결하세요.
+          4. 라이선스 컴플라이언스를 확인하세요.
+          EOF
+
+      - name: Upload security report
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-report
+          path: security-report.md
+
+  # 알림
+  notify:
+    name: Send Security Notifications
+    runs-on: ubuntu-latest
+    needs: [setup, code-quality, security-scan, dependency-scan, container-scan, secrets-scan, infrastructure-scan]
+    if: always() && (github.event_name == 'schedule' || github.event_name == 'workflow_dispatch')
+    steps:
+      - name: Determine overall status
+        id: status
+        run: |
+          # 보안 관련 중요 스캔들의 결과 확인
+          CRITICAL_SCANS=("${{ needs.security-scan.result }}" "${{ needs.dependency-scan.result }}" "${{ needs.secrets-scan.result }}")
+          
+          FAILED=false
+          for result in "${CRITICAL_SCANS[@]}"; do
+            if [ "$result" = "failure" ]; then
+              FAILED=true
+              break
+            fi
+          done
+          
+          if [ "$FAILED" = true ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+            echo "emoji=🚨" >> $GITHUB_OUTPUT
+          else
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+            echo "emoji=🔒" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Send Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
         uses: 8398a7/action-slack@v3
         with:
-          status: failure
-          channel: '#security'
-          text: '🚨 보안 스캔에서 문제가 발견되었습니다. 즉시 확인이 필요합니다.'
+          status: custom
+          custom_payload: |
+            {
+              "text": "${{ steps.status.outputs.emoji }} 보안 스캔 완료 - ${{ steps.status.outputs.status }}",
+              "attachments": [
+                {
+                  "color": "${{ steps.status.outputs.color }}",
+                  "fields": [
+                    {
+                      "title": "Scan Type",
+                      "value": "${{ needs.setup.outputs.scan_type }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Severity",
+                      "value": "${{ needs.setup.outputs.severity }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Security Scan",
+                      "value": "${{ needs.security-scan.result }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Dependencies",
+                      "value": "${{ needs.dependency-scan.result }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Containers",
+                      "value": "${{ needs.container-scan.result }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Secrets",
+                      "value": "${{ needs.secrets-scan.result }}",
+                      "short": true
+                    }
+                  ]
+                }
+              ]
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}

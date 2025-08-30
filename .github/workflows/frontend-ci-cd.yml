@@ -1,6 +1,7 @@
 name: Frontend CI/CD
 
 on:
+  # 자동 트리거
   push:
     branches: [main, develop]
     paths:
@@ -11,23 +12,84 @@ on:
     paths:
       - 'frontend/**'
       - '.github/workflows/frontend-ci-cd.yml'
+  
+  # 수동 실행 트리거
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: '배포할 환경을 선택하세요'
+        required: true
+        default: 'development'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+      skip_tests:
+        description: '테스트를 건너뛸지 선택하세요'
+        required: false
+        default: false
+        type: boolean
+      deploy_only:
+        description: '배포만 실행할지 선택하세요 (빌드 건너뛰기)'
+        required: false
+        default: false
+        type: boolean
 
 env:
   NODE_VERSION: '20'
   PNPM_VERSION: '8'
 
 jobs:
-  # 코드 품질 검사 및 테스트
-  test:
-    name: Test & Lint
+  # 환경 설정 및 변경사항 감지
+  setup:
+    name: Setup and Detect Changes
     runs-on: ubuntu-latest
-    
+    outputs:
+      should_run: ${{ steps.changes.outputs.frontend }}
+      environment: ${{ steps.env.outputs.environment }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: changes
+        with:
+          filters: |
+            frontend:
+              - 'frontend/**'
+              - '.github/workflows/frontend-ci-cd.yml'
+
+      - name: Determine environment
+        id: env
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "environment=${{ github.event.inputs.environment }}" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/main" ]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          elif [ "${{ github.ref }}" = "refs/heads/develop" ]; then
+            echo "environment=development" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+          fi
+
+  # 테스트 및 린트
+  test:
+    name: Test and Lint
+    runs-on: ubuntu-latest
+    needs: setup
+    if: |
+      (needs.setup.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch') &&
+      (github.event.inputs.skip_tests != 'true' && github.event.inputs.deploy_only != 'true')
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -40,46 +102,46 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Lint frontend
+      - name: Run ESLint
         run: pnpm --filter frontend lint
 
-      - name: Type check
+      - name: Run TypeScript check
         run: pnpm --filter frontend type-check
 
-      - name: Run tests
-        run: pnpm --filter frontend test:ci
+      - name: Run unit tests
+        run: pnpm --filter frontend test:unit
+        env:
+          CI: true
 
-      - name: Upload test coverage
-        uses: codecov/codecov-action@v3
+      - name: Upload test results
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
-          file: ./frontend/coverage/lcov.info
-          flags: frontend
-          name: frontend-coverage
+          name: frontend-test-results
+          path: |
+            frontend/coverage/
+            frontend/test-results/
 
-  # 빌드 작업
+  # 빌드
   build:
-    name: Build
+    name: Build Application
     runs-on: ubuntu-latest
-    needs: test
-    if: github.event_name == 'push'
-    
+    needs: [setup, test]
+    if: |
+      always() && 
+      (needs.setup.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch') &&
+      (needs.test.result == 'success' || needs.test.result == 'skipped' || github.event.inputs.skip_tests == 'true')
     strategy:
       matrix:
-        environment: [development, staging, production]
-        include:
-          - environment: development
-            branch: develop
-          - environment: staging
-            branch: main
-          - environment: production
-            branch: main
-    
+        environment: 
+          - ${{ needs.setup.outputs.environment == 'production' && 'production' || needs.setup.outputs.environment }}
+    environment: ${{ matrix.environment }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v2
+        uses: pnpm/action-setup@v3
         with:
           version: ${{ env.PNPM_VERSION }}
 
@@ -94,116 +156,177 @@ jobs:
 
       - name: Create environment file
         run: |
-          cat > frontend/.env.production << EOF
-          VITE_API_URL=${{ secrets[format('VITE_API_URL_{0}', matrix.environment)] }}
-          VITE_GOOGLE_CLIENT_ID=${{ secrets[format('VITE_GOOGLE_CLIENT_ID_{0}', matrix.environment)] }}
-          VITE_VAPID_PUBLIC_KEY=${{ secrets[format('VITE_VAPID_PUBLIC_KEY_{0}', matrix.environment)] }}
-          VITE_FIREBASE_CONFIG=${{ secrets[format('VITE_FIREBASE_CONFIG_{0}', matrix.environment)] }}
+          cd frontend
+          cat > .env << EOF
+          VITE_API_URL=${{ vars.VITE_API_URL || secrets[format('VITE_API_URL_{0}', matrix.environment)] }}
+          VITE_GOOGLE_CLIENT_ID=${{ vars.VITE_GOOGLE_CLIENT_ID || secrets[format('VITE_GOOGLE_CLIENT_ID_{0}', matrix.environment)] }}
+          VITE_VAPID_PUBLIC_KEY=${{ vars.VITE_VAPID_PUBLIC_KEY || secrets[format('VITE_VAPID_PUBLIC_KEY_{0}', matrix.environment)] }}
+          VITE_FIREBASE_CONFIG=${{ vars.VITE_FIREBASE_CONFIG || secrets[format('VITE_FIREBASE_CONFIG_{0}', matrix.environment)] }}
           EOF
 
-      - name: Build frontend
+      - name: Build application
         run: pnpm --filter frontend build
         env:
           NODE_ENV: production
 
-      - name: Generate PWA icons
-        run: pnpm --filter frontend generate-icons
-
       - name: Upload build artifacts
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: frontend-build-${{ matrix.environment }}
-          path: frontend/dist
+          path: frontend/dist/
           retention-days: 7
 
-  # 개발 환경 배포
-  deploy-dev:
-    name: Deploy to Development
+  # Vercel 배포
+  deploy:
+    name: Deploy to Vercel
     runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/develop' && github.event_name == 'push'
-    environment: development
-    
+    needs: [setup, build]
+    if: |
+      always() && 
+      (needs.setup.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch') &&
+      (needs.build.result == 'success' || github.event.inputs.deploy_only == 'true') &&
+      github.event_name != 'pull_request'
+    environment: ${{ needs.setup.outputs.environment }}
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: frontend-build-development
-          path: dist
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Deploy to Vercel (Development)
+      - name: Download build artifacts
+        if: github.event.inputs.deploy_only != 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: frontend-build-${{ needs.setup.outputs.environment }}
+          path: frontend/dist/
+
+      - name: Deploy to Vercel
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
-          alias-domains: bible-daily-dev.vercel.app
+          working-directory: frontend
+          vercel-args: ${{ needs.setup.outputs.environment == 'production' && '--prod' || '' }}
+          scope: ${{ secrets.VERCEL_ORG_ID }}
 
-  # 스테이징 환경 배포
-  deploy-staging:
-    name: Deploy to Staging
+      - name: Get deployment URL
+        id: deployment
+        run: |
+          if [ "${{ needs.setup.outputs.environment }}" = "production" ]; then
+            echo "url=https://bible-daily.com" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.setup.outputs.environment }}" = "staging" ]; then
+            echo "url=https://staging.bible-daily.com" >> $GITHUB_OUTPUT
+          else
+            echo "url=https://dev.bible-daily.com" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run smoke tests
+        run: |
+          sleep 30  # 배포 완료 대기
+          curl -f ${{ steps.deployment.outputs.url }} || exit 1
+          echo "✅ Smoke test passed for ${{ steps.deployment.outputs.url }}"
+
+  # 배포 후 테스트 (E2E)
+  e2e-tests:
+    name: End-to-End Tests
     runs-on: ubuntu-latest
-    needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: staging
-    
+    needs: [setup, deploy]
+    if: |
+      always() && 
+      needs.deploy.result == 'success' &&
+      github.event.inputs.skip_tests != 'true' &&
+      needs.setup.outputs.environment != 'production'
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: frontend-build-staging
-          path: dist
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      - name: Deploy to Vercel (Staging)
-        uses: amondnet/vercel-action@v25
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v3
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
-          alias-domains: bible-daily-staging.vercel.app
+          version: ${{ env.PNPM_VERSION }}
 
-  # 프로덕션 환경 배포 (수동 승인 필요)
-  deploy-production:
-    name: Deploy to Production
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run E2E tests
+        run: pnpm --filter frontend test:e2e
+        env:
+          BASE_URL: ${{ needs.deploy.outputs.url }}
+          CI: true
+
+      - name: Upload E2E test results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: e2e-test-results
+          path: |
+            frontend/test-results/
+            frontend/playwright-report/
+
+  # 알림
+  notify:
+    name: Send Notifications
     runs-on: ubuntu-latest
-    needs: [build, deploy-staging]
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    environment: production
-    
+    needs: [setup, test, build, deploy, e2e-tests]
+    if: always() && (needs.setup.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch')
     steps:
-      - name: Download build artifacts
-        uses: actions/download-artifact@v3
-        with:
-          name: frontend-build-production
-          path: dist
+      - name: Determine status
+        id: status
+        run: |
+          if [ "${{ needs.deploy.result }}" = "success" ]; then
+            echo "status=success" >> $GITHUB_OUTPUT
+            echo "color=good" >> $GITHUB_OUTPUT
+            echo "emoji=✅" >> $GITHUB_OUTPUT
+          elif [ "${{ needs.deploy.result }}" = "failure" ] || [ "${{ needs.build.result }}" = "failure" ] || [ "${{ needs.test.result }}" = "failure" ]; then
+            echo "status=failure" >> $GITHUB_OUTPUT
+            echo "color=danger" >> $GITHUB_OUTPUT
+            echo "emoji=❌" >> $GITHUB_OUTPUT
+          else
+            echo "status=cancelled" >> $GITHUB_OUTPUT
+            echo "color=warning" >> $GITHUB_OUTPUT
+            echo "emoji=⚠️" >> $GITHUB_OUTPUT
+          fi
 
-      - name: Deploy to Vercel (Production)
-        uses: amondnet/vercel-action@v25
-        with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          working-directory: ./
-          alias-domains: bible-daily.com
-
-      - name: Notify deployment success
+      - name: Send Slack notification
+        if: env.SLACK_WEBHOOK_URL != ''
         uses: 8398a7/action-slack@v3
         with:
-          status: success
-          channel: '#deployments'
-          text: '🚀 Frontend가 프로덕션에 성공적으로 배포되었습니다!'
+          status: custom
+          custom_payload: |
+            {
+              "text": "${{ steps.status.outputs.emoji }} Frontend 배포 ${{ steps.status.outputs.status }}",
+              "attachments": [
+                {
+                  "color": "${{ steps.status.outputs.color }}",
+                  "fields": [
+                    {
+                      "title": "Environment",
+                      "value": "${{ needs.setup.outputs.environment }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Branch",
+                      "value": "${{ github.ref_name }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Commit",
+                      "value": "<https://github.com/${{ github.repository }}/commit/${{ github.sha }}|${{ github.sha }}>",
+                      "short": true
+                    },
+                    {
+                      "title": "Actor",
+                      "value": "${{ github.actor }}",
+                      "short": true
+                    }
+                  ]
+                }
+              ]
+            }
         env:
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: success()
-
-      - name: Notify deployment failure
-        uses: 8398a7/action-slack@v3
-        with:
-          status: failure
-          channel: '#deployments'
-          text: '❌ Frontend 프로덕션 배포에 실패했습니다.'
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-        if: failure()
