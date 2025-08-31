@@ -1,4 +1,71 @@
 services:
+  # Certbot for Let's Encrypt SSL certificates
+  certbot:
+    image: certbot/certbot:latest
+    container_name: bible-daily-certbot
+    volumes:
+      # Let's Encrypt certificates
+      - certbot_certs:/etc/letsencrypt
+      # ACME challenge files
+      - certbot_www:/var/www/certbot
+      # Logs
+      - /opt/bible-daily/logs/certbot:/var/log/letsencrypt
+    environment:
+      # Email for Let's Encrypt notifications
+      CERTBOT_EMAIL: ${CERTBOT_EMAIL:-admin@bible-daily.com}
+      # Primary domain
+      DOMAIN: ${DOMAIN:-bible-daily.com}
+      # Additional domains (comma-separated)
+      ADDITIONAL_DOMAINS: ${ADDITIONAL_DOMAINS:-www.bible-daily.com,api.bible-daily.com}
+      # Staging mode for testing (set to 1 for staging)
+      CERTBOT_STAGING: ${CERTBOT_STAGING:-0}
+    command: >
+      sh -c "
+        # Wait for nginx to be ready
+        sleep 30 &&
+        
+        # Build domain list
+        DOMAIN_LIST=\"-d $${DOMAIN}\"
+        if [ ! -z \"$${ADDITIONAL_DOMAINS}\" ]; then
+          for domain in $$(echo $${ADDITIONAL_DOMAINS} | tr ',' ' '); do
+            DOMAIN_LIST=\"$${DOMAIN_LIST} -d $${domain}\"
+          done
+        fi
+        
+        # Set staging flag if needed
+        STAGING_FLAG=\"\"
+        if [ \"$${CERTBOT_STAGING}\" = \"1\" ]; then
+          STAGING_FLAG=\"--staging\"
+        fi
+        
+        # Check if certificate already exists
+        if [ ! -f \"/etc/letsencrypt/live/$${DOMAIN}/fullchain.pem\" ]; then
+          echo \"Obtaining SSL certificate for: $${DOMAIN_LIST}\"
+          certbot certonly \
+            --webroot \
+            --webroot-path=/var/www/certbot \
+            --email $${CERTBOT_EMAIL} \
+            --agree-tos \
+            --no-eff-email \
+            $${STAGING_FLAG} \
+            $${DOMAIN_LIST}
+        else
+          echo \"Certificate already exists for $${DOMAIN}\"
+        fi
+        
+        # Keep container running for renewal
+        trap exit TERM
+        while :; do
+          sleep 12h & wait $${!}
+          certbot renew --webroot --webroot-path=/var/www/certbot
+        done
+      "
+    networks:
+      - bible-daily-prod-network
+    restart: unless-stopped
+    depends_on:
+      - frontend
+
   # MySQL Database
   mysql:
     image: mysql:8.0
@@ -150,7 +217,7 @@ services:
           memory: 512M
           cpus: "0.25"
 
-  # Frontend Application
+  # Frontend Application with Let's Encrypt SSL
   frontend:
     image: ${FRONTEND_IMAGE:-ghcr.io/davidwin3/bible-daily/frontend:latest}
     platform: linux/arm64
@@ -160,15 +227,19 @@ services:
       NODE_ENV: production
       REACT_APP_API_URL: https://${DOMAIN}/api
       REACT_APP_VERSION: ${BUILD_VERSION}
-      # Nginx configuration
+      # Nginx SSL configuration
       DOMAIN: ${DOMAIN:-bible-daily.com}
-      SSL_CERT_PATH: ${SSL_CERT_PATH:-/etc/ssl/certs/nginx-selfsigned.crt}
-      SSL_KEY_PATH: ${SSL_KEY_PATH:-/etc/ssl/private/nginx-selfsigned.key}
+      ADDITIONAL_DOMAINS: ${ADDITIONAL_DOMAINS:-www.bible-daily.com api.bible-daily.com}
+      SSL_CERT_PATH: /etc/letsencrypt/live/${DOMAIN}/fullchain.pem
+      SSL_KEY_PATH: /etc/letsencrypt/live/${DOMAIN}/privkey.pem
+      USE_LETSENCRYPT: "true"
     volumes:
-      - /opt/bible-daily/logs:/var/log/nginx
-      # SSL 인증서 볼륨 마운트 (실제 인증서 사용 시)
-      - ${HOST_SSL_CERT_PATH:-/dev/null}:${SSL_CERT_PATH:-/etc/ssl/certs/nginx-selfsigned.crt}:ro
-      - ${HOST_SSL_KEY_PATH:-/dev/null}:${SSL_KEY_PATH:-/etc/ssl/private/nginx-selfsigned.key}:ro
+      # Nginx logs
+      - /opt/bible-daily/logs/nginx:/var/log/nginx
+      # Let's Encrypt certificates (shared with certbot)
+      - certbot_certs:/etc/letsencrypt:ro
+      # ACME challenge files (shared with certbot)
+      - certbot_www:/var/www/certbot:ro
     ports:
       - "80:80"
       - "443:443"
@@ -210,6 +281,23 @@ services:
   #     - bible-daily-prod-network
 
 volumes:
+  # Let's Encrypt certificates
+  certbot_certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/bible-daily/ssl/letsencrypt
+
+  # ACME challenge files
+  certbot_www:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/bible-daily/ssl/www
+
+  # Database volumes
   mysql_prod_data:
     driver: local
     driver_opts:

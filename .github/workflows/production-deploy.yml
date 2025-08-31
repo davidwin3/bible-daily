@@ -28,11 +28,6 @@ on:
         required: false
         default: false
         type: boolean
-      use_ssl:
-        description: "SSL 인증서를 사용한 HTTPS 배포"
-        required: false
-        default: false
-        type: boolean
 
   # main 브랜치에 푸시될 때 자동 배포 (프로덕션 태그가 있는 경우)
   push:
@@ -44,7 +39,6 @@ on:
       - "backend/**"
       - "frontend/**"
       - "docker-compose.prod.yml"
-      - "docker-compose.ssl.yml"
       - ".github/workflows/production-deploy.yml"
 
 env:
@@ -84,7 +78,6 @@ jobs:
             frontend:
               - 'frontend/**'
               - 'docker-compose.prod.yml'
-              - 'docker-compose.ssl.yml'
 
       - name: Determine deployment targets
         id: deploy
@@ -471,7 +464,7 @@ jobs:
           host: ${{ secrets.ORACLE_CLOUD_SERVER_IP }}
           username: ${{ secrets.ORACLE_CLOUD_USER }}
           key: ${{ secrets.ORACLE_CLOUD_SSH_KEY }}
-          source: "docker-compose.prod.yml,docker-compose.ssl.yml,deployment/,scripts/"
+          source: "docker-compose.prod.yml,deployment/,scripts/"
           target: "/opt/bible-daily/"
 
       - name: Deploy services to production
@@ -554,8 +547,7 @@ jobs:
             # Version
             BUILD_VERSION=${{ needs.setup.outputs.version }}
 
-            # SSL Configuration
-            USE_SSL=${{ github.event.inputs.use_ssl }}
+            # SSL Configuration (Always enabled)
             CERTBOT_EMAIL=${{ secrets.CERTBOT_EMAIL }}
             ADDITIONAL_DOMAINS=${{ secrets.ADDITIONAL_DOMAINS }}
             CERTBOT_STAGING=${{ secrets.CERTBOT_STAGING }}
@@ -575,45 +567,28 @@ jobs:
               docker pull ${{ needs.build-frontend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.FRONTEND_IMAGE_NAME) }}
             fi
 
-            # Determine which docker-compose file to use
+            # Always use SSL configuration with Let's Encrypt
             COMPOSE_FILE="docker-compose.prod.yml"
-            if [ "$USE_SSL" = "true" ]; then
-              COMPOSE_FILE="docker-compose.ssl.yml"
-              echo "🔒 Using SSL configuration with Let's Encrypt"
-            else
-              echo "🌐 Using standard HTTP configuration"
-            fi
+            echo "🔒 Using SSL configuration with Let's Encrypt"
 
             # Check and create Docker volumes if needed
             echo "🔍 Checking Docker volumes..."
-            if [ "$USE_SSL" = "true" ]; then
-              # SSL volumes
-              if ! docker volume ls | grep -q "bible-daily_mysql_ssl_data"; then
-                echo "📦 Creating MySQL SSL volume..."
-                docker volume create bible-daily_mysql_ssl_data
-              fi
-              if ! docker volume ls | grep -q "bible-daily_redis_ssl_data"; then
-                echo "📦 Creating Redis SSL volume..."
-                docker volume create bible-daily_redis_ssl_data
-              fi
-              if ! docker volume ls | grep -q "bible-daily_certbot_certs"; then
-                echo "📦 Creating Certbot certs volume..."
-                docker volume create bible-daily_certbot_certs
-              fi
-              if ! docker volume ls | grep -q "bible-daily_certbot_www"; then
-                echo "📦 Creating Certbot www volume..."
-                docker volume create bible-daily_certbot_www
-              fi
-            else
-              # Standard volumes
-              if ! docker volume ls | grep -q "bible-daily_mysql_prod_data"; then
-                echo "📦 Creating MySQL volume..."
-                docker volume create bible-daily_mysql_prod_data
-              fi
-              if ! docker volume ls | grep -q "bible-daily_redis_prod_data"; then
-                echo "📦 Creating Redis volume..."
-                docker volume create bible-daily_redis_prod_data
-              fi
+            # SSL volumes (always created)
+            if ! docker volume ls | grep -q "bible-daily_mysql_prod_data"; then
+              echo "📦 Creating MySQL volume..."
+              docker volume create bible-daily_mysql_prod_data
+            fi
+            if ! docker volume ls | grep -q "bible-daily_redis_prod_data"; then
+              echo "📦 Creating Redis volume..."
+              docker volume create bible-daily_redis_prod_data
+            fi
+            if ! docker volume ls | grep -q "bible-daily_certbot_certs"; then
+              echo "📦 Creating Certbot certs volume..."
+              docker volume create bible-daily_certbot_certs
+            fi
+            if ! docker volume ls | grep -q "bible-daily_certbot_www"; then
+              echo "📦 Creating Certbot www volume..."
+              docker volume create bible-daily_certbot_www
             fi
 
             # Deploy services
@@ -624,12 +599,8 @@ jobs:
               echo '🚀 Deploying backend service...'
               docker-compose -f $COMPOSE_FILE --env-file .env.production up -d mysql redis backend
             elif [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
-              echo '🚀 Deploying frontend service...'
-              if [ "$USE_SSL" = "true" ]; then
-                docker-compose -f $COMPOSE_FILE --env-file .env.production up -d frontend certbot
-              else
-                docker-compose -f $COMPOSE_FILE --env-file .env.production up -d frontend
-              fi
+              echo '🚀 Deploying frontend service with SSL...'
+              docker-compose -f $COMPOSE_FILE --env-file .env.production up -d frontend certbot
             fi
 
             # Wait for services to start
@@ -651,31 +622,16 @@ jobs:
             set -e  # Exit on any error
             cd /opt/bible-daily
 
-            # Validate environment file and determine compose file
+            # Validate environment file
             if [ -f scripts/validate-env.sh ]; then
               # Use validation script if available
               chmod +x scripts/validate-env.sh
               ./scripts/validate-env.sh .env.production || echo "Environment validation completed with warnings"
-              
-              # Check SSL configuration using the script
-              SSL_CONFIG=$(./scripts/validate-env.sh --check-ssl .env.production)
-              if [ "$SSL_CONFIG" = "ssl" ]; then
-                COMPOSE_FILE="docker-compose.ssl.yml"
-                echo "Using SSL configuration: $COMPOSE_FILE"
-              else
-                COMPOSE_FILE="docker-compose.prod.yml"
-                echo "Using standard configuration: $COMPOSE_FILE"
-              fi
-            else
-              # Fallback to simple validation
-              COMPOSE_FILE="docker-compose.prod.yml"
-              if [ -f .env.production ]; then
-                if grep -q "^USE_SSL=true" .env.production 2>/dev/null; then
-                  COMPOSE_FILE="docker-compose.ssl.yml"
-                  echo "Using SSL configuration: $COMPOSE_FILE"
-                fi
-              fi
             fi
+
+            # Always use SSL configuration
+            COMPOSE_FILE="docker-compose.prod.yml"
+            echo "Using SSL configuration: $COMPOSE_FILE"
 
       - name: Health check and cleanup
         uses: appleboy/ssh-action@v1.0.3
@@ -689,31 +645,16 @@ jobs:
             set -e  # Exit on any error
             cd /opt/bible-daily
 
-            # Validate environment file and determine compose file
+            # Validate environment file
             if [ -f scripts/validate-env.sh ]; then
               # Use validation script if available
               chmod +x scripts/validate-env.sh
               ./scripts/validate-env.sh .env.production || echo "Environment validation completed with warnings"
-              
-              # Check SSL configuration using the script
-              SSL_CONFIG=$(./scripts/validate-env.sh --check-ssl .env.production)
-              if [ "$SSL_CONFIG" = "ssl" ]; then
-                COMPOSE_FILE="docker-compose.ssl.yml"
-                echo "Using SSL configuration: $COMPOSE_FILE"
-              else
-                COMPOSE_FILE="docker-compose.prod.yml"
-                echo "Using standard configuration: $COMPOSE_FILE"
-              fi
-            else
-              # Fallback to simple validation
-              COMPOSE_FILE="docker-compose.prod.yml"
-              if [ -f .env.production ]; then
-                if grep -q "^USE_SSL=true" .env.production 2>/dev/null; then
-                  COMPOSE_FILE="docker-compose.ssl.yml"
-                  echo "Using SSL configuration: $COMPOSE_FILE"
-                fi
-              fi
             fi
+
+            # Always use SSL configuration
+            COMPOSE_FILE="docker-compose.prod.yml"
+            echo "Using SSL configuration: $COMPOSE_FILE"
 
             # Wait for services to be ready
             echo "⏳ Waiting for services to be ready..."
@@ -734,17 +675,10 @@ jobs:
             # Check frontend health
             if [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
               for i in {1..10}; do
-                # Try HTTPS first if SSL is enabled, fallback to HTTP
-                if [ "$USE_SSL" = "true" ]; then
-                  if curl -f -k https://localhost:443 || curl -f http://localhost:80; then
-                    echo '✅ Frontend health check passed'
-                    break
-                  fi
-                else
-                  if curl -f http://localhost:80; then
-                    echo '✅ Frontend health check passed'
-                    break
-                  fi
+                # Try HTTPS first (SSL always enabled), fallback to HTTP
+                if curl -f -k https://localhost:443 || curl -f http://localhost:80; then
+                  echo '✅ Frontend health check passed'
+                  break
                 fi
                 echo "Frontend health check attempt $i failed, retrying in 10s..."
                 sleep 10
@@ -874,7 +808,7 @@ jobs:
                     },
                     {
                       "title": "SSL Configuration",
-                      "value": "${{ github.event.inputs.use_ssl == 'true' && '🔒 HTTPS with Lets Encrypt' || '🌐 HTTP Only' }}",
+                      "value": "🔒 HTTPS with Let's Encrypt (Always enabled)",
                       "short": true
                     },
                     {
@@ -925,11 +859,7 @@ jobs:
           else
             echo "**Deployment Type:** ✅ **Normal** (정상 배포)" >> $GITHUB_STEP_SUMMARY
           fi
-          if [ "${{ github.event.inputs.use_ssl }}" = "true" ]; then
-            echo "**SSL Configuration:** 🔒 **HTTPS with Lets Encrypt**" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "**SSL Configuration:** 🌐 **HTTP Only**" >> $GITHUB_STEP_SUMMARY
-          fi
+          echo "**SSL Configuration:** 🔒 **HTTPS with Let's Encrypt** (Always enabled)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Services Deployed" >> $GITHUB_STEP_SUMMARY
           if [ "${{ needs.setup.outputs.deploy_backend }}" = "true" ]; then
