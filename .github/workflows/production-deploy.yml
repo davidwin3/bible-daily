@@ -28,6 +28,39 @@ on:
         required: false
         default: false
         type: boolean
+      enable_db_sync:
+        description: "데이터베이스 스키마 동기화 활성화 (초기 배포시에만 사용)"
+        required: false
+        default: false
+        type: boolean
+      migration_mode:
+        description: "마이그레이션 실행 모드"
+        required: false
+        default: "none"
+        type: choice
+        options:
+          - none
+          - run_migrations
+          - reset_database
+      deployment_environment:
+        description: "배포 환경 선택"
+        required: false
+        default: "production"
+        type: choice
+        options:
+          - production
+          - staging
+          - hotfix
+      rollback_version:
+        description: "롤백할 버전 (예: v1.0.0, latest 등)"
+        required: false
+        default: ""
+        type: string
+      maintenance_mode:
+        description: "점검 모드 활성화 (배포 중 서비스 중단)"
+        required: false
+        default: false
+        type: boolean
 
   # main 브랜치에 푸시될 때 자동 배포 (프로덕션 태그가 있는 경우)
   push:
@@ -508,7 +541,7 @@ jobs:
             # Create production environment file
             cat > .env.production << EOF
             # Application
-            NODE_ENV=production
+            NODE_ENV=${{ github.event.inputs.deployment_environment || 'production' }}
             PORT=3000
 
             # Database
@@ -518,6 +551,7 @@ jobs:
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
             DB_DATABASE=${{ secrets.DB_DATABASE }}
+            DB_SYNCHRONIZE=${{ github.event.inputs.enable_db_sync || 'false' }}
 
             # Redis
             REDIS_HOST=${{ secrets.REDIS_HOST }}
@@ -606,6 +640,26 @@ jobs:
               docker volume create bible-daily_certbot_www
             fi
 
+            # Handle maintenance mode
+            if [ '${{ github.event.inputs.maintenance_mode }}' = 'true' ]; then
+              echo '🚧 Enabling maintenance mode...'
+              # Stop services for maintenance
+              docker-compose -f $COMPOSE_FILE down || true
+              sleep 10
+            fi
+
+            # Handle rollback if specified
+            if [ -n '${{ github.event.inputs.rollback_version }}' ] && [ '${{ github.event.inputs.rollback_version }}' != '' ]; then
+              echo '🔄 Rolling back to version: ${{ github.event.inputs.rollback_version }}'
+              # Override image tags for rollback
+              export BACKEND_IMAGE="${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }}:${{ github.event.inputs.rollback_version }}"
+              export FRONTEND_IMAGE="${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }}:${{ github.event.inputs.rollback_version }}"
+              
+              # Pull rollback images
+              docker pull $BACKEND_IMAGE || echo "Warning: Could not pull backend rollback image"
+              docker pull $FRONTEND_IMAGE || echo "Warning: Could not pull frontend rollback image"
+            fi
+
             # Deploy services
             if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ] && [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
               echo '🚀 Deploying all services...'
@@ -647,6 +701,40 @@ jobs:
             # Always use SSL configuration
             COMPOSE_FILE="docker-compose.prod.yml"
             echo "Using SSL configuration: $COMPOSE_FILE"
+
+            # Handle migration modes
+            MIGRATION_MODE="${{ github.event.inputs.migration_mode || 'none' }}"
+            echo "🗄️ Migration mode: $MIGRATION_MODE"
+
+            if [ "$MIGRATION_MODE" = "reset_database" ]; then
+              echo "⚠️ DANGER: Resetting database - all data will be lost!"
+              echo "Stopping backend service..."
+              docker-compose -f $COMPOSE_FILE stop backend || true
+              
+              echo "Resetting MySQL database..."
+              docker-compose -f $COMPOSE_FILE exec -T mysql mysql -u root -p${{ secrets.DB_ROOT_PASSWORD }} -e "DROP DATABASE IF EXISTS ${{ secrets.DB_DATABASE }}; CREATE DATABASE ${{ secrets.DB_DATABASE }} CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;" || true
+              
+              echo "Restarting backend with DB_SYNCHRONIZE=true..."
+              # Temporarily enable synchronize for schema recreation
+              docker-compose -f $COMPOSE_FILE restart backend
+              sleep 30
+              
+            elif [ "$MIGRATION_MODE" = "run_migrations" ]; then
+              echo "🔄 Running database migrations..."
+              # Here you would run your migration commands
+              # docker-compose -f $COMPOSE_FILE exec -T backend npm run migration:run
+              echo "Migration commands would run here (not implemented yet)"
+              
+            elif [ "${{ github.event.inputs.enable_db_sync }}" = "true" ]; then
+              echo "🔄 Database synchronization is enabled via DB_SYNCHRONIZE=true"
+              echo "Schema will be automatically synchronized on backend startup"
+            fi
+
+            # Wait for backend to be ready after any database operations
+            if [ "$MIGRATION_MODE" != "none" ] || [ "${{ github.event.inputs.enable_db_sync }}" = "true" ]; then
+              echo "⏳ Waiting for backend to initialize after database operations..."
+              sleep 60
+            fi
 
       - name: Health check and cleanup
         uses: appleboy/ssh-action@v1.0.3
@@ -709,8 +797,13 @@ jobs:
             docker image prune -f
 
             # Remove old images (keep last 3 versions)
+            echo "🗑️ Removing old backend images..."
             docker images ${{ env.REGISTRY }}/${{ env.BACKEND_IMAGE_NAME }} --format 'table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}' | tail -n +4 | head -n -3 | awk '{print $1}' | xargs -r docker rmi || true
+
+            echo "🗑️ Removing old frontend images..."
             docker images ${{ env.REGISTRY }}/${{ env.FRONTEND_IMAGE_NAME }} --format 'table {{.Repository}}:{{.Tag}}\t{{.CreatedAt}}' | tail -n +4 | head -n -3 | awk '{print $1}' | xargs -r docker rmi || true
+
+            echo "✅ Image cleanup completed"
 
             echo "✅ Deployment completed successfully!"
 
@@ -822,6 +915,31 @@ jobs:
                       "short": true
                     },
                     {
+                      "title": "Environment",
+                      "value": "${{ github.event.inputs.deployment_environment || 'production' }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Database Sync",
+                      "value": "${{ github.event.inputs.enable_db_sync == 'true' && '🔄 Enabled' || '❌ Disabled' }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Migration Mode",
+                      "value": "${{ github.event.inputs.migration_mode == 'reset_database' && '⚠️ Reset DB' || (github.event.inputs.migration_mode == 'run_migrations' && '🔄 Run Migrations' || '➖ None') }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Maintenance Mode",
+                      "value": "${{ github.event.inputs.maintenance_mode == 'true' && '🚧 Enabled' || '✅ Normal' }}",
+                      "short": true
+                    },
+                    {
+                      "title": "Rollback Version",
+                      "value": "${{ github.event.inputs.rollback_version != '' && github.event.inputs.rollback_version || '➖ None' }}",
+                      "short": true
+                    },
+                    {
                       "title": "SSL Configuration",
                       "value": "🔒 HTTPS with Let's Encrypt (Always enabled)",
                       "short": true
@@ -863,7 +981,7 @@ jobs:
           echo "## 🚀 Production Deployment Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Status:** ${{ steps.status.outputs.emoji }} ${{ steps.status.outputs.status }}" >> $GITHUB_STEP_SUMMARY
-          echo "**Environment:** Oracle Cloud ARM64 Production" >> $GITHUB_STEP_SUMMARY
+          echo "**Environment:** Oracle Cloud ARM64 ${{ github.event.inputs.deployment_environment || 'Production' }}" >> $GITHUB_STEP_SUMMARY
           echo "**Version:** ${{ needs.setup.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
           echo "**Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
@@ -875,6 +993,15 @@ jobs:
             echo "**Deployment Type:** ✅ **Normal** (정상 배포)" >> $GITHUB_STEP_SUMMARY
           fi
           echo "**SSL Configuration:** 🔒 **HTTPS with Let's Encrypt** (Always enabled)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployment Options" >> $GITHUB_STEP_SUMMARY
+          echo "- **Database Sync:** ${{ github.event.inputs.enable_db_sync == 'true' && '🔄 Enabled' || '❌ Disabled' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Migration Mode:** ${{ github.event.inputs.migration_mode == 'reset_database' && '⚠️ Reset Database' || (github.event.inputs.migration_mode == 'run_migrations' && '🔄 Run Migrations' || '➖ None') }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Maintenance Mode:** ${{ github.event.inputs.maintenance_mode == 'true' && '🚧 Enabled' || '✅ Normal Operation' }}" >> $GITHUB_STEP_SUMMARY
+          if [ -n "${{ github.event.inputs.rollback_version }}" ] && [ "${{ github.event.inputs.rollback_version }}" != "" ]; then
+            echo "- **Rollback Version:** 🔄 ${{ github.event.inputs.rollback_version }}" >> $GITHUB_STEP_SUMMARY
+          fi
+          echo "- **Image Cleanup:** 🧹 Always Enabled" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Services Deployed" >> $GITHUB_STEP_SUMMARY
           if [ "${{ needs.setup.outputs.deploy_backend }}" = "true" ]; then

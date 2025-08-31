@@ -53,8 +53,9 @@ export const getDatabaseConfig = (
     migrations: [__dirname + '/../migrations/*{.ts,.js}'],
     migrationsRun: false, // 자동 마이그레이션 비활성화
 
-    // 개발 환경에서만 동기화
-    synchronize: !isProduction,
+    // 스키마 동기화 설정
+    // 운영 환경에서는 초기 배포시에만 true로 설정하고, 이후 false로 변경
+    synchronize: configService.get('DB_SYNCHRONIZE', 'false') === 'true',
 
     // 로깅 설정
     logging: isProduction
