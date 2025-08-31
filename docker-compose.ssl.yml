@@ -240,7 +240,7 @@ services:
       --save 60 10000
     volumes:
       - redis_ssl_data:/data
-      - /opt/bible-daily/logs/redis:/var/log/redis
+      - /opt/bible-daily/logs:/var/log/redis
     ports:
       - "6379:6379"
     networks:
