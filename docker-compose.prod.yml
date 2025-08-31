@@ -10,6 +10,8 @@ services:
       - certbot_www:/var/www/certbot
       # Logs
       - /opt/bible-daily/logs/certbot:/var/log/letsencrypt
+      # Certbot initialization script
+      - ./scripts/certbot-init.sh:/usr/local/bin/certbot-init.sh:ro
     environment:
       # Email for Let's Encrypt notifications
       CERTBOT_EMAIL: ${CERTBOT_EMAIL:-admin@bible-daily.com}
@@ -19,47 +21,7 @@ services:
       ADDITIONAL_DOMAINS: ${ADDITIONAL_DOMAINS:-www.bible-daily.com,api.bible-daily.com}
       # Staging mode for testing (set to 1 for staging)
       CERTBOT_STAGING: ${CERTBOT_STAGING:-0}
-    command: >
-      sh -c "
-        # Wait for nginx to be ready
-        sleep 30 &&
-        
-        # Build domain list
-        DOMAIN_LIST=\"-d $${DOMAIN}\"
-        if [ ! -z \"$${ADDITIONAL_DOMAINS}\" ]; then
-          for domain in $$(echo $${ADDITIONAL_DOMAINS} | tr ',' ' '); do
-            DOMAIN_LIST=\"$${DOMAIN_LIST} -d $${domain}\"
-          done
-        fi
-        
-        # Set staging flag if needed
-        STAGING_FLAG=\"\"
-        if [ \"$${CERTBOT_STAGING}\" = \"1\" ]; then
-          STAGING_FLAG=\"--staging\"
-        fi
-        
-        # Check if certificate already exists
-        if [ ! -f \"/etc/letsencrypt/live/$${DOMAIN}/fullchain.pem\" ]; then
-          echo \"Obtaining SSL certificate for: $${DOMAIN_LIST}\"
-          certbot certonly \
-            --webroot \
-            --webroot-path=/var/www/certbot \
-            --email $${CERTBOT_EMAIL} \
-            --agree-tos \
-            --no-eff-email \
-            $${STAGING_FLAG} \
-            $${DOMAIN_LIST}
-        else
-          echo \"Certificate already exists for $${DOMAIN}\"
-        fi
-        
-        # Keep container running for renewal
-        trap exit TERM
-        while :; do
-          sleep 12h & wait $${!}
-          certbot renew --webroot --webroot-path=/var/www/certbot
-        done
-      "
+    entrypoint: ["/bin/sh", "/usr/local/bin/certbot-init.sh"]
     networks:
       - bible-daily-prod-network
     restart: unless-stopped
