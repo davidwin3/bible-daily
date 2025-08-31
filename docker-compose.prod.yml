@@ -145,6 +145,7 @@ services:
       CORS_ORIGIN: ${CORS_ORIGIN}
       LOG_LEVEL: info
       LOG_FORMAT: json
+      SERVICE_DOMAIN: ${SERVICE_DOMAIN}
     volumes:
       - /opt/bible-daily/logs:/app/logs
       - /opt/bible-daily/uploads:/app/uploads
@@ -187,11 +188,8 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
-      REACT_APP_API_URL: https://${DOMAIN}/api
-      REACT_APP_VERSION: ${BUILD_VERSION}
-      # Nginx SSL configuration
-      DOMAIN: ${DOMAIN:-bible-daily.com}
-      ADDITIONAL_DOMAINS: ${ADDITIONAL_DOMAINS:-www.bible-daily.com api.bible-daily.com}
+      VITE_API_BASE_URL: https://${SERVICE_DOMAIN}/api
+      VITE_APP_VERSION: ${BUILD_VERSION}
       SSL_CERT_PATH: /etc/letsencrypt/live/${DOMAIN}/fullchain.pem
       SSL_KEY_PATH: /etc/letsencrypt/live/${DOMAIN}/privkey.pem
       USE_LETSENCRYPT: "true"

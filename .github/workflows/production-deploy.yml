@@ -534,6 +534,7 @@ jobs:
             # CORS
             CORS_ORIGIN=${{ vars.CORS_ORIGIN }}
             DOMAIN=${{ vars.DOMAIN }}
+            SERVICE_DOMAIN=${{ vars.SERVICE_DOMAIN }}
 
             # Images
             BACKEND_IMAGE=${{ needs.build-backend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.BACKEND_IMAGE_NAME) }}
