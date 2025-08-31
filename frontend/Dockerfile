@@ -37,11 +37,11 @@ RUN pnpm build
 # Production stage - using nginx to serve static files
 FROM nginx:alpine AS production
 
-# Install curl for health checks
-RUN apk add --no-cache curl
+# Install curl for health checks and gettext for envsubst
+RUN apk add --no-cache curl gettext
 
-# Copy custom nginx configuration
-COPY frontend/nginx.conf /etc/nginx/nginx.conf
+# Copy nginx configuration template
+COPY frontend/nginx.conf.template /etc/nginx/nginx.conf.template
 
 # Copy built application from build stage
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
@@ -54,18 +54,70 @@ COPY --from=build /app/frontend/dist/sw.js /usr/share/nginx/html/
 RUN addgroup -g 1001 -S nginx-user
 RUN adduser -S nginx-user -u 1001 -G nginx-user
 
+# Create startup script
+RUN cat > /docker-entrypoint.sh << 'EOF'
+#!/bin/sh
+set -e
+
+# Set default values for environment variables
+export DOMAIN=${DOMAIN:-"_"}
+export ADDITIONAL_DOMAINS=${ADDITIONAL_DOMAINS:-""}
+export SSL_CERT_PATH=${SSL_CERT_PATH:-"/etc/letsencrypt/live/${DOMAIN}/fullchain.pem"}
+export SSL_KEY_PATH=${SSL_KEY_PATH:-"/etc/letsencrypt/live/${DOMAIN}/privkey.pem"}
+export USE_LETSENCRYPT=${USE_LETSENCRYPT:-"true"}
+
+# Create necessary directories
+mkdir -p /var/www/certbot
+mkdir -p /etc/ssl/certs /etc/ssl/private
+
+# Check if Let's Encrypt certificates exist
+if [ "$USE_LETSENCRYPT" = "true" ] && [ -f "$SSL_CERT_PATH" ] && [ -f "$SSL_KEY_PATH" ]; then
+    echo "Using Let's Encrypt certificates..."
+elif [ -f "/etc/ssl/custom/cert.pem" ] && [ -f "/etc/ssl/custom/key.pem" ]; then
+    echo "Using custom certificates..."
+    export SSL_CERT_PATH="/etc/ssl/custom/cert.pem"
+    export SSL_KEY_PATH="/etc/ssl/custom/key.pem"
+else
+    echo "No valid certificates found. Generating self-signed certificate..."
+    export SSL_CERT_PATH="/etc/ssl/certs/nginx-selfsigned.crt"
+    export SSL_KEY_PATH="/etc/ssl/private/nginx-selfsigned.key"
+    
+    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "$SSL_KEY_PATH" \
+        -out "$SSL_CERT_PATH" \
+        -subj "/C=KR/ST=Seoul/L=Seoul/O=Bible Daily/CN=${DOMAIN}"
+    chmod 600 "$SSL_KEY_PATH"
+    chmod 644 "$SSL_CERT_PATH"
+fi
+
+# Substitute environment variables in nginx config
+envsubst '${DOMAIN} ${ADDITIONAL_DOMAINS} ${SSL_CERT_PATH} ${SSL_KEY_PATH}' < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf
+
+# Test nginx configuration
+nginx -t
+
+# Start nginx
+exec nginx -g "daemon off;"
+EOF
+
+# Make the script executable
+RUN chmod +x /docker-entrypoint.sh
+
+# Install openssl for self-signed certificate generation
+RUN apk add --no-cache openssl
+
 # Change ownership of nginx directories
 RUN chown -R nginx-user:nginx-user /var/cache/nginx /var/run /var/log/nginx /usr/share/nginx/html
 
 # Switch to non-root user
 USER nginx-user
 
-# Expose port
-EXPOSE 80
+# Expose ports
+EXPOSE 80 443
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:80 || exit 1
+  CMD curl -f http://localhost:80 || curl -k -f https://localhost:443 || exit 1
 
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"]
+# Start nginx with environment variable substitution
+CMD ["/docker-entrypoint.sh"]

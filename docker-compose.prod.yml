@@ -153,10 +153,18 @@ services:
       NODE_ENV: production
       REACT_APP_API_URL: https://${DOMAIN}/api
       REACT_APP_VERSION: ${BUILD_VERSION}
+      # Nginx configuration
+      DOMAIN: ${DOMAIN:-bible-daily.com}
+      SSL_CERT_PATH: ${SSL_CERT_PATH:-/etc/ssl/certs/nginx-selfsigned.crt}
+      SSL_KEY_PATH: ${SSL_KEY_PATH:-/etc/ssl/private/nginx-selfsigned.key}
     volumes:
       - /opt/bible-daily/logs:/var/log/nginx
+      # SSL 인증서 볼륨 마운트 (실제 인증서 사용 시)
+      - ${HOST_SSL_CERT_PATH:-/dev/null}:${SSL_CERT_PATH:-/etc/ssl/certs/nginx-selfsigned.crt}:ro
+      - ${HOST_SSL_KEY_PATH:-/dev/null}:${SSL_KEY_PATH:-/etc/ssl/private/nginx-selfsigned.key}:ro
     ports:
       - "80:80"
+      - "443:443"
     networks:
       - bible-daily-prod-network
     depends_on:
