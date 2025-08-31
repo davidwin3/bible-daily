@@ -188,8 +188,17 @@ services:
     restart: unless-stopped
     environment:
       NODE_ENV: production
+      SERVICE_DOMAIN: ${SERVICE_DOMAIN}
       VITE_API_BASE_URL: https://${SERVICE_DOMAIN}/api
       VITE_APP_VERSION: ${BUILD_VERSION}
+      # Firebase Configuration
+      VITE_FIREBASE_API_KEY: ${VITE_FIREBASE_API_KEY}
+      VITE_FIREBASE_AUTH_DOMAIN: ${VITE_FIREBASE_AUTH_DOMAIN}
+      VITE_FIREBASE_PROJECT_ID: ${VITE_FIREBASE_PROJECT_ID}
+      VITE_FIREBASE_STORAGE_BUCKET: ${VITE_FIREBASE_STORAGE_BUCKET}
+      VITE_FIREBASE_MESSAGING_SENDER_ID: ${VITE_FIREBASE_MESSAGING_SENDER_ID}
+      VITE_FIREBASE_APP_ID: ${VITE_FIREBASE_APP_ID}
+      # SSL Configuration
       SSL_CERT_PATH: /etc/letsencrypt/live/${DOMAIN}/fullchain.pem
       SSL_KEY_PATH: /etc/letsencrypt/live/${DOMAIN}/privkey.pem
       USE_LETSENCRYPT: "true"
