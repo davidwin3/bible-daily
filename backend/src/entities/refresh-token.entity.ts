@@ -11,13 +11,12 @@ import {
 import { User } from './user.entity';
 
 @Entity('refresh_tokens')
-@Index(['token'])
 @Index(['userId'])
 export class RefreshToken {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'varchar', length: 500 })
   token: string;
 
   @Column()

@@ -6,22 +6,25 @@ export const getDatabaseConfig = (
 ): TypeOrmModuleOptions => {
   const isProduction = configService.get('NODE_ENV') === 'production';
 
-  return {
-    type: 'mysql',
+  const dbConfig = {
     host: configService.get('DB_HOST'),
-    port: configService.get('DB_PORT'),
+    port: parseInt(configService.get('DB_PORT') || '3306', 10),
     username: configService.get('DB_USERNAME'),
     password: configService.get('DB_PASSWORD'),
     database: configService.get('DB_DATABASE'),
+  };
+
+  console.log('🔍 Database connection config:', {
+    ...dbConfig,
+    password: '***', // 비밀번호는 숨김
+  });
+
+  return {
+    type: 'mysql',
+    ...dbConfig,
 
     // 연결 풀 최적화
     extra: {
-      // 연결 풀 설정
-      connectionLimit: isProduction ? 20 : 10, // 최대 연결 수
-      acquireTimeout: 30000, // 연결 획득 타임아웃 (30초)
-      timeout: 60000, // 쿼리 타임아웃 (60초)
-      reconnect: true, // 자동 재연결
-
       // MySQL 특화 설정
       charset: 'utf8mb4',
       timezone: '+09:00', // 한국 시간대
@@ -39,6 +42,10 @@ export const getDatabaseConfig = (
       }),
     },
 
+    // 연결 풀 설정 (TypeORM 레벨에서 관리)
+    poolSize: isProduction ? 20 : 10, // 최대 연결 수
+    connectTimeout: 30000, // 연결 타임아웃 (30초)
+
     // 엔티티 설정
     entities: [__dirname + '/../**/*.entity{.ts,.js}'],
 
@@ -50,20 +57,29 @@ export const getDatabaseConfig = (
     synchronize: !isProduction,
 
     // 로깅 설정
-    logging: isProduction ? ['error', 'warn'] : ['query', 'error', 'warn'],
+    logging: isProduction
+      ? ['error', 'warn']
+      : ['query', 'error', 'warn', 'info'],
     logger: 'advanced-console',
 
-    // 캐시 설정
-    cache: {
-      type: 'redis',
-      options: {
-        host: configService.get('REDIS_HOST', 'localhost'),
-        port: configService.get('REDIS_PORT', 6379),
-        password: configService.get('REDIS_PASSWORD'),
-        db: configService.get('REDIS_DB', 1), // 캐시용 DB
-      },
-      duration: 300000, // 5분 캐시
-    },
+    // 연결 재시도 설정
+    retryAttempts: 10,
+    retryDelay: 3000,
+
+    // 자동 엔티티 로드
+    autoLoadEntities: true,
+
+    // 캐시 설정 (일시적으로 비활성화)
+    // cache: {
+    //   type: 'redis',
+    //   options: {
+    //     host: configService.get('REDIS_HOST', 'localhost'),
+    //     port: configService.get('REDIS_PORT', 6379),
+    //     password: configService.get('REDIS_PASSWORD'),
+    //     db: configService.get('REDIS_DB', 1), // 캐시용 DB
+    //   },
+    //   duration: 300000, // 5분 캐시
+    // },
 
     // 성능 모니터링
     maxQueryExecutionTime: 1000, // 1초 이상 걸리는 쿼리 로깅
