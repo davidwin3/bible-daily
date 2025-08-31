@@ -1,0 +1,297 @@
+services:
+  # Certbot for Let's Encrypt SSL certificates
+  certbot:
+    image: certbot/certbot:latest
+    container_name: bible-daily-certbot
+    volumes:
+      # Let's Encrypt certificates
+      - certbot_certs:/etc/letsencrypt
+      # ACME challenge files
+      - certbot_www:/var/www/certbot
+      # Logs
+      - /opt/bible-daily/logs/certbot:/var/log/letsencrypt
+    environment:
+      # Email for Let's Encrypt notifications
+      CERTBOT_EMAIL: ${CERTBOT_EMAIL:-admin@bible-daily.com}
+      # Primary domain
+      DOMAIN: ${DOMAIN:-bible-daily.com}
+      # Additional domains (comma-separated)
+      ADDITIONAL_DOMAINS: ${ADDITIONAL_DOMAINS:-www.bible-daily.com,api.bible-daily.com}
+      # Staging mode for testing (set to 1 for staging)
+      CERTBOT_STAGING: ${CERTBOT_STAGING:-0}
+    command: >
+      sh -c "
+        # Wait for nginx to be ready
+        sleep 30 &&
+        
+        # Build domain list
+        DOMAIN_LIST=\"-d $${DOMAIN}\"
+        if [ ! -z \"$${ADDITIONAL_DOMAINS}\" ]; then
+          for domain in $$(echo $${ADDITIONAL_DOMAINS} | tr ',' ' '); do
+            DOMAIN_LIST=\"$${DOMAIN_LIST} -d $${domain}\"
+          done
+        fi
+        
+        # Set staging flag if needed
+        STAGING_FLAG=\"\"
+        if [ \"$${CERTBOT_STAGING}\" = \"1\" ]; then
+          STAGING_FLAG=\"--staging\"
+        fi
+        
+        # Check if certificate already exists
+        if [ ! -f \"/etc/letsencrypt/live/$${DOMAIN}/fullchain.pem\" ]; then
+          echo \"Obtaining SSL certificate for: $${DOMAIN_LIST}\"
+          certbot certonly \
+            --webroot \
+            --webroot-path=/var/www/certbot \
+            --email $${CERTBOT_EMAIL} \
+            --agree-tos \
+            --no-eff-email \
+            $${STAGING_FLAG} \
+            $${DOMAIN_LIST}
+        else
+          echo \"Certificate already exists for $${DOMAIN}\"
+        fi
+        
+        # Keep container running for renewal
+        trap exit TERM
+        while :; do
+          sleep 12h & wait $${!}
+          certbot renew --webroot --webroot-path=/var/www/certbot
+        done
+      "
+    networks:
+      - bible-daily-prod-network
+    restart: unless-stopped
+    depends_on:
+      - frontend
+
+  # Frontend with Let's Encrypt support
+  frontend:
+    image: ${FRONTEND_IMAGE:-ghcr.io/davidwin3/bible-daily/frontend:latest}
+    platform: linux/arm64
+    container_name: bible-daily-frontend-ssl
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      REACT_APP_API_URL: https://${DOMAIN}/api
+      REACT_APP_VERSION: ${BUILD_VERSION}
+      # Nginx SSL configuration
+      DOMAIN: ${DOMAIN:-bible-daily.com}
+      ADDITIONAL_DOMAINS: ${ADDITIONAL_DOMAINS:-www.bible-daily.com api.bible-daily.com}
+      SSL_CERT_PATH: /etc/letsencrypt/live/${DOMAIN}/fullchain.pem
+      SSL_KEY_PATH: /etc/letsencrypt/live/${DOMAIN}/privkey.pem
+      USE_LETSENCRYPT: "true"
+    volumes:
+      # Nginx logs
+      - /opt/bible-daily/logs/nginx:/var/log/nginx
+      # Let's Encrypt certificates (shared with certbot)
+      - certbot_certs:/etc/letsencrypt:ro
+      # ACME challenge files (shared with certbot)
+      - certbot_www:/var/www/certbot:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - bible-daily-prod-network
+    depends_on:
+      - backend
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80/health"]
+      timeout: 10s
+      retries: 3
+      interval: 30s
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.25"
+        reservations:
+          memory: 256M
+          cpus: "0.1"
+
+  # Backend API (same as production)
+  backend:
+    image: ${BACKEND_IMAGE:-ghcr.io/davidwin3/bible-daily/backend:latest}
+    platform: linux/arm64
+    container_name: bible-daily-backend-ssl
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DB_HOST: mysql
+      DB_PORT: ${DB_PORT}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_DATABASE: ${DB_DATABASE}
+      REDIS_HOST: redis
+      REDIS_PORT: ${REDIS_PORT}
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET}
+      FIREBASE_PROJECT_ID: ${FIREBASE_PROJECT_ID}
+      FIREBASE_PRIVATE_KEY_ID: ${FIREBASE_PRIVATE_KEY_ID}
+      FIREBASE_PRIVATE_KEY: ${FIREBASE_PRIVATE_KEY}
+      FIREBASE_CLIENT_EMAIL: ${FIREBASE_CLIENT_EMAIL}
+      FIREBASE_CLIENT_ID: ${FIREBASE_CLIENT_ID}
+      FIREBASE_AUTH_URI: ${FIREBASE_AUTH_URI:-https://accounts.google.com/o/oauth2/auth}
+      FIREBASE_TOKEN_URI: ${FIREBASE_TOKEN_URI:-https://oauth2.googleapis.com/token}
+      CORS_ORIGIN: ${CORS_ORIGIN}
+      LOG_LEVEL: info
+      LOG_FORMAT: json
+    volumes:
+      - /opt/bible-daily/logs/backend:/app/logs
+      - /opt/bible-daily/uploads:/app/uploads
+    ports:
+      - "3000:3000"
+    networks:
+      - bible-daily-prod-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:3000/health",
+        ]
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: "0.5"
+        reservations:
+          memory: 512M
+          cpus: "0.25"
+
+  # MySQL Database (same as production)
+  mysql:
+    image: mysql:8.0
+    platform: linux/arm64
+    container_name: bible-daily-mysql-ssl
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_DATABASE}
+      MYSQL_USER: ${DB_USERNAME}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_ssl_data:/var/lib/mysql
+      - ./backend/database/init:/docker-entrypoint-initdb.d
+      - /opt/bible-daily/backups:/backups
+    ports:
+      - "3306:3306"
+    networks:
+      - bible-daily-prod-network
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_unicode_ci
+      --innodb-buffer-pool-size=512M
+      --max-connections=200
+      --slow-query-log=1
+      --slow-query-log-file=/var/log/mysql/slow.log
+      --long-query-time=2
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD}",
+        ]
+      timeout: 20s
+      retries: 10
+      interval: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+        reservations:
+          memory: 512M
+
+  # Redis for caching and sessions (same as production)
+  redis:
+    image: redis:7-alpine
+    platform: linux/arm64
+    container_name: bible-daily-redis-ssl
+    restart: unless-stopped
+    command: >
+      redis-server
+      --requirepass ${REDIS_PASSWORD}
+      --maxmemory 256mb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+    volumes:
+      - redis_ssl_data:/data
+      - /opt/bible-daily/logs/redis:/var/log/redis
+    ports:
+      - "6379:6379"
+    networks:
+      - bible-daily-prod-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      timeout: 3s
+      retries: 5
+      interval: 30s
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+        reservations:
+          memory: 128M
+
+volumes:
+  # Let's Encrypt certificates
+  certbot_certs:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/bible-daily/ssl/letsencrypt
+
+  # ACME challenge files
+  certbot_www:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/bible-daily/ssl/www
+
+  # Database volumes
+  mysql_ssl_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/bible-daily/data/mysql
+
+  redis_ssl_data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/bible-daily/data/redis
+
+networks:
+  bible-daily-prod-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -28,6 +28,11 @@ on:
         required: false
         default: false
         type: boolean
+      use_ssl:
+        description: "SSL 인증서를 사용한 HTTPS 배포"
+        required: false
+        default: false
+        type: boolean
 
   # main 브랜치에 푸시될 때 자동 배포 (프로덕션 태그가 있는 경우)
   push:
@@ -39,6 +44,7 @@ on:
       - "backend/**"
       - "frontend/**"
       - "docker-compose.prod.yml"
+      - "docker-compose.ssl.yml"
       - ".github/workflows/production-deploy.yml"
 
 env:
@@ -78,6 +84,7 @@ jobs:
             frontend:
               - 'frontend/**'
               - 'docker-compose.prod.yml'
+              - 'docker-compose.ssl.yml'
 
       - name: Determine deployment targets
         id: deploy
@@ -443,12 +450,18 @@ jobs:
             mkdir -p /opt/bible-daily/uploads
             mkdir -p /opt/bible-daily/backups
 
+            # Create SSL directories for Let's Encrypt
+            mkdir -p /opt/bible-daily/ssl/letsencrypt
+            mkdir -p /opt/bible-daily/ssl/www
+
             # Set proper permissions
             chmod 755 /opt/bible-daily/data/mysql
             chmod 755 /opt/bible-daily/data/redis
             chmod 755 /opt/bible-daily/logs
             chmod 755 /opt/bible-daily/uploads
             chmod 755 /opt/bible-daily/backups
+            chmod 755 /opt/bible-daily/ssl/letsencrypt
+            chmod 755 /opt/bible-daily/ssl/www
 
             # Ensure MySQL data directory has correct ownership for container
             # MySQL container runs as mysql user (uid 999)
@@ -463,7 +476,7 @@ jobs:
           host: ${{ secrets.ORACLE_CLOUD_SERVER_IP }}
           username: ${{ secrets.ORACLE_CLOUD_USER }}
           key: ${{ secrets.ORACLE_CLOUD_SSH_KEY }}
-          source: "docker-compose.prod.yml,deployment/"
+          source: "docker-compose.prod.yml,docker-compose.ssl.yml,deployment/"
           target: "/opt/bible-daily/"
 
       - name: Deploy services to production
@@ -541,6 +554,12 @@ jobs:
 
             # Version
             BUILD_VERSION=${{ needs.setup.outputs.version }}
+
+            # SSL Configuration
+            USE_SSL=${{ github.event.inputs.use_ssl }}
+            CERTBOT_EMAIL=${{ secrets.CERTBOT_EMAIL }}
+            ADDITIONAL_DOMAINS=${{ secrets.ADDITIONAL_DOMAINS }}
+            CERTBOT_STAGING=${{ secrets.CERTBOT_STAGING }}
             EOF
 
             # Login to GHCR
@@ -557,34 +576,68 @@ jobs:
               docker pull ${{ needs.build-frontend.outputs.image || format('{0}/{1}:latest', env.REGISTRY, env.FRONTEND_IMAGE_NAME) }}
             fi
 
+            # Determine which docker-compose file to use
+            COMPOSE_FILE="docker-compose.prod.yml"
+            if [ "$USE_SSL" = "true" ]; then
+              COMPOSE_FILE="docker-compose.ssl.yml"
+              echo "🔒 Using SSL configuration with Let's Encrypt"
+            else
+              echo "🌐 Using standard HTTP configuration"
+            fi
+
             # Check and create Docker volumes if needed
             echo "🔍 Checking Docker volumes..."
-            if ! docker volume ls | grep -q "bible-daily_mysql_prod_data"; then
-              echo "📦 Creating MySQL volume..."
-              docker volume create bible-daily_mysql_prod_data
-            fi
-            if ! docker volume ls | grep -q "bible-daily_redis_prod_data"; then
-              echo "📦 Creating Redis volume..."
-              docker volume create bible-daily_redis_prod_data
+            if [ "$USE_SSL" = "true" ]; then
+              # SSL volumes
+              if ! docker volume ls | grep -q "bible-daily_mysql_ssl_data"; then
+                echo "📦 Creating MySQL SSL volume..."
+                docker volume create bible-daily_mysql_ssl_data
+              fi
+              if ! docker volume ls | grep -q "bible-daily_redis_ssl_data"; then
+                echo "📦 Creating Redis SSL volume..."
+                docker volume create bible-daily_redis_ssl_data
+              fi
+              if ! docker volume ls | grep -q "bible-daily_certbot_certs"; then
+                echo "📦 Creating Certbot certs volume..."
+                docker volume create bible-daily_certbot_certs
+              fi
+              if ! docker volume ls | grep -q "bible-daily_certbot_www"; then
+                echo "📦 Creating Certbot www volume..."
+                docker volume create bible-daily_certbot_www
+              fi
+            else
+              # Standard volumes
+              if ! docker volume ls | grep -q "bible-daily_mysql_prod_data"; then
+                echo "📦 Creating MySQL volume..."
+                docker volume create bible-daily_mysql_prod_data
+              fi
+              if ! docker volume ls | grep -q "bible-daily_redis_prod_data"; then
+                echo "📦 Creating Redis volume..."
+                docker volume create bible-daily_redis_prod_data
+              fi
             fi
 
             # Deploy services
             if [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ] && [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
               echo '🚀 Deploying all services...'
-              docker-compose -f docker-compose.prod.yml --env-file .env.production up -d
+              docker-compose -f $COMPOSE_FILE --env-file .env.production up -d
             elif [ '${{ needs.setup.outputs.deploy_backend }}' = 'true' ]; then
               echo '🚀 Deploying backend service...'
-              docker-compose -f docker-compose.prod.yml --env-file .env.production up -d mysql redis backend
+              docker-compose -f $COMPOSE_FILE --env-file .env.production up -d mysql redis backend
             elif [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
               echo '🚀 Deploying frontend service...'
-              docker-compose -f docker-compose.prod.yml --env-file .env.production up -d frontend
+              if [ "$USE_SSL" = "true" ]; then
+                docker-compose -f $COMPOSE_FILE --env-file .env.production up -d frontend certbot
+              else
+                docker-compose -f $COMPOSE_FILE --env-file .env.production up -d frontend
+              fi
             fi
 
             # Wait for services to start
             sleep 30
 
             # Show running containers
-            docker-compose -f docker-compose.prod.yml ps
+            docker-compose -f $COMPOSE_FILE ps
 
       - name: Run database migrations (if backend deployed)
         if: needs.setup.outputs.deploy_backend == 'true'
@@ -599,10 +652,19 @@ jobs:
             set -e  # Exit on any error
             cd /opt/bible-daily
 
+            # Determine compose file
+            COMPOSE_FILE="docker-compose.prod.yml"
+            if [ -f .env.production ]; then
+              source .env.production
+              if [ "$USE_SSL" = "true" ]; then
+                COMPOSE_FILE="docker-compose.ssl.yml"
+              fi
+            fi
+
             # Run migrations with retry logic
             echo "🔄 Running database migrations..."
             for i in {1..3}; do
-              if docker-compose -f docker-compose.prod.yml --env-file .env.production exec -T backend npm run migration:run; then
+              if docker-compose -f $COMPOSE_FILE --env-file .env.production exec -T backend npm run migration:run; then
                 echo "✅ Database migrations completed successfully"
                 break
               else
@@ -628,6 +690,15 @@ jobs:
             set -e  # Exit on any error
             cd /opt/bible-daily
 
+            # Determine compose file
+            COMPOSE_FILE="docker-compose.prod.yml"
+            if [ -f .env.production ]; then
+              source .env.production
+              if [ "$USE_SSL" = "true" ]; then
+                COMPOSE_FILE="docker-compose.ssl.yml"
+              fi
+            fi
+
             # Wait for services to be ready
             echo "⏳ Waiting for services to be ready..."
             sleep 60
@@ -647,9 +718,17 @@ jobs:
             # Check frontend health
             if [ '${{ needs.setup.outputs.deploy_frontend }}' = 'true' ]; then
               for i in {1..10}; do
-                if curl -f http://localhost:80; then
-                  echo '✅ Frontend health check passed'
-                  break
+                # Try HTTPS first if SSL is enabled, fallback to HTTP
+                if [ "$USE_SSL" = "true" ]; then
+                  if curl -f -k https://localhost:443 || curl -f http://localhost:80; then
+                    echo '✅ Frontend health check passed'
+                    break
+                  fi
+                else
+                  if curl -f http://localhost:80; then
+                    echo '✅ Frontend health check passed'
+                    break
+                  fi
                 fi
                 echo "Frontend health check attempt $i failed, retrying in 10s..."
                 sleep 10
@@ -657,7 +736,7 @@ jobs:
             fi
 
             # Show final status
-            docker-compose -f docker-compose.prod.yml ps
+            docker-compose -f $COMPOSE_FILE ps
             docker system df
 
             # Cleanup old images to save disk space
@@ -778,6 +857,11 @@ jobs:
                       "short": true
                     },
                     {
+                      "title": "SSL Configuration",
+                      "value": "${{ github.event.inputs.use_ssl == 'true' && '🔒 HTTPS with Lets Encrypt' || '🌐 HTTP Only' }}",
+                      "short": true
+                    },
+                    {
                       "title": "Branch",
                       "value": "${{ github.ref_name }}",
                       "short": true
@@ -824,6 +908,11 @@ jobs:
             echo "**Deployment Type:** ⚡ **Skip Tests** (테스트 건너뜀)" >> $GITHUB_STEP_SUMMARY
           else
             echo "**Deployment Type:** ✅ **Normal** (정상 배포)" >> $GITHUB_STEP_SUMMARY
+          fi
+          if [ "${{ github.event.inputs.use_ssl }}" = "true" ]; then
+            echo "**SSL Configuration:** 🔒 **HTTPS with Lets Encrypt**" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**SSL Configuration:** 🌐 **HTTP Only**" >> $GITHUB_STEP_SUMMARY
           fi
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Services Deployed" >> $GITHUB_STEP_SUMMARY
