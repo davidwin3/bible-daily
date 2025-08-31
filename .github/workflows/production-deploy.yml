@@ -471,7 +471,7 @@ jobs:
           host: ${{ secrets.ORACLE_CLOUD_SERVER_IP }}
           username: ${{ secrets.ORACLE_CLOUD_USER }}
           key: ${{ secrets.ORACLE_CLOUD_SSH_KEY }}
-          source: "docker-compose.prod.yml,docker-compose.ssl.yml,deployment/"
+          source: "docker-compose.prod.yml,docker-compose.ssl.yml,deployment/,scripts/"
           target: "/opt/bible-daily/"
 
       - name: Deploy services to production
@@ -486,17 +486,21 @@ jobs:
             set -e  # Exit on any error
             cd /opt/bible-daily
 
-            # Ensure all required directories exist with proper permissions
-            echo "🔧 Ensuring all required directories exist..."
-            mkdir -p /opt/bible-daily/data/mysql
-            mkdir -p /opt/bible-daily/data/redis
-            mkdir -p /opt/bible-daily/logs
-            mkdir -p /opt/bible-daily/uploads
-            mkdir -p /opt/bible-daily/backups
-
-            # Set proper ownership for container users
-            sudo chown -R 999:999 /opt/bible-daily/data/mysql 2>/dev/null || true
-            sudo chown -R 999:999 /opt/bible-daily/data/redis 2>/dev/null || true
+            # Run fix-permissions script to ensure all directories and permissions are set correctly
+            echo "🔧 Running fix-permissions script..."
+            if [ -f scripts/fix-permissions.sh ]; then
+              chmod +x scripts/fix-permissions.sh
+              ./scripts/fix-permissions.sh
+            else
+              echo "⚠️ fix-permissions.sh not found, creating directories manually..."
+              mkdir -p /opt/bible-daily/data/mysql
+              mkdir -p /opt/bible-daily/data/redis
+              mkdir -p /opt/bible-daily/logs
+              mkdir -p /opt/bible-daily/uploads
+              mkdir -p /opt/bible-daily/backups
+              sudo chown -R 999:999 /opt/bible-daily/data/mysql 2>/dev/null || true
+              sudo chown -R 999:999 /opt/bible-daily/data/redis 2>/dev/null || true
+            fi
 
             # Verify directories exist
             ls -la /opt/bible-daily/data/
