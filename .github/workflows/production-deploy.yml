@@ -647,12 +647,29 @@ jobs:
             set -e  # Exit on any error
             cd /opt/bible-daily
 
-            # Determine compose file
-            COMPOSE_FILE="docker-compose.prod.yml"
-            if [ -f .env.production ]; then
-              source .env.production
-              if [ "$USE_SSL" = "true" ]; then
+            # Validate environment file and determine compose file
+            if [ -f scripts/validate-env.sh ]; then
+              # Use validation script if available
+              chmod +x scripts/validate-env.sh
+              ./scripts/validate-env.sh .env.production || echo "Environment validation completed with warnings"
+              
+              # Check SSL configuration using the script
+              SSL_CONFIG=$(./scripts/validate-env.sh --check-ssl .env.production)
+              if [ "$SSL_CONFIG" = "ssl" ]; then
                 COMPOSE_FILE="docker-compose.ssl.yml"
+                echo "Using SSL configuration: $COMPOSE_FILE"
+              else
+                COMPOSE_FILE="docker-compose.prod.yml"
+                echo "Using standard configuration: $COMPOSE_FILE"
+              fi
+            else
+              # Fallback to simple validation
+              COMPOSE_FILE="docker-compose.prod.yml"
+              if [ -f .env.production ]; then
+                if grep -q "^USE_SSL=true" .env.production 2>/dev/null; then
+                  COMPOSE_FILE="docker-compose.ssl.yml"
+                  echo "Using SSL configuration: $COMPOSE_FILE"
+                fi
               fi
             fi
 
@@ -668,12 +685,29 @@ jobs:
             set -e  # Exit on any error
             cd /opt/bible-daily
 
-            # Determine compose file
-            COMPOSE_FILE="docker-compose.prod.yml"
-            if [ -f .env.production ]; then
-              source .env.production
-              if [ "$USE_SSL" = "true" ]; then
+            # Validate environment file and determine compose file
+            if [ -f scripts/validate-env.sh ]; then
+              # Use validation script if available
+              chmod +x scripts/validate-env.sh
+              ./scripts/validate-env.sh .env.production || echo "Environment validation completed with warnings"
+              
+              # Check SSL configuration using the script
+              SSL_CONFIG=$(./scripts/validate-env.sh --check-ssl .env.production)
+              if [ "$SSL_CONFIG" = "ssl" ]; then
                 COMPOSE_FILE="docker-compose.ssl.yml"
+                echo "Using SSL configuration: $COMPOSE_FILE"
+              else
+                COMPOSE_FILE="docker-compose.prod.yml"
+                echo "Using standard configuration: $COMPOSE_FILE"
+              fi
+            else
+              # Fallback to simple validation
+              COMPOSE_FILE="docker-compose.prod.yml"
+              if [ -f .env.production ]; then
+                if grep -q "^USE_SSL=true" .env.production 2>/dev/null; then
+                  COMPOSE_FILE="docker-compose.ssl.yml"
+                  echo "Using SSL configuration: $COMPOSE_FILE"
+                fi
               fi
             fi
 
