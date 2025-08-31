@@ -54,6 +54,9 @@ COPY --from=build /app/frontend/dist/sw.js /usr/share/nginx/html/
 RUN addgroup -g 1001 -S nginx-user
 RUN adduser -S nginx-user -u 1001 -G nginx-user
 
+# Create necessary directories first (before switching to non-root user)
+RUN mkdir -p /var/www/certbot /etc/ssl/certs /etc/ssl/private
+
 # Create startup script
 RUN cat > /docker-entrypoint.sh << 'EOF'
 #!/bin/sh
@@ -66,9 +69,8 @@ export SSL_CERT_PATH=${SSL_CERT_PATH:-"/etc/letsencrypt/live/${DOMAIN}/fullchain
 export SSL_KEY_PATH=${SSL_KEY_PATH:-"/etc/letsencrypt/live/${DOMAIN}/privkey.pem"}
 export USE_LETSENCRYPT=${USE_LETSENCRYPT:-"true"}
 
-# Create necessary directories
-mkdir -p /var/www/certbot
-mkdir -p /etc/ssl/certs /etc/ssl/private
+# Ensure directories exist (in case they were not mounted properly)
+mkdir -p /var/www/certbot /etc/ssl/certs /etc/ssl/private 2>/dev/null || true
 
 # Check if Let's Encrypt certificates exist
 if [ "$USE_LETSENCRYPT" = "true" ] && [ -f "$SSL_CERT_PATH" ] && [ -f "$SSL_KEY_PATH" ]; then
@@ -96,6 +98,9 @@ envsubst '${DOMAIN} ${ADDITIONAL_DOMAINS} ${SSL_CERT_PATH} ${SSL_KEY_PATH}' < /e
 # Test nginx configuration
 nginx -t
 
+# Ensure proper ownership of runtime directories
+chown -R nginx-user:nginx-user /var/cache/nginx /var/run /var/log/nginx /var/www/certbot 2>/dev/null || true
+
 # Start nginx
 exec nginx -g "daemon off;"
 EOF
@@ -106,11 +111,12 @@ RUN chmod +x /docker-entrypoint.sh
 # Install openssl for self-signed certificate generation
 RUN apk add --no-cache openssl
 
-# Change ownership of nginx directories
-RUN chown -R nginx-user:nginx-user /var/cache/nginx /var/run /var/log/nginx /usr/share/nginx/html
+# Change ownership of nginx directories and certbot directory
+RUN chown -R nginx-user:nginx-user /var/cache/nginx /var/run /var/log/nginx /usr/share/nginx/html /var/www/certbot /etc/ssl/certs /etc/ssl/private
 
-# Switch to non-root user
-USER nginx-user
+# Note: We don't switch to non-root user here because we need root privileges 
+# to create directories and manage SSL certificates in the entrypoint script
+# The nginx process itself will run as nginx-user
 
 # Expose ports
 EXPOSE 80 443
