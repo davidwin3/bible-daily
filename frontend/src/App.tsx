@@ -17,6 +17,7 @@ import { AdminDashboardPage } from "@/pages/AdminDashboardPage";
 import { AdminMissionsPage } from "@/pages/AdminMissionsPage";
 import { AdminCellsPage } from "@/pages/AdminCellsPage";
 import { AdminUsersPage } from "@/pages/AdminUsersPage";
+import { EmailAuthCallbackPage } from "@/pages/EmailAuthCallbackPage";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 
@@ -41,6 +42,7 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/auth/email-callback" element={<EmailAuthCallbackPage />} />
             <Route path="/" element={<Layout />}>
               <Route index element={<HomePage />} />
               <Route path="posts" element={<PostsPage />} />

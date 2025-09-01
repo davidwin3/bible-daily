@@ -4,9 +4,13 @@
   "description": "중고등학생을 위한 성경말씀 소감 공유 플랫폼",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
   "background_color": "#ffffff",
-  "theme_color": "#2563eb",
+  "theme_color": "#f97316",
   "orientation": "portrait-primary",
+  "scope": "/",
+  "id": "bible-daily-pwa",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/vite.svg",
@@ -23,6 +27,7 @@
   ],
   "categories": ["education", "lifestyle", "social"],
   "lang": "ko",
+  "dir": "ltr",
   "screenshots": [],
   "shortcuts": [
     {
@@ -48,6 +53,12 @@
           "sizes": "96x96"
         }
       ]
+    }
+  ],
+  "protocol_handlers": [
+    {
+      "protocol": "web+bible-daily",
+      "url": "/?action=%s"
     }
   ]
 }
