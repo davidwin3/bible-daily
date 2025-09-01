@@ -8,6 +8,7 @@ import { HomePage } from "@/pages/HomePage";
 import { PostsPage } from "@/pages/PostsPage";
 import { PostDetailPage } from "@/pages/PostDetailPage";
 import { CreatePostPage } from "@/pages/CreatePostPage";
+import { EditPostPage } from "@/pages/EditPostPage";
 import { MissionsPage } from "@/pages/MissionsPage";
 import { ProfilePage } from "@/pages/ProfilePage";
 import { CellsPage } from "@/pages/CellsPage";
@@ -50,6 +51,14 @@ function App() {
                 element={
                   <ProtectedRoute>
                     <CreatePostPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="posts/:id/edit"
+                element={
+                  <ProtectedRoute>
+                    <EditPostPage />
                   </ProtectedRoute>
                 }
               />
