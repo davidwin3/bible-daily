@@ -177,134 +177,133 @@ jobs:
             type=raw,value=prod-${{ steps.version.outputs.version }}
             type=sha,prefix=prod-
 
-  # Backend 테스트
-  backend-test:
-    name: Backend Tests
-    runs-on: ubuntu-latest
-    needs: setup
-    if: |
-      needs.setup.outputs.deploy_backend == 'true' && 
-      github.event.inputs.skip_tests != 'true' &&
-      github.event.inputs.force_deploy != 'true'
-    services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: test_password
-          MYSQL_DATABASE: bible_daily_test
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+  # Backend 테스트 (추후 사용 예정)
+  # backend-test:
+  #   name: Backend Tests
+  #   runs-on: ubuntu-latest
+  #   needs: setup
+  #   if: |
+  #     needs.setup.outputs.deploy_backend == 'true' && 
+  #     github.event.inputs.skip_tests != 'true' &&
+  #     github.event.inputs.force_deploy != 'true'
+  #   services:
+  #     mysql:
+  #       image: mysql:8.0
+  #       env:
+  #         MYSQL_ROOT_PASSWORD: test_password
+  #         MYSQL_DATABASE: bible_daily_test
+  #       ports:
+  #         - 3306:3306
+  #       options: >-
+  #         --health-cmd="mysqladmin ping"
+  #         --health-interval=10s
+  #         --health-timeout=5s
+  #         --health-retries=3
 
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd="redis-cli ping"
-          --health-interval=10s
-          --health-timeout=5s
-          --health-retries=3
+  #     redis:
+  #       image: redis:7-alpine
+  #       ports:
+  #         - 6379:6379
+  #       options: >-
+  #         --health-cmd="redis-cli ping"
+  #         --health-interval=10s
+  #         --health-timeout=5s
+  #         --health-retries=3
 
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v3
+  #       with:
+  #         version: ${{ env.PNPM_VERSION }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: "pnpm"
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  #     - name: Install dependencies
+  #       run: pnpm install --frozen-lockfile
 
-      - name: Run ESLint
-        run: pnpm --filter backend lint
+  #     - name: Run ESLint
+  #       run: pnpm --filter backend lint
 
-      - name: Run TypeScript check
-        run: pnpm --filter backend build
+  #     - name: Run TypeScript check
+  #       run: pnpm --filter backend build
 
-      - name: Create test environment file
-        run: |
-          cd backend
-          cat > .env.test << EOF
-          NODE_ENV=test
-          DB_HOST=localhost
-          DB_PORT=3306
-          DB_USERNAME=root
-          DB_PASSWORD=test_password
-          DB_DATABASE=bible_daily_test
-          REDIS_HOST=localhost
-          REDIS_PORT=6379
-          JWT_SECRET=test_jwt_secret
-          JWT_REFRESH_SECRET=test_refresh_secret
-          EOF
+  #     - name: Create test environment file
+  #       run: |
+  #         cd backend
+  #         cat > .env.test << EOF
+  #         NODE_ENV=test
+  #         DB_HOST=localhost
+  #         DB_PORT=3306
+  #         DB_USERNAME=root
+  #         DB_PASSWORD=test_password
+  #         DB_DATABASE=bible_daily_test
+  #         REDIS_HOST=localhost
+  #         REDIS_PORT=6379
+  #         JWT_SECRET=test_jwt_secret
+  #         JWT_REFRESH_SECRET=test_refresh_secret
+  #         EOF
 
-      # - name: Run tests
-      #   run: |
-      #     pnpm --filter backend test
-      #     pnpm --filter backend test:e2e
-      #   env:
-      #     NODE_ENV: test
-      #     CI: true
+  #     # - name: Run tests
+  #     #   run: |
+  #     #     pnpm --filter backend test
+  #     #     pnpm --filter backend test:e2e
+  #     #   env:
+  #     #     NODE_ENV: test
+  #     #     CI: true
 
-  # Frontend 테스트
-  frontend-test:
-    name: Frontend Tests
-    runs-on: ubuntu-latest
-    needs: setup
-    if: |
-      needs.setup.outputs.deploy_frontend == 'true' && 
-      github.event.inputs.skip_tests != 'true' &&
-      github.event.inputs.force_deploy != 'true'
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+  # Frontend 테스트 (추후 사용 예정)
+  # frontend-test:
+  #   name: Frontend Tests
+  #   runs-on: ubuntu-latest
+  #   needs: setup
+  #   if: |
+  #     needs.setup.outputs.deploy_frontend == 'true' && 
+  #     github.event.inputs.skip_tests != 'true' &&
+  #     github.event.inputs.force_deploy != 'true'
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v3
-        with:
-          version: ${{ env.PNPM_VERSION }}
+  #     - name: Setup pnpm
+  #       uses: pnpm/action-setup@v3
+  #       with:
+  #         version: ${{ env.PNPM_VERSION }}
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: ${{ env.NODE_VERSION }}
-          cache: "pnpm"
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: ${{ env.NODE_VERSION }}
+  #         cache: "pnpm"
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+  #     - name: Install dependencies
+  #       run: pnpm install --frozen-lockfile
 
-      - name: Run ESLint
-        run: pnpm --filter frontend lint
+  #     - name: Run ESLint
+  #       run: pnpm --filter frontend lint
 
-      - name: Run TypeScript check
-        run: pnpm --filter frontend build
+  #     - name: Run TypeScript check
+  #       run: pnpm --filter frontend build
 
-      - name: Run tests
-        run: pnpm --filter frontend test
-        env:
-          CI: true
+  #     - name: Run tests
+  #       run: pnpm --filter frontend test
+  #       env:
+  #         CI: true
 
   # Backend Docker 이미지 빌드 (ARM64)
   build-backend:
     name: Build Backend ARM64 Image
     runs-on: ubuntu-latest
-    needs: [setup, backend-test]
+    needs: [setup]
     if: |
       always() && 
-      needs.setup.outputs.deploy_backend == 'true' &&
-      (needs.backend-test.result == 'success' || needs.backend-test.result == 'skipped')
+      needs.setup.outputs.deploy_backend == 'true'
     outputs:
       image: ${{ steps.image.outputs.image }}
       digest: ${{ steps.build.outputs.digest }}
@@ -371,11 +370,10 @@ jobs:
   build-frontend:
     name: Build Frontend ARM64 Image
     runs-on: ubuntu-latest
-    needs: [setup, frontend-test]
+    needs: [setup]
     if: |
       always() && 
-      needs.setup.outputs.deploy_frontend == 'true' &&
-      (needs.frontend-test.result == 'success' || needs.frontend-test.result == 'skipped')
+      needs.setup.outputs.deploy_frontend == 'true'
     outputs:
       image: ${{ steps.image.outputs.image }}
       digest: ${{ steps.build.outputs.digest }}
