@@ -7,6 +7,17 @@ import { UserMission } from '../entities/user-mission.entity';
 import { Post } from '../entities/post.entity';
 import * as admin from 'firebase-admin';
 
+interface MissionStatRaw {
+  userId: string;
+  recentMissions: string;
+  completedMissions: string;
+}
+
+interface PostCountRaw {
+  authorId: string;
+  totalPosts: string;
+}
+
 @Injectable()
 export class UsersService {
   constructor(
@@ -87,6 +98,7 @@ export class UsersService {
 
   // Admin only methods
   async getAllUsersForAdmin() {
+    // 기본 사용자 정보 조회
     const users = await this.usersRepository.find({
       select: [
         'id',
@@ -101,53 +113,90 @@ export class UsersService {
       order: { createdAt: 'DESC' },
     });
 
-    // 각 사용자의 활동 통계 추가
-    const usersWithStats: any[] = [];
-    for (const user of users) {
-      const cellMembership = await this.cellMembersRepository.findOne({
-        where: { userId: user.id, isActive: true },
-        relations: ['cell'],
-        select: {
-          cell: {
-            id: true,
-            name: true,
-          },
+    // 30일 전 날짜 계산
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+
+    // 활성 셀 멤버십 정보를 한 번에 조회
+    const activeCellMemberships = await this.cellMembersRepository
+      .createQueryBuilder('cellMember')
+      .leftJoinAndSelect('cellMember.cell', 'cell')
+      .select(['cellMember.userId', 'cell.id', 'cell.name'])
+      .where('cellMember.isActive = :isActive', { isActive: true })
+      .getMany();
+
+    // 모든 사용자의 미션 통계를 한 번에 조회
+    const missionStats = await this.userMissionsRepository
+      .createQueryBuilder('userMission')
+      .select([
+        'userMission.userId',
+        'COUNT(*) as recentMissions',
+        'SUM(CASE WHEN userMission.isCompleted = true THEN 1 ELSE 0 END) as completedMissions',
+      ])
+      .where('userMission.createdAt >= :thirtyDaysAgo', { thirtyDaysAgo })
+      .groupBy('userMission.userId')
+      .getRawMany<MissionStatRaw>();
+
+    // 모든 사용자의 게시물 수를 한 번에 조회
+    const postCounts = await this.postsRepository
+      .createQueryBuilder('post')
+      .select(['post.authorId', 'COUNT(*) as totalPosts'])
+      .where('post.isDeleted = false')
+      .groupBy('post.authorId')
+      .getRawMany<PostCountRaw>();
+
+    // 통계 데이터를 Map으로 변환하여 빠른 조회
+    const cellMembershipMap = new Map(
+      activeCellMemberships.map((membership) => [
+        membership.userId,
+        membership.cell,
+      ]),
+    );
+
+    const missionStatsMap = new Map(
+      missionStats.map((stat) => [
+        stat.userId,
+        {
+          recentMissions: parseInt(stat.recentMissions, 10),
+          completedMissions: parseInt(stat.completedMissions, 10),
         },
-      });
+      ]),
+    );
 
-      const recentMissions = await this.userMissionsRepository.count({
-        where: {
-          userId: user.id,
-          createdAt: MoreThanOrEqual(
-            new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          ),
-        },
-      });
+    const postCountsMap = new Map(
+      postCounts.map((count) => [
+        count.authorId,
+        parseInt(count.totalPosts, 10),
+      ]),
+    );
 
-      const completedMissions = await this.userMissionsRepository.count({
-        where: {
-          userId: user.id,
-          isCompleted: true,
-          createdAt: MoreThanOrEqual(
-            new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
-          ),
-        },
-      });
+    // 결과 조합
+    const usersWithStats = users.map((user) => {
+      const missionStat = missionStatsMap.get(user.id) || {
+        recentMissions: 0,
+        completedMissions: 0,
+      };
+      const totalPosts = postCountsMap.get(user.id) || 0;
+      const cellInfo = cellMembershipMap.get(user.id) || null;
 
-      const totalPosts = await this.postsRepository.count({
-        where: { authorId: user.id, isDeleted: false },
-      });
-
-      usersWithStats.push({
-        ...user,
-        cellInfo: cellMembership?.cell || null,
-        recentMissions,
-        completedMissions,
+      return {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        profileImage: user.profileImage,
+        role: user.role,
+        isActive: user.isActive,
+        createdAt: user.createdAt,
+        lastLoginAt: user.lastLoginAt,
+        cellInfo,
+        recentMissions: missionStat.recentMissions,
+        completedMissions: missionStat.completedMissions,
         completionRate:
-          recentMissions > 0 ? (completedMissions / recentMissions) * 100 : 0,
+          missionStat.recentMissions > 0
+            ? (missionStat.completedMissions / missionStat.recentMissions) * 100
+            : 0,
         totalPosts,
-      });
-    }
+      };
+    });
 
     return usersWithStats;
   }

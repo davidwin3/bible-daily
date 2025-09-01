@@ -15,12 +15,8 @@ export class CompressionInterceptor implements NestInterceptor {
 
     return next.handle().pipe(
       map((data) => {
-        // 응답 크기가 1KB 이상일 때만 압축 헤더 설정
-        const dataSize = JSON.stringify(data).length;
-
-        if (dataSize > 1024) {
-          response.setHeader('Content-Encoding', 'gzip');
-        }
+        // compression() 미들웨어가 이미 압축을 처리하므로
+        // Content-Encoding 헤더를 수동으로 설정하지 않음
 
         // 캐시 헤더 설정
         if (this.isCacheable(context)) {
@@ -53,4 +49,3 @@ export class CompressionInterceptor implements NestInterceptor {
     return `"${Buffer.from(content).toString('base64').slice(0, 16)}"`;
   }
 }
-
