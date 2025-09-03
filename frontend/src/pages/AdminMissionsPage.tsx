@@ -209,45 +209,54 @@ export const AdminMissionsPage: React.FC = () => {
   return (
     <>
       <AdminNav />
-      <div className="container mx-auto px-4 py-8 pb-20">
-        <div className="flex justify-between items-center mb-8">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">미션 관리</h1>
-            <p className="text-gray-600">일일 성경 읽기 미션을 관리하세요.</p>
+      <div className="container mx-auto px-3 sm:px-4 py-4 sm:py-8 pb-20">
+        {/* 모바일 최적화된 헤더 */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+                미션 관리
+              </h1>
+              <p className="text-sm sm:text-base text-gray-600">
+                일일 성경 읽기 미션을 관리하세요.
+              </p>
+            </div>
+            <Dialog
+              open={isCreateDialogOpen}
+              onOpenChange={setIsCreateDialogOpen}
+            >
+              <DialogTrigger asChild>
+                <Button className="w-full sm:w-auto">
+                  <Plus className="h-4 w-4 mr-2" />새 미션 추가
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="w-[95vw] max-w-4xl h-[90vh] sm:max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>새 미션 추가</DialogTitle>
+                </DialogHeader>
+                <MissionForm
+                  formData={formData}
+                  setFormData={setFormData}
+                  onSubmit={handleCreate}
+                  isLoading={createMission.isPending}
+                  submitText="미션 생성"
+                />
+              </DialogContent>
+            </Dialog>
           </div>
-          <Dialog
-            open={isCreateDialogOpen}
-            onOpenChange={setIsCreateDialogOpen}
-          >
-            <DialogTrigger asChild>
-              <Button>
-                <Plus className="h-4 w-4 mr-2" />새 미션 추가
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>새 미션 추가</DialogTitle>
-              </DialogHeader>
-              <MissionForm
-                formData={formData}
-                setFormData={setFormData}
-                onSubmit={handleCreate}
-                isLoading={createMission.isPending}
-                submitText="미션 생성"
-              />
-            </DialogContent>
-          </Dialog>
         </div>
 
-        {/* 필터 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg">필터</CardTitle>
+        {/* 필터 - 모바일 최적화 */}
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="pb-3 sm:pb-6">
+            <CardTitle className="text-base sm:text-lg">필터</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <CardContent className="pt-0">
+            <div className="space-y-4 sm:grid sm:grid-cols-1 md:grid-cols-3 sm:gap-4 sm:space-y-0">
               <div>
-                <Label htmlFor="month">월별 조회</Label>
+                <Label htmlFor="month" className="text-sm font-medium">
+                  월별 조회
+                </Label>
                 <Input
                   id="month"
                   type="month"
@@ -255,81 +264,96 @@ export const AdminMissionsPage: React.FC = () => {
                   onChange={(e) =>
                     setFilters({ ...filters, month: e.target.value })
                   }
+                  className="mt-1"
                 />
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* 미션 목록 */}
-        <div className="grid gap-4">
+        {/* 미션 목록 - 모바일 최적화 */}
+        <div className="space-y-3 sm:space-y-4">
           {missions?.map((mission) => (
             <Card key={mission.id}>
-              <CardContent className="p-6 relative">
-                {/* 우측 상단 고정 메뉴 */}
-                <div className="absolute top-4 right-4 flex gap-2">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openEditDialog(mission)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() =>
-                      handleDelete(mission.id, (mission.totalUsers || 0) > 0)
-                    }
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </div>
-
-                {/* 메인 콘텐츠 영역 */}
-                <div>
-                  <div className="flex items-center gap-3 mb-2">
-                    <Badge variant={mission.isActive ? "default" : "secondary"}>
-                      {mission.isActive ? "활성" : "비활성"}
-                    </Badge>
-                    <span className="text-sm text-gray-500">
-                      {format(new Date(mission.date), "PPP", { locale: ko })}
-                    </span>
-                  </div>
-
-                  <h3 className="text-lg font-semibold mb-2">
-                    {mission.title ? `${mission.title}` : "-"}
-                  </h3>
-
-                  {mission.description && (
-                    <p className="text-gray-600 mb-3 whitespace-pre-wrap">
-                      {mission.description}
-                    </p>
-                  )}
-
-                  {/* 날짜와 완료율 정보 */}
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
-                    <div className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      <span>{format(new Date(mission.date), "MM/dd")}</span>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Target className="h-4 w-4" />
-                      <span>
-                        완료율: {mission.completionRate?.toFixed(1) || 0}% (
-                        {mission.completionCount || 0}/{mission.totalUsers || 0}
-                        )
+              <CardContent className="p-4 sm:p-6">
+                {/* 모바일 최적화: 상단 정보와 액션 버튼 */}
+                <div className="flex flex-col gap-3 sm:gap-0 sm:relative">
+                  {/* 상단 정보 */}
+                  <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3 sm:pr-24">
+                    <div className="flex items-center gap-2 sm:gap-3">
+                      <Badge
+                        variant={mission.isActive ? "default" : "secondary"}
+                        className="text-xs"
+                      >
+                        {mission.isActive ? "활성" : "비활성"}
+                      </Badge>
+                      <span className="text-xs sm:text-sm text-gray-500">
+                        {format(new Date(mission.date), "MM월 dd일", {
+                          locale: ko,
+                        })}
                       </span>
                     </div>
                   </div>
 
-                  {/* 구절 표시 */}
-                  <ScriptureDisplay
-                    mission={mission}
-                    variant="detailed"
-                    className="mt-4"
-                  />
+                  {/* 모바일: 액션 버튼을 상단에 배치 */}
+                  <div className="flex gap-2 sm:absolute sm:top-0 sm:right-0">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => openEditDialog(mission)}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <Edit className="h-4 w-4 sm:mr-0 mr-1" />
+                      <span className="sm:hidden">수정</span>
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleDelete(mission.id, (mission.totalUsers || 0) > 0)
+                      }
+                      className="text-red-600 hover:text-red-700 flex-1 sm:flex-none"
+                    >
+                      <Trash2 className="h-4 w-4 sm:mr-0 mr-1" />
+                      <span className="sm:hidden">삭제</span>
+                    </Button>
+                  </div>
+
+                  {/* 메인 콘텐츠 */}
+                  <div className="space-y-3">
+                    <h3 className="text-base sm:text-lg font-semibold leading-tight">
+                      {mission.title ? `${mission.title}` : "제목 없음"}
+                    </h3>
+
+                    {mission.description && (
+                      <p className="text-sm sm:text-base text-gray-600 whitespace-pre-wrap leading-relaxed">
+                        {mission.description}
+                      </p>
+                    )}
+
+                    {/* 통계 정보 - 모바일 최적화 */}
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span>{format(new Date(mission.date), "MM/dd")}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Target className="h-3 w-3 sm:h-4 sm:w-4" />
+                        <span>
+                          완료율: {mission.completionRate?.toFixed(1) || 0}% (
+                          {mission.completionCount || 0}/
+                          {mission.totalUsers || 0}명)
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* 구절 표시 */}
+                    <ScriptureDisplay
+                      mission={mission}
+                      variant="detailed"
+                      className="mt-3 sm:mt-4"
+                    />
+                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -345,9 +369,9 @@ export const AdminMissionsPage: React.FC = () => {
           )}
         </div>
 
-        {/* 수정 다이얼로그 */}
+        {/* 수정 다이얼로그 - 모바일 최적화 */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="w-[95vw] max-w-4xl h-[90vh] sm:max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>미션 수정</DialogTitle>
             </DialogHeader>
@@ -418,33 +442,37 @@ const MissionForm: React.FC<MissionFormProps> = ({
   };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-6">
+    <form onSubmit={onSubmit} className="space-y-4 sm:space-y-6">
       <div>
-        <Label htmlFor="date">날짜</Label>
+        <Label htmlFor="date" className="text-sm font-medium">
+          날짜
+        </Label>
         <Input
           id="date"
           type="date"
           value={formData.date}
           onChange={(e) => setFormData({ ...formData, date: e.target.value })}
           required
+          className="mt-1"
         />
       </div>
 
       <div>
-        <div className="flex items-center justify-between mb-4">
-          <Label className="text-lg font-semibold">성경구절</Label>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0 mb-4">
+          <Label className="text-base sm:text-lg font-semibold">성경구절</Label>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={addScripture}
+            className="w-full sm:w-auto"
           >
             <Plus className="h-4 w-4 mr-2" />
             구절 추가
           </Button>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {formData.scriptures.map((scripture, index) => (
             <ScriptureInput
               key={index}
@@ -459,17 +487,22 @@ const MissionForm: React.FC<MissionFormProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="title">제목 (선택)</Label>
+        <Label htmlFor="title" className="text-sm font-medium">
+          제목 (선택)
+        </Label>
         <Input
           id="title"
           value={formData.title || ""}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           placeholder="미션 제목"
+          className="mt-1"
         />
       </div>
 
       <div>
-        <Label htmlFor="description">설명 (선택)</Label>
+        <Label htmlFor="description" className="text-sm font-medium">
+          설명 (선택)
+        </Label>
         <Textarea
           id="description"
           value={formData.description || ""}
@@ -478,6 +511,7 @@ const MissionForm: React.FC<MissionFormProps> = ({
           }
           placeholder="미션에 대한 설명이나 안내사항"
           rows={3}
+          className="mt-1"
         />
       </div>
 
@@ -537,9 +571,9 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
       : [];
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h4 className="font-medium">구절 {index + 1}</h4>
+    <Card className="p-3 sm:p-4">
+      <div className="flex items-center justify-between mb-3 sm:mb-4">
+        <h4 className="text-sm sm:text-base font-medium">구절 {index + 1}</h4>
         {canRemove && (
           <Button
             type="button"
@@ -553,10 +587,10 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
         )}
       </div>
 
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="space-y-3 sm:space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           <div>
-            <Label>시작 성경책</Label>
+            <Label className="text-sm font-medium">시작 성경책</Label>
             <Select
               value={scripture.startBook}
               onValueChange={(value: string) => {
@@ -587,7 +621,7 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
                 });
               }}
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-1">
                 <SelectValue placeholder="성경책 선택" />
               </SelectTrigger>
               <SelectContent>
@@ -610,8 +644,8 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>시작 장</Label>
+          <div className="sm:col-span-1">
+            <Label className="text-sm font-medium">시작 장</Label>
             <Select
               value={scripture.startChapter.toString()}
               onValueChange={(value: string) =>
@@ -622,7 +656,7 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
               }
               disabled={!scripture.startBook}
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-1">
                 <SelectValue placeholder="장" />
               </SelectTrigger>
               <SelectContent>
@@ -634,8 +668,8 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>시작 절 (선택)</Label>
+          <div className="sm:col-span-1">
+            <Label className="text-sm font-medium">시작 절 (선택)</Label>
             <Select
               value={scripture.startVerse?.toString() || ""}
               onValueChange={(value: string) =>
@@ -645,7 +679,7 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
               }
               disabled={!scripture.startBook || !scripture.startChapter}
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-1">
                 <SelectValue placeholder="절" />
               </SelectTrigger>
               <SelectContent>
@@ -659,9 +693,9 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4">
           <div>
-            <Label>끝 성경책 (선택)</Label>
+            <Label className="text-sm font-medium">끝 성경책 (선택)</Label>
             <Select
               value={scripture.endBook || ""}
               onValueChange={(value: string) =>
@@ -673,7 +707,7 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
               }
               disabled={!scripture.startBook}
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-1">
                 <SelectValue placeholder="선택" />
               </SelectTrigger>
               <SelectContent>
@@ -700,8 +734,8 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>끝 장 (선택)</Label>
+          <div className="sm:col-span-1">
+            <Label className="text-sm font-medium">끝 장 (선택)</Label>
             <Select
               value={scripture.endChapter?.toString() || ""}
               onValueChange={(value: string) =>
@@ -712,7 +746,7 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
               }
               disabled={!scripture.endBook}
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-1">
                 <SelectValue placeholder="장" />
               </SelectTrigger>
               <SelectContent>
@@ -724,8 +758,8 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
               </SelectContent>
             </Select>
           </div>
-          <div>
-            <Label>끝 절 (선택)</Label>
+          <div className="sm:col-span-1">
+            <Label className="text-sm font-medium">끝 절 (선택)</Label>
             <Select
               value={scripture.endVerse?.toString() || ""}
               onValueChange={(value: string) =>
@@ -735,7 +769,7 @@ const ScriptureInput: React.FC<ScriptureInputProps> = ({
               }
               disabled={!scripture.endChapter}
             >
-              <SelectTrigger>
+              <SelectTrigger className="mt-1">
                 <SelectValue placeholder="절" />
               </SelectTrigger>
               <SelectContent>
