@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Mission } from '../entities/mission.entity';
 import { UserMission } from '../entities/user-mission.entity';
 import { GetMissionsDto } from './dto/get-missions.dto';
@@ -240,9 +240,16 @@ export class MissionsServiceOptimized {
         0,
       );
 
+      // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+      const startDateStr = startOfMonth.toISOString().split('T')[0];
+      const endDateStr = endOfMonth.toISOString().split('T')[0];
+
       queryBuilder.andWhere(
         'mission.date BETWEEN :startOfMonth AND :endOfMonth',
-        { startOfMonth, endOfMonth },
+        {
+          startOfMonth: startDateStr,
+          endOfMonth: endDateStr,
+        },
       );
     }
 
@@ -405,6 +412,10 @@ export class MissionsServiceOptimized {
       0,
     );
 
+    // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+    const startDateStr = startOfMonth.toISOString().split('T')[0];
+    const endDateStr = endOfMonth.toISOString().split('T')[0];
+
     const result = await this.missionsRepository
       .createQueryBuilder('mission')
       .leftJoin('mission.userMissions', 'userMission')
@@ -415,8 +426,8 @@ export class MissionsServiceOptimized {
       )
       .addSelect('COUNT(DISTINCT userMission.userId)', 'activeUsers')
       .where('mission.date BETWEEN :startOfMonth AND :endOfMonth', {
-        startOfMonth,
-        endOfMonth,
+        startOfMonth: startDateStr,
+        endOfMonth: endDateStr,
       })
       .andWhere('mission.isActive = :isActive', { isActive: true })
       .getRawOne();

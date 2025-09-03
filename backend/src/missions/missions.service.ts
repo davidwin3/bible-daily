@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, MoreThanOrEqual } from 'typeorm';
+import { Repository } from 'typeorm';
 import { Mission } from '../entities/mission.entity';
 import { MissionScripture } from '../entities/mission-scripture.entity';
 import { UserMission } from '../entities/user-mission.entity';
@@ -74,22 +74,30 @@ export class MissionsService {
         0,
       );
 
+      // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+      const startDateStr = startOfMonth.toISOString().split('T')[0];
+      const endDateStr = endOfMonth.toISOString().split('T')[0];
+
       queryBuilder.andWhere(
         'mission.date BETWEEN :startOfMonth AND :endOfMonth',
         {
-          startOfMonth,
-          endOfMonth,
+          startOfMonth: startDateStr,
+          endOfMonth: endDateStr,
         },
       );
     } else {
       if (startDate) {
+        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+        const startDateStr = new Date(startDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date >= :startDate', {
-          startDate: new Date(startDate),
+          startDate: startDateStr,
         });
       }
       if (endDate) {
+        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+        const endDateStr = new Date(endDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date <= :endDate', {
-          endDate: new Date(endDate),
+          endDate: endDateStr,
         });
       }
     }
@@ -235,11 +243,15 @@ export class MissionsService {
         0,
       );
 
+      // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+      const startDateStr = startOfMonth.toISOString().split('T')[0];
+      const endDateStr = endOfMonth.toISOString().split('T')[0];
+
       queryBuilder.andWhere(
         'mission.date BETWEEN :startOfMonth AND :endOfMonth',
         {
-          startOfMonth,
-          endOfMonth,
+          startOfMonth: startDateStr,
+          endOfMonth: endDateStr,
         },
       );
     }
@@ -482,15 +494,16 @@ export class MissionsService {
     // 최근 7일 통계
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoStr = sevenDaysAgo.toISOString().split('T')[0];
 
-    const recentMissions = await this.missionsRepository.find({
-      where: {
-        date: MoreThanOrEqual(sevenDaysAgo),
-        isActive: true,
-      },
-      relations: ['scriptures'],
-      order: { date: 'DESC' },
-    });
+    const recentMissions = await this.missionsRepository
+      .createQueryBuilder('mission')
+      .leftJoinAndSelect('mission.scriptures', 'scriptures')
+      .where('mission.date >= :sevenDaysAgo', { sevenDaysAgo: sevenDaysAgoStr })
+      .andWhere('mission.isActive = :isActive', { isActive: true })
+      .orderBy('mission.date', 'DESC')
+      .addOrderBy('scriptures.order', 'ASC')
+      .getMany();
 
     const recentStats: any[] = [];
     for (const mission of recentMissions) {
