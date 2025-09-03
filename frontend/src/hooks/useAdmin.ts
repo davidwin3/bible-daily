@@ -52,11 +52,24 @@ interface AdminDashboard {
   };
 }
 
+interface MissionScripture {
+  id?: string;
+  startBook: string;
+  startChapter: number;
+  startVerse?: number;
+  endBook?: string;
+  endChapter?: number;
+  endVerse?: number;
+  order: number;
+}
+
 interface Mission {
   id: string;
   date: string;
-  startBook: string;
-  startChapter: number;
+  scriptures?: MissionScripture[];
+  // 하위 호환성을 위한 필드들
+  startBook?: string;
+  startChapter?: number;
   startVerse?: number;
   endBook?: string;
   endChapter?: number;
@@ -71,8 +84,10 @@ interface Mission {
 
 interface CreateMissionData {
   date: string;
-  startBook: string;
-  startChapter: number;
+  scriptures?: Omit<MissionScripture, "id">[];
+  // 하위 호환성을 위한 필드들
+  startBook?: string;
+  startChapter?: number;
   startVerse?: number;
   endBook?: string;
   endChapter?: number;

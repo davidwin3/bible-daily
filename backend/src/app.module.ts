@@ -14,6 +14,7 @@ import { User } from './entities/user.entity';
 import { Post } from './entities/post.entity';
 import { Like } from './entities/like.entity';
 import { Mission } from './entities/mission.entity';
+import { MissionScripture } from './entities/mission-scripture.entity';
 import { UserMission } from './entities/user-mission.entity';
 import { Cell } from './entities/cell.entity';
 import { CellMember } from './entities/cell-member.entity';

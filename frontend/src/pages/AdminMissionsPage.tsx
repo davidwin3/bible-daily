@@ -39,35 +39,7 @@ import {
   getChapterNumbers,
   getVerseNumbersForChapter,
 } from "@/lib/bible-data";
-
-interface MissionFormData {
-  date: string;
-  startBook: string;
-  startChapter: number;
-  startVerse?: number;
-  endBook?: string;
-  endChapter?: number;
-  endVerse?: number;
-  title?: string;
-  description?: string;
-}
-
-interface Mission {
-  id: string;
-  date: string;
-  startBook: string;
-  startChapter: number;
-  startVerse?: number;
-  endBook?: string;
-  endChapter?: number;
-  endVerse?: number;
-  title?: string;
-  description?: string;
-  isActive: boolean;
-  completionCount?: number;
-  totalUsers?: number;
-  completionRate?: number;
-}
+import type { Mission, MissionFormData, MissionScripture } from "@/lib/types";
 
 export const AdminMissionsPage: React.FC = () => {
   const [filters, setFilters] = useState({
@@ -78,12 +50,17 @@ export const AdminMissionsPage: React.FC = () => {
   const [editingMission, setEditingMission] = useState<Mission | null>(null);
   const [formData, setFormData] = useState<MissionFormData>({
     date: format(new Date(), "yyyy-MM-dd"),
-    startBook: "",
-    startChapter: 1,
-    startVerse: undefined,
-    endBook: "",
-    endChapter: undefined,
-    endVerse: undefined,
+    scriptures: [
+      {
+        startBook: "",
+        startChapter: 1,
+        startVerse: undefined,
+        endBook: "",
+        endChapter: undefined,
+        endVerse: undefined,
+        order: 0,
+      },
+    ],
     title: "",
     description: "",
   });
@@ -94,10 +71,28 @@ export const AdminMissionsPage: React.FC = () => {
   const deleteMission = useDeleteMission();
   const softDeleteMission = useSoftDeleteMission();
 
+  const convertFormDataToCreateData = (formData: MissionFormData) => {
+    return {
+      date: formData.date,
+      scriptures: formData.scriptures.map((scripture) => ({
+        startBook: scripture.startBook,
+        startChapter: scripture.startChapter,
+        startVerse: scripture.startVerse,
+        endBook: scripture.endBook,
+        endChapter: scripture.endChapter,
+        endVerse: scripture.endVerse,
+        order: scripture.order,
+      })),
+      title: formData.title,
+      description: formData.description,
+    };
+  };
+
   const handleCreate = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createMission.mutateAsync(formData);
+      const createData = convertFormDataToCreateData(formData);
+      await createMission.mutateAsync(createData);
       setIsCreateDialogOpen(false);
       resetForm();
     } catch (error) {
@@ -110,9 +105,10 @@ export const AdminMissionsPage: React.FC = () => {
     if (!editingMission) return;
 
     try {
+      const updateData = convertFormDataToCreateData(formData);
       await updateMission.mutateAsync({
         id: editingMission.id,
-        data: formData,
+        data: updateData,
       });
       setIsEditDialogOpen(false);
       setEditingMission(null);
@@ -146,14 +142,41 @@ export const AdminMissionsPage: React.FC = () => {
 
   const openEditDialog = (mission: Mission) => {
     setEditingMission(mission);
+
+    // 기존 미션이 scriptures를 가지고 있으면 사용하고, 없으면 하위 호환성으로 단일 구절 생성
+    let scriptures: MissionScripture[] = [];
+    if (mission.scriptures && mission.scriptures.length > 0) {
+      scriptures = mission.scriptures;
+    } else if (mission.startBook && mission.startChapter) {
+      scriptures = [
+        {
+          startBook: mission.startBook,
+          startChapter: mission.startChapter,
+          startVerse: mission.startVerse,
+          endBook: mission.endBook,
+          endChapter: mission.endChapter,
+          endVerse: mission.endVerse,
+          order: 0,
+        },
+      ];
+    }
+
     setFormData({
       date: format(new Date(mission.date), "yyyy-MM-dd"),
-      startBook: mission.startBook,
-      startChapter: mission.startChapter,
-      startVerse: mission.startVerse,
-      endBook: mission.endBook,
-      endChapter: mission.endChapter,
-      endVerse: mission.endVerse,
+      scriptures:
+        scriptures.length > 0
+          ? scriptures
+          : [
+              {
+                startBook: "",
+                startChapter: 1,
+                startVerse: undefined,
+                endBook: "",
+                endChapter: undefined,
+                endVerse: undefined,
+                order: 0,
+              },
+            ],
       title: mission.title || "",
       description: mission.description || "",
     });
@@ -163,12 +186,17 @@ export const AdminMissionsPage: React.FC = () => {
   const resetForm = () => {
     setFormData({
       date: format(new Date(), "yyyy-MM-dd"),
-      startBook: "",
-      startChapter: 1,
-      startVerse: undefined,
-      endBook: "",
-      endChapter: undefined,
-      endVerse: undefined,
+      scriptures: [
+        {
+          startBook: "",
+          startChapter: 1,
+          startVerse: undefined,
+          endBook: "",
+          endChapter: undefined,
+          endVerse: undefined,
+          order: 0,
+        },
+      ],
       title: "",
       description: "",
     });
@@ -213,7 +241,7 @@ export const AdminMissionsPage: React.FC = () => {
                 <Plus className="h-4 w-4 mr-2" />새 미션 추가
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-md">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>새 미션 추가</DialogTitle>
               </DialogHeader>
@@ -286,12 +314,32 @@ export const AdminMissionsPage: React.FC = () => {
                       <div className="flex items-center gap-1">
                         <BookOpen className="h-4 w-4" />
                         <span>
-                          {mission.startBook} {mission.startChapter}
-                          {mission.startVerse && `:${mission.startVerse}`}
-                          {" - "}
-                          {mission.endBook && `${mission.endBook}`}
-                          {mission.endChapter && ` ${mission.endChapter}`}
-                          {mission.endVerse && `:${mission.endVerse}`}
+                          {mission.scriptures &&
+                          mission.scriptures.length > 0 ? (
+                            mission.scriptures.map((scripture, index) => (
+                              <span key={index}>
+                                {index > 0 && ", "}
+                                {scripture.startBook} {scripture.startChapter}
+                                {scripture.startVerse &&
+                                  `:${scripture.startVerse}`}
+                                {scripture.endBook &&
+                                  scripture.endBook !== scripture.startBook &&
+                                  ` - ${scripture.endBook}`}
+                                {scripture.endChapter &&
+                                  ` ${scripture.endChapter}`}
+                                {scripture.endVerse && `:${scripture.endVerse}`}
+                              </span>
+                            ))
+                          ) : (
+                            <>
+                              {mission.startBook} {mission.startChapter}
+                              {mission.startVerse && `:${mission.startVerse}`}
+                              {" - "}
+                              {mission.endBook && `${mission.endBook}`}
+                              {mission.endChapter && ` ${mission.endChapter}`}
+                              {mission.endVerse && `:${mission.endVerse}`}
+                            </>
+                          )}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -341,7 +389,7 @@ export const AdminMissionsPage: React.FC = () => {
 
         {/* 수정 다이얼로그 */}
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>미션 수정</DialogTitle>
             </DialogHeader>
@@ -374,41 +422,45 @@ const MissionForm: React.FC<MissionFormProps> = ({
   isLoading,
   submitText,
 }) => {
-  // 선택된 성경책에 따른 장 수 계산
-  const startBook = findBookByName(formData.startBook);
-  const endBook = findBookByName(formData.endBook || "");
-  const startChapterOptions = startBook
-    ? getChapterNumbers(startBook.chapters)
-    : [];
-  const endChapterOptions = endBook ? getChapterNumbers(endBook.chapters) : [];
+  const addScripture = () => {
+    const newScriptures = [
+      ...formData.scriptures,
+      {
+        startBook: "",
+        startChapter: 1,
+        startVerse: undefined,
+        endBook: "",
+        endChapter: undefined,
+        endVerse: undefined,
+        order: formData.scriptures.length,
+      },
+    ];
+    setFormData({ ...formData, scriptures: newScriptures });
+  };
 
-  // 시작 성경책의 인덱스 찾기
-  const startBookIndex = formData.startBook
-    ? [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS].findIndex(
-        (book) => book.name === formData.startBook
-      )
-    : -1;
+  const removeScripture = (index: number) => {
+    if (formData.scriptures.length <= 1) return; // 최소 1개는 유지
+    const newScriptures = formData.scriptures.filter((_, i) => i !== index);
+    // order 재정렬
+    const reorderedScriptures = newScriptures.map((scripture, i) => ({
+      ...scripture,
+      order: i,
+    }));
+    setFormData({ ...formData, scriptures: reorderedScriptures });
+  };
 
-  // 끝 성경책 옵션 필터링 (시작 성경책 이후의 성경책들만)
-  const availableEndBooks =
-    startBookIndex >= 0
-      ? [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS].slice(startBookIndex)
-      : [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS];
-
-  // 선택된 성경책과 장에 따른 정확한 절 수 계산
-  const startVerseOptions =
-    formData.startBook && formData.startChapter
-      ? getVerseNumbersForChapter(formData.startBook, formData.startChapter)
-      : [];
-  const endVerseOptions =
-    formData.endBook && formData.endChapter
-      ? getVerseNumbersForChapter(formData.endBook, formData.endChapter)
-      : formData.startBook && formData.endChapter
-      ? getVerseNumbersForChapter(formData.startBook, formData.endChapter)
-      : [];
+  const updateScripture = (
+    index: number,
+    updates: Partial<MissionScripture>
+  ) => {
+    const newScriptures = formData.scriptures.map((scripture, i) =>
+      i === index ? { ...scripture, ...updates } : scripture
+    );
+    setFormData({ ...formData, scriptures: newScriptures });
+  };
 
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-6">
       <div>
         <Label htmlFor="date">날짜</Label>
         <Input
@@ -420,204 +472,31 @@ const MissionForm: React.FC<MissionFormProps> = ({
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
-        <div>
-          <Label>시작 성경책</Label>
-          <Select
-            value={formData.startBook}
-            onValueChange={(value: string) => {
-              const newStartBookIndex = [
-                ...OLD_TESTAMENT_BOOKS,
-                ...NEW_TESTAMENT_BOOKS,
-              ].findIndex((book) => book.name === value);
-              const currentEndBookIndex = formData.endBook
-                ? [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS].findIndex(
-                    (book) => book.name === formData.endBook
-                  )
-                : -1;
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <Label className="text-lg font-semibold">성경구절</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={addScripture}
+          >
+            <Plus className="h-4 w-4 mr-2" />
+            구절 추가
+          </Button>
+        </div>
 
-              // 끝 성경책이 시작 성경책보다 앞에 있으면 초기화
-              const shouldResetEndBook =
-                currentEndBookIndex >= 0 &&
-                currentEndBookIndex < newStartBookIndex;
-
-              setFormData({
-                ...formData,
-                startBook: value,
-                startChapter: 1,
-                startVerse: undefined, // 성경책이 변경되면 절 선택 초기화
-                endBook: shouldResetEndBook ? undefined : formData.endBook,
-                endChapter: shouldResetEndBook
-                  ? undefined
-                  : formData.endChapter,
-                endVerse: shouldResetEndBook ? undefined : formData.endVerse,
-              });
-            }}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="성경책 선택" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>구약</SelectLabel>
-                {OLD_TESTAMENT_BOOKS.map((book) => (
-                  <SelectItem key={book.id} value={book.name}>
-                    {book.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>신약</SelectLabel>
-                {NEW_TESTAMENT_BOOKS.map((book) => (
-                  <SelectItem key={book.id} value={book.name}>
-                    {book.name}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>시작 장</Label>
-          <Select
-            value={formData.startChapter.toString()}
-            onValueChange={(value: string) =>
-              setFormData({
-                ...formData,
-                startChapter: parseInt(value),
-                startVerse: undefined, // 장이 변경되면 절 선택 초기화
-              })
-            }
-            disabled={!formData.startBook}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="장" />
-            </SelectTrigger>
-            <SelectContent>
-              {startChapterOptions.map((chapter) => (
-                <SelectItem key={chapter} value={chapter.toString()}>
-                  {chapter}장
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>시작 절 (선택)</Label>
-          <Select
-            value={formData.startVerse?.toString() || ""}
-            onValueChange={(value: string) =>
-              setFormData({
-                ...formData,
-                startVerse: value ? parseInt(value) : undefined,
-              })
-            }
-            disabled={!formData.startBook || !formData.startChapter}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="절" />
-            </SelectTrigger>
-            <SelectContent>
-              {startVerseOptions.map((verse) => (
-                <SelectItem key={verse} value={verse.toString()}>
-                  {verse}절
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-3 gap-2">
-        <div>
-          <Label>끝 성경책 (선택)</Label>
-          <Select
-            value={formData.endBook || ""}
-            onValueChange={(value: string) =>
-              setFormData({
-                ...formData,
-                endBook: value || undefined,
-                endChapter: undefined,
-                endVerse: undefined, // 성경책이 변경되면 절 선택 초기화
-              })
-            }
-            disabled={!formData.startBook}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="선택" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectGroup>
-                <SelectLabel>구약</SelectLabel>
-                {availableEndBooks
-                  .filter((book) => book.testament === "old")
-                  .map((book) => (
-                    <SelectItem key={book.id} value={book.name}>
-                      {book.name}
-                    </SelectItem>
-                  ))}
-              </SelectGroup>
-              <SelectGroup>
-                <SelectLabel>신약</SelectLabel>
-                {availableEndBooks
-                  .filter((book) => book.testament === "new")
-                  .map((book) => (
-                    <SelectItem key={book.id} value={book.name}>
-                      {book.name}
-                    </SelectItem>
-                  ))}
-              </SelectGroup>
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>끝 장 (선택)</Label>
-          <Select
-            value={formData.endChapter?.toString() || ""}
-            onValueChange={(value: string) =>
-              setFormData({
-                ...formData,
-                endChapter: value ? parseInt(value) : undefined,
-                endVerse: undefined, // 장이 변경되면 절 선택 초기화
-              })
-            }
-            disabled={!formData.endBook}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="장" />
-            </SelectTrigger>
-            <SelectContent>
-              {endChapterOptions.map((chapter) => (
-                <SelectItem key={chapter} value={chapter.toString()}>
-                  {chapter}장
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div>
-          <Label>끝 절 (선택)</Label>
-          <Select
-            value={formData.endVerse?.toString() || ""}
-            onValueChange={(value: string) =>
-              setFormData({
-                ...formData,
-                endVerse: value ? parseInt(value) : undefined,
-              })
-            }
-            disabled={!formData.endChapter}
-          >
-            <SelectTrigger>
-              <SelectValue placeholder="절" />
-            </SelectTrigger>
-            <SelectContent>
-              {endVerseOptions.map((verse) => (
-                <SelectItem key={verse} value={verse.toString()}>
-                  {verse}절
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="space-y-6">
+          {formData.scriptures.map((scripture, index) => (
+            <ScriptureInput
+              key={index}
+              scripture={scripture}
+              index={index}
+              onUpdate={updateScripture}
+              onRemove={removeScripture}
+              canRemove={formData.scriptures.length > 1}
+            />
+          ))}
         </div>
       </div>
 
@@ -648,5 +527,270 @@ const MissionForm: React.FC<MissionFormProps> = ({
         {isLoading ? "처리 중..." : submitText}
       </Button>
     </form>
+  );
+};
+
+interface ScriptureInputProps {
+  scripture: MissionScripture;
+  index: number;
+  onUpdate: (index: number, updates: Partial<MissionScripture>) => void;
+  onRemove: (index: number) => void;
+  canRemove: boolean;
+}
+
+const ScriptureInput: React.FC<ScriptureInputProps> = ({
+  scripture,
+  index,
+  onUpdate,
+  onRemove,
+  canRemove,
+}) => {
+  // 선택된 성경책에 따른 장 수 계산
+  const startBook = findBookByName(scripture.startBook);
+  const endBook = findBookByName(scripture.endBook || "");
+  const startChapterOptions = startBook
+    ? getChapterNumbers(startBook.chapters)
+    : [];
+  const endChapterOptions = endBook ? getChapterNumbers(endBook.chapters) : [];
+
+  // 시작 성경책의 인덱스 찾기
+  const startBookIndex = scripture.startBook
+    ? [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS].findIndex(
+        (book) => book.name === scripture.startBook
+      )
+    : -1;
+
+  // 끝 성경책 옵션 필터링 (시작 성경책 이후의 성경책들만)
+  const availableEndBooks =
+    startBookIndex >= 0
+      ? [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS].slice(startBookIndex)
+      : [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS];
+
+  // 선택된 성경책과 장에 따른 정확한 절 수 계산
+  const startVerseOptions =
+    scripture.startBook && scripture.startChapter
+      ? getVerseNumbersForChapter(scripture.startBook, scripture.startChapter)
+      : [];
+  const endVerseOptions =
+    scripture.endBook && scripture.endChapter
+      ? getVerseNumbersForChapter(scripture.endBook, scripture.endChapter)
+      : scripture.startBook && scripture.endChapter
+      ? getVerseNumbersForChapter(scripture.startBook, scripture.endChapter)
+      : [];
+
+  return (
+    <Card className="p-4">
+      <div className="flex items-center justify-between mb-4">
+        <h4 className="font-medium">구절 {index + 1}</h4>
+        {canRemove && (
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() => onRemove(index)}
+            className="text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+      </div>
+
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label>시작 성경책</Label>
+            <Select
+              value={scripture.startBook}
+              onValueChange={(value: string) => {
+                const newStartBookIndex = [
+                  ...OLD_TESTAMENT_BOOKS,
+                  ...NEW_TESTAMENT_BOOKS,
+                ].findIndex((book) => book.name === value);
+                const currentEndBookIndex = scripture.endBook
+                  ? [...OLD_TESTAMENT_BOOKS, ...NEW_TESTAMENT_BOOKS].findIndex(
+                      (book) => book.name === scripture.endBook
+                    )
+                  : -1;
+
+                // 끝 성경책이 시작 성경책보다 앞에 있으면 초기화
+                const shouldResetEndBook =
+                  currentEndBookIndex >= 0 &&
+                  currentEndBookIndex < newStartBookIndex;
+
+                onUpdate(index, {
+                  startBook: value,
+                  startChapter: 1,
+                  startVerse: undefined,
+                  endBook: shouldResetEndBook ? undefined : scripture.endBook,
+                  endChapter: shouldResetEndBook
+                    ? undefined
+                    : scripture.endChapter,
+                  endVerse: shouldResetEndBook ? undefined : scripture.endVerse,
+                });
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="성경책 선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>구약</SelectLabel>
+                  {OLD_TESTAMENT_BOOKS.map((book) => (
+                    <SelectItem key={book.id} value={book.name}>
+                      {book.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>신약</SelectLabel>
+                  {NEW_TESTAMENT_BOOKS.map((book) => (
+                    <SelectItem key={book.id} value={book.name}>
+                      {book.name}
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>시작 장</Label>
+            <Select
+              value={scripture.startChapter.toString()}
+              onValueChange={(value: string) =>
+                onUpdate(index, {
+                  startChapter: parseInt(value),
+                  startVerse: undefined,
+                })
+              }
+              disabled={!scripture.startBook}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="장" />
+              </SelectTrigger>
+              <SelectContent>
+                {startChapterOptions.map((chapter) => (
+                  <SelectItem key={chapter} value={chapter.toString()}>
+                    {chapter}장
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>시작 절 (선택)</Label>
+            <Select
+              value={scripture.startVerse?.toString() || ""}
+              onValueChange={(value: string) =>
+                onUpdate(index, {
+                  startVerse: value ? parseInt(value) : undefined,
+                })
+              }
+              disabled={!scripture.startBook || !scripture.startChapter}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="절" />
+              </SelectTrigger>
+              <SelectContent>
+                {startVerseOptions.map((verse) => (
+                  <SelectItem key={verse} value={verse.toString()}>
+                    {verse}절
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div>
+            <Label>끝 성경책 (선택)</Label>
+            <Select
+              value={scripture.endBook || ""}
+              onValueChange={(value: string) =>
+                onUpdate(index, {
+                  endBook: value || undefined,
+                  endChapter: undefined,
+                  endVerse: undefined,
+                })
+              }
+              disabled={!scripture.startBook}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="선택" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectLabel>구약</SelectLabel>
+                  {availableEndBooks
+                    .filter((book) => book.testament === "old")
+                    .map((book) => (
+                      <SelectItem key={book.id} value={book.name}>
+                        {book.name}
+                      </SelectItem>
+                    ))}
+                </SelectGroup>
+                <SelectGroup>
+                  <SelectLabel>신약</SelectLabel>
+                  {availableEndBooks
+                    .filter((book) => book.testament === "new")
+                    .map((book) => (
+                      <SelectItem key={book.id} value={book.name}>
+                        {book.name}
+                      </SelectItem>
+                    ))}
+                </SelectGroup>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>끝 장 (선택)</Label>
+            <Select
+              value={scripture.endChapter?.toString() || ""}
+              onValueChange={(value: string) =>
+                onUpdate(index, {
+                  endChapter: value ? parseInt(value) : undefined,
+                  endVerse: undefined,
+                })
+              }
+              disabled={!scripture.endBook}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="장" />
+              </SelectTrigger>
+              <SelectContent>
+                {endChapterOptions.map((chapter) => (
+                  <SelectItem key={chapter} value={chapter.toString()}>
+                    {chapter}장
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Label>끝 절 (선택)</Label>
+            <Select
+              value={scripture.endVerse?.toString() || ""}
+              onValueChange={(value: string) =>
+                onUpdate(index, {
+                  endVerse: value ? parseInt(value) : undefined,
+                })
+              }
+              disabled={!scripture.endChapter}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="절" />
+              </SelectTrigger>
+              <SelectContent>
+                {endVerseOptions.map((verse) => (
+                  <SelectItem key={verse} value={verse.toString()}>
+                    {verse}절
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </div>
+    </Card>
   );
 };

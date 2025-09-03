@@ -7,6 +7,7 @@ import {
   OneToMany,
 } from 'typeorm';
 import { UserMission } from './user-mission.entity';
+import { MissionScripture } from './mission-scripture.entity';
 
 @Entity('missions')
 export class Mission {
@@ -16,10 +17,11 @@ export class Mission {
   @Column({ type: 'date', unique: true })
   date: Date;
 
-  @Column({ length: 100 })
+  // 하위 호환성을 위해 유지하되, nullable로 변경 (deprecated)
+  @Column({ length: 100, nullable: true })
   startBook: string;
 
-  @Column()
+  @Column({ nullable: true })
   startChapter: number;
 
   @Column({ nullable: true })
@@ -52,6 +54,12 @@ export class Mission {
   // Relations
   @OneToMany(() => UserMission, (userMission) => userMission.mission)
   userMissions: UserMission[];
+
+  @OneToMany(() => MissionScripture, (scripture) => scripture.mission, {
+    cascade: true,
+    eager: true,
+  })
+  scriptures: MissionScripture[];
 
   // Virtual field for completion stats
   completionCount?: number;

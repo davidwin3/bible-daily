@@ -6,20 +6,32 @@ import {
   Min,
   Max,
   Length,
+  IsArray,
+  ValidateNested,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { CreateMissionScriptureDto } from './create-mission-scripture.dto';
 
 export class CreateMissionDto {
   @IsDateString()
   date: string;
 
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CreateMissionScriptureDto)
+  scriptures: CreateMissionScriptureDto[];
+
+  // 하위 호환성을 위한 필드들 (optional)
+  @IsOptional()
   @IsString()
   @Length(1, 100)
-  startBook: string;
+  startBook?: string;
 
+  @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(150)
-  startChapter: number;
+  startChapter?: number;
 
   @IsOptional()
   @IsNumber()
