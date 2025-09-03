@@ -14,7 +14,18 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Users, Eye, UserCheck, UserX, Search, Filter, ChevronDown, UserCog, ShieldCheck, GraduationCap } from "lucide-react";
+import {
+  Users,
+  Eye,
+  UserCheck,
+  UserX,
+  Search,
+  Filter,
+  ChevronDown,
+  UserCog,
+  ShieldCheck,
+  GraduationCap,
+} from "lucide-react";
 import {
   useAdminUsers,
   useAdminUserDetail,
@@ -159,7 +170,7 @@ export const AdminUsersPage: React.FC = () => {
   return (
     <>
       <AdminNav />
-      <div className="container mx-auto px-4 py-4 sm:py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8 pb-20">
         <div className="mb-6 sm:mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
             사용자 관리
@@ -337,7 +348,9 @@ export const AdminUsersPage: React.FC = () => {
                                 const Icon = getRoleIcon(user.role);
                                 return <Icon className="h-3 w-3" />;
                               })()}
-                              <span className="text-xs">{getRoleLabel(user.role)}</span>
+                              <span className="text-xs">
+                                {getRoleLabel(user.role)}
+                              </span>
                             </div>
                             <ChevronDown className="h-3 w-3 opacity-50" />
                           </Button>
@@ -349,14 +362,22 @@ export const AdminUsersPage: React.FC = () => {
                               return (
                                 <Button
                                   key={option.value}
-                                  variant={user.role === option.value ? "secondary" : "ghost"}
+                                  variant={
+                                    user.role === option.value
+                                      ? "secondary"
+                                      : "ghost"
+                                  }
                                   size="sm"
                                   className="w-full justify-start gap-2 h-8"
-                                  onClick={() => handleRoleChange(user.id, option.value)}
+                                  onClick={() =>
+                                    handleRoleChange(user.id, option.value)
+                                  }
                                   disabled={updateUserRole.isPending}
                                 >
                                   <Icon className="h-3 w-3" />
-                                  <span className="text-xs">{option.label}</span>
+                                  <span className="text-xs">
+                                    {option.label}
+                                  </span>
                                   {user.role === option.value && (
                                     <div className="ml-auto h-1 w-1 rounded-full bg-primary" />
                                   )}

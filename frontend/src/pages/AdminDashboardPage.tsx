@@ -65,7 +65,7 @@ export const AdminDashboardPage: React.FC = () => {
   return (
     <>
       <AdminNav />
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 pb-20">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             관리자 대시보드
