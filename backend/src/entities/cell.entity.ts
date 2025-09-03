@@ -7,11 +7,15 @@ import {
   OneToMany,
   ManyToOne,
   JoinColumn,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 import { CellMember } from './cell-member.entity';
 
 @Entity('cells')
+@Index('idx_cells_is_active', ['isActive'])
+@Index('idx_cells_leader_id', ['leaderId'])
+@Index('idx_cells_active_cells', ['isActive', 'leaderId'])
 export class Cell {
   @PrimaryGeneratedColumn('uuid')
   id: string;

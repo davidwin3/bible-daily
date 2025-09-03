@@ -7,12 +7,20 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Mission } from './mission.entity';
 
 @Entity('user_missions')
 @Unique(['userId', 'missionId'])
+@Index('idx_user_missions_user_id', ['userId'])
+@Index('idx_user_missions_mission_id', ['missionId'])
+@Index('idx_user_missions_is_completed', ['isCompleted'])
+@Index('idx_user_missions_created_at', ['createdAt'])
+@Index('idx_user_missions_user_completed', ['userId', 'isCompleted'])
+@Index('idx_user_missions_mission_completed', ['missionId', 'isCompleted'])
+@Index('idx_user_missions_recent_activity', ['userId', 'createdAt'])
 export class UserMission {
   @PrimaryGeneratedColumn('uuid')
   id: string;

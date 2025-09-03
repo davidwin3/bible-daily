@@ -8,6 +8,7 @@ import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Mission } from '../entities/mission.entity';
 import { MissionScripture } from '../entities/mission-scripture.entity';
 import { UserMission } from '../entities/user-mission.entity';
+import { User } from '../entities/user.entity';
 import { GetMissionsDto } from './dto/get-missions.dto';
 import { CreateMissionDto } from './dto/create-mission.dto';
 import { UpdateMissionDto } from './dto/update-mission.dto';
@@ -21,24 +22,21 @@ export class MissionsService {
     private missionScripturesRepository: Repository<MissionScripture>,
     @InjectRepository(UserMission)
     private userMissionsRepository: Repository<UserMission>,
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
   ) {}
 
   async getTodayMission(): Promise<Mission | null> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // 오늘 날짜를 YYYY-MM-DD 형식으로 변환
+    const today = new Date().toISOString().split('T')[0];
 
-    const mission = await this.missionsRepository.findOne({
-      where: {
-        date: today,
-        isActive: true,
-      },
-      relations: ['scriptures'],
-      order: {
-        scriptures: {
-          order: 'ASC',
-        },
-      },
-    });
+    const mission = await this.missionsRepository
+      .createQueryBuilder('mission')
+      .leftJoinAndSelect('mission.scriptures', 'scriptures')
+      .where('mission.date = :date', { date: today })
+      .andWhere('mission.isActive = :isActive', { isActive: true })
+      .orderBy('scriptures.order', 'ASC')
+      .getOne();
 
     if (mission) {
       // 완료 통계 추가
@@ -148,36 +146,37 @@ export class MissionsService {
   }
 
   async getMissionByDate(date: string): Promise<Mission | null> {
-    const targetDate = new Date(date);
-    targetDate.setHours(0, 0, 0, 0);
+    // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환하여 Raw 쿼리 사용
+    const targetDateStr = new Date(date).toISOString().split('T')[0];
 
-    const mission = await this.missionsRepository.findOne({
+    const mission = await this.missionsRepository
+      .createQueryBuilder('mission')
+      .leftJoinAndSelect('mission.scriptures', 'scriptures')
+      .where('mission.date = :date', { date: targetDateStr })
+      .andWhere('mission.isActive = :isActive', { isActive: true })
+      .orderBy('scriptures.order', 'ASC')
+      .getOne();
+
+    if (!mission) {
+      return null;
+    }
+
+    // 미션 통계 계산 (기존 로직 유지)
+    const completionCount = await this.userMissionsRepository.count({
       where: {
-        date: targetDate,
-        isActive: true,
-      },
-      relations: ['scriptures'],
-      order: {
-        scriptures: {
-          order: 'ASC',
-        },
+        mission: { id: mission.id },
+        isCompleted: true,
       },
     });
 
-    if (mission) {
-      // 완료 통계 추가
-      const completionCount = await this.userMissionsRepository.count({
-        where: { missionId: mission.id, isCompleted: true },
-      });
-      const totalUsers = await this.userMissionsRepository.count({
-        where: { missionId: mission.id },
-      });
+    const totalUsers = await this.usersRepository.count({
+      where: { isActive: true },
+    });
 
-      mission.completionCount = completionCount;
-      mission.totalUsers = totalUsers;
-      mission.completionRate =
-        totalUsers > 0 ? (completionCount / totalUsers) * 100 : 0;
-    }
+    mission.completionCount = completionCount;
+    mission.totalUsers = totalUsers;
+    mission.completionRate =
+      totalUsers > 0 ? (completionCount / totalUsers) * 100 : 0;
 
     return mission;
   }
@@ -267,16 +266,20 @@ export class MissionsService {
     const { date, scriptures, title, description } = createMissionDto;
 
     // 날짜 중복 체크
-    const existingMission = await this.missionsRepository.findOne({
-      where: { date: new Date(date) },
-    });
+    // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+    const dateStr = new Date(date).toISOString().split('T')[0];
+
+    const existingMission = await this.missionsRepository
+      .createQueryBuilder('mission')
+      .where('mission.date = :date', { date: dateStr })
+      .getOne();
 
     if (existingMission) {
       throw new ConflictException('Mission for this date already exists');
     }
 
     const mission = this.missionsRepository.create({
-      date: new Date(date),
+      date: new Date(dateStr + 'T00:00:00.000Z'), // UTC 기준으로 날짜만 설정
       title,
       description,
     });
@@ -313,9 +316,14 @@ export class MissionsService {
 
     // 날짜가 변경되는 경우 중복 체크
     if (updateMissionDto.date) {
-      const existingMission = await this.missionsRepository.findOne({
-        where: { date: new Date(updateMissionDto.date) },
-      });
+      // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+      const dateStr = new Date(updateMissionDto.date)
+        .toISOString()
+        .split('T')[0];
+      const existingMission = await this.missionsRepository
+        .createQueryBuilder('mission')
+        .where('mission.date = :date', { date: dateStr })
+        .getOne();
 
       if (existingMission && existingMission.id !== id) {
         throw new ConflictException('Mission for this date already exists');
@@ -333,7 +341,10 @@ export class MissionsService {
     Object.assign(mission, {
       ...missionUpdates,
       date: updateMissionDto.date
-        ? new Date(updateMissionDto.date)
+        ? new Date(
+            new Date(updateMissionDto.date).toISOString().split('T')[0] +
+              'T00:00:00.000Z',
+          )
         : mission.date,
     });
 
@@ -406,22 +417,30 @@ export class MissionsService {
         0,
       );
 
+      // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+      const startDateStr = startOfMonth.toISOString().split('T')[0];
+      const endDateStr = endOfMonth.toISOString().split('T')[0];
+
       queryBuilder.andWhere(
         'mission.date BETWEEN :startOfMonth AND :endOfMonth',
         {
-          startOfMonth,
-          endOfMonth,
+          startOfMonth: startDateStr,
+          endOfMonth: endDateStr,
         },
       );
     } else {
       if (startDate) {
+        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+        const startDateStr = new Date(startDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date >= :startDate', {
-          startDate: new Date(startDate),
+          startDate: startDateStr,
         });
       }
       if (endDate) {
+        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+        const endDateStr = new Date(endDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date <= :endDate', {
-          endDate: new Date(endDate),
+          endDate: endDateStr,
         });
       }
     }

@@ -5,11 +5,15 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { UserMission } from './user-mission.entity';
 import { MissionScripture } from './mission-scripture.entity';
 
 @Entity('missions')
+@Index('idx_missions_is_active', ['isActive'])
+@Index('idx_missions_date', ['date'])
+@Index('idx_missions_active_missions', ['isActive', 'date'])
 export class Mission {
   @PrimaryGeneratedColumn('uuid')
   id: string;

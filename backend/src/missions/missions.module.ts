@@ -5,9 +5,12 @@ import { MissionsController } from './missions.controller';
 import { Mission } from '../entities/mission.entity';
 import { MissionScripture } from '../entities/mission-scripture.entity';
 import { UserMission } from '../entities/user-mission.entity';
+import { User } from '../entities/user.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Mission, MissionScripture, UserMission])],
+  imports: [
+    TypeOrmModule.forFeature([Mission, MissionScripture, UserMission, User]),
+  ],
   providers: [MissionsService],
   controllers: [MissionsController],
   exports: [MissionsService],

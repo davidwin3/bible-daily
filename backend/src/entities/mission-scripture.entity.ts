@@ -6,10 +6,14 @@ import {
   JoinColumn,
   CreateDateColumn,
   UpdateDateColumn,
+  Index,
 } from 'typeorm';
 import { Mission } from './mission.entity';
 
 @Entity('mission_scriptures')
+@Index('idx_mission_scriptures_mission_id', ['missionId'])
+@Index('idx_mission_scriptures_order', ['missionId', 'order'])
+@Index('idx_mission_scriptures_book', ['startBook'])
 export class MissionScripture {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -51,4 +55,3 @@ export class MissionScripture {
   @Column()
   missionId: string;
 }
-

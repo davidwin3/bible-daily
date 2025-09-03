@@ -5,6 +5,7 @@ import {
   CreateDateColumn,
   UpdateDateColumn,
   OneToMany,
+  Index,
 } from 'typeorm';
 import { Post } from './post.entity';
 import { Like } from './like.entity';
@@ -19,6 +20,11 @@ export enum UserRole {
 }
 
 @Entity('users')
+@Index('idx_users_is_active', ['isActive'])
+@Index('idx_users_role', ['role'])
+@Index('idx_users_last_login_at', ['lastLoginAt'])
+@Index('idx_users_active_users', ['isActive', 'role'])
+@Index('idx_users_recent_login', ['isActive', 'lastLoginAt'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;

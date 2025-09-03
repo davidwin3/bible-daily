@@ -25,8 +25,8 @@ export class MissionsServiceOptimized {
    * - 단일 쿼리로 통계 정보까지 함께 조회
    */
   async getTodayMission(userId?: string): Promise<Mission | null> {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // 오늘 날짜를 YYYY-MM-DD 형식으로 변환
+    const today = new Date().toISOString().split('T')[0];
 
     const queryBuilder = this.missionsRepository
       .createQueryBuilder('mission')
@@ -120,19 +120,30 @@ export class MissionsServiceOptimized {
         0,
       );
 
+      // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+      const startDateStr = startOfMonth.toISOString().split('T')[0];
+      const endDateStr = endOfMonth.toISOString().split('T')[0];
+
       queryBuilder.andWhere(
         'mission.date BETWEEN :startOfMonth AND :endOfMonth',
-        { startOfMonth, endOfMonth },
+        {
+          startOfMonth: startDateStr,
+          endOfMonth: endDateStr,
+        },
       );
     } else {
       if (startDate) {
+        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+        const startDateStr = new Date(startDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date >= :startDate', {
-          startDate: new Date(startDate),
+          startDate: startDateStr,
         });
       }
       if (endDate) {
+        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+        const endDateStr = new Date(endDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date <= :endDate', {
-          endDate: new Date(endDate),
+          endDate: endDateStr,
         });
       }
     }
@@ -340,16 +351,22 @@ export class MissionsServiceOptimized {
    * 미션 생성
    */
   async create(createMissionDto: CreateMissionDto): Promise<Mission> {
-    // 중복 날짜 확인
-    const existingMission = await this.missionsRepository.findOne({
-      where: { date: new Date(createMissionDto.date) },
-    });
+    // 날짜 중복 체크 - DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+    const dateStr = new Date(createMissionDto.date).toISOString().split('T')[0];
+
+    const existingMission = await this.missionsRepository
+      .createQueryBuilder('mission')
+      .where('mission.date = :date', { date: dateStr })
+      .getOne();
 
     if (existingMission) {
       throw new ConflictException('Mission already exists for this date');
     }
 
-    const mission = this.missionsRepository.create(createMissionDto);
+    const mission = this.missionsRepository.create({
+      ...createMissionDto,
+      date: new Date(dateStr + 'T00:00:00.000Z'), // UTC 기준으로 날짜만 설정
+    });
     return await this.missionsRepository.save(mission);
   }
 
@@ -418,4 +435,3 @@ export class MissionsServiceOptimized {
     };
   }
 }
-

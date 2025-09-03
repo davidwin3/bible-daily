@@ -11,7 +11,11 @@ import {
 import { User } from './user.entity';
 
 @Entity('refresh_tokens')
-@Index(['userId'])
+@Index('idx_refresh_tokens_user_id', ['userId'])
+@Index('idx_refresh_tokens_token', ['token'])
+@Index('idx_refresh_tokens_expires_at', ['expiresAt'])
+@Index('idx_refresh_tokens_is_revoked', ['isRevoked'])
+@Index('idx_refresh_tokens_valid_tokens', ['userId', 'isRevoked', 'expiresAt'])
 export class RefreshToken {
   @PrimaryGeneratedColumn()
   id: number;

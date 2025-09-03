@@ -6,12 +6,19 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Index,
 } from 'typeorm';
 import { User } from './user.entity';
 import { Cell } from './cell.entity';
 
 @Entity('cell_members')
 @Unique(['userId', 'cellId'])
+@Index('idx_cell_members_user_id', ['userId'])
+@Index('idx_cell_members_cell_id', ['cellId'])
+@Index('idx_cell_members_is_active', ['isActive'])
+@Index('idx_cell_members_user_active', ['userId', 'isActive'])
+@Index('idx_cell_members_cell_active', ['cellId', 'isActive'])
+@Index('idx_cell_members_joined_at', ['joinedAt'])
 export class CellMember {
   @PrimaryGeneratedColumn('uuid')
   id: string;
