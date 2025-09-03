@@ -265,73 +265,71 @@ export const AdminMissionsPage: React.FC = () => {
         <div className="grid gap-4">
           {missions?.map((mission) => (
             <Card key={mission.id}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge
-                        variant={mission.isActive ? "default" : "secondary"}
-                      >
-                        {mission.isActive ? "활성" : "비활성"}
-                      </Badge>
-                      <span className="text-sm text-gray-500">
-                        {format(new Date(mission.date), "PPP", { locale: ko })}
+              <CardContent className="p-6 relative">
+                {/* 우측 상단 고정 메뉴 */}
+                <div className="absolute top-4 right-4 flex gap-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditDialog(mission)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() =>
+                      handleDelete(mission.id, (mission.totalUsers || 0) > 0)
+                    }
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+
+                {/* 메인 콘텐츠 영역 */}
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <Badge variant={mission.isActive ? "default" : "secondary"}>
+                      {mission.isActive ? "활성" : "비활성"}
+                    </Badge>
+                    <span className="text-sm text-gray-500">
+                      {format(new Date(mission.date), "PPP", { locale: ko })}
+                    </span>
+                  </div>
+
+                  <h3 className="text-lg font-semibold mb-2">
+                    {mission.title ? `${mission.title}` : "-"}
+                  </h3>
+
+                  {mission.description && (
+                    <p className="text-gray-600 mb-3 whitespace-pre-wrap">
+                      {mission.description}
+                    </p>
+                  )}
+
+                  {/* 날짜와 완료율 정보 */}
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      <span>{format(new Date(mission.date), "MM/dd")}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Target className="h-4 w-4" />
+                      <span>
+                        완료율: {mission.completionRate?.toFixed(1) || 0}% (
+                        {mission.completionCount || 0}/{mission.totalUsers || 0}
+                        )
                       </span>
                     </div>
-
-                    <h3 className="text-lg font-semibold mb-2">
-                      {mission.title ? `${mission.title}` : "-"}
-                    </h3>
-
-                    {mission.description && (
-                      <p className="text-gray-600 mb-3 whitespace-pre-wrap">
-                        {mission.description}
-                      </p>
-                    )}
-
-                    {/* 날짜와 완료율 정보 */}
-                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="h-4 w-4" />
-                        <span>{format(new Date(mission.date), "MM/dd")}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Target className="h-4 w-4" />
-                        <span>
-                          완료율: {mission.completionRate?.toFixed(1) || 0}% (
-                          {mission.completionCount || 0}/
-                          {mission.totalUsers || 0})
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 구절 표시 */}
-                    <ScriptureDisplay
-                      mission={mission}
-                      variant="detailed"
-                      className="mt-4"
-                    />
                   </div>
 
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openEditDialog(mission)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        handleDelete(mission.id, (mission.totalUsers || 0) > 0)
-                      }
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  {/* 구절 표시 */}
+                  <ScriptureDisplay
+                    mission={mission}
+                    variant="detailed"
+                    className="mt-4"
+                  />
                 </div>
               </CardContent>
             </Card>
