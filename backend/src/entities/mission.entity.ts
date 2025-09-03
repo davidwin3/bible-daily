@@ -17,25 +17,6 @@ export class Mission {
   @Column({ type: 'date', unique: true })
   date: Date;
 
-  // 하위 호환성을 위해 유지하되, nullable로 변경 (deprecated)
-  @Column({ length: 100, nullable: true })
-  startBook: string;
-
-  @Column({ nullable: true })
-  startChapter: number;
-
-  @Column({ nullable: true })
-  startVerse: number;
-
-  @Column({ length: 100, nullable: true })
-  endBook: string;
-
-  @Column({ nullable: true })
-  endChapter: number;
-
-  @Column({ nullable: true })
-  endVerse: number;
-
   @Column({ length: 200, nullable: true })
   title: string;
 

@@ -2,9 +2,6 @@ import {
   IsDateString,
   IsString,
   IsOptional,
-  IsNumber,
-  Min,
-  Max,
   Length,
   IsArray,
   ValidateNested,
@@ -21,38 +18,7 @@ export class CreateMissionDto {
   @Type(() => CreateMissionScriptureDto)
   scriptures: CreateMissionScriptureDto[];
 
-  // 하위 호환성을 위한 필드들 (optional)
-  @IsOptional()
-  @IsString()
-  @Length(1, 100)
-  startBook?: string;
 
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(150)
-  startChapter?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  startVerse?: number;
-
-  @IsOptional()
-  @IsString()
-  @Length(1, 100)
-  endBook?: string;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  @Max(150)
-  endChapter?: number;
-
-  @IsOptional()
-  @IsNumber()
-  @Min(1)
-  endVerse?: number;
 
   @IsOptional()
   @IsString()

@@ -66,14 +66,7 @@ interface MissionScripture {
 interface Mission {
   id: string;
   date: string;
-  scriptures?: MissionScripture[];
-  // 하위 호환성을 위한 필드들
-  startBook?: string;
-  startChapter?: number;
-  startVerse?: number;
-  endBook?: string;
-  endChapter?: number;
-  endVerse?: number;
+  scriptures: MissionScripture[];
   title?: string;
   description?: string;
   isActive: boolean;
@@ -84,14 +77,7 @@ interface Mission {
 
 interface CreateMissionData {
   date: string;
-  scriptures?: Omit<MissionScripture, "id">[];
-  // 하위 호환성을 위한 필드들
-  startBook?: string;
-  startChapter?: number;
-  startVerse?: number;
-  endBook?: string;
-  endChapter?: number;
-  endVerse?: number;
+  scriptures: Omit<MissionScripture, "id">[];
   title?: string;
   description?: string;
 }

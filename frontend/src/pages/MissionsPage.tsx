@@ -17,7 +17,6 @@ import {
   useUserProgress,
   useToggleCompletion,
   useCompletionStatus,
-  type Mission,
 } from "@/hooks/useMissions";
 import {
   BookOpenIcon,
@@ -27,6 +26,7 @@ import {
   TrendingUpIcon,
   TargetIcon,
 } from "lucide-react";
+import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
 
 export const MissionsPage: React.FC = () => {
   const { user } = useAuth();
@@ -58,38 +58,7 @@ export const MissionsPage: React.FC = () => {
     toggleCompletionMutation.mutate(missionId);
   };
 
-  const formatBibleReference = (mission: Mission) => {
-    let reference = `${mission.startBook} ${mission.startChapter}`;
-
-    if (mission.startVerse) {
-      reference += `:${mission.startVerse}`;
-    }
-
-    if (mission.endBook && mission.endBook !== mission.startBook) {
-      reference += ` - ${mission.endBook} ${mission.endChapter}`;
-      if (mission.endVerse) {
-        reference += `:${mission.endVerse}`;
-      }
-    } else if (
-      mission.endChapter &&
-      mission.endChapter !== mission.startChapter
-    ) {
-      reference += ` - ${mission.endChapter}`;
-      if (mission.endVerse) {
-        reference += `:${mission.endVerse}`;
-      }
-    } else if (
-      mission.endVerse &&
-      mission.startVerse &&
-      mission.endVerse !== mission.startVerse
-    ) {
-      reference += `-${mission.endVerse}`;
-    }
-
-    return reference;
-  };
-
-  const formatDate = (date: Date) => {
+  const formatDate = (date: Date | string) => {
     return new Date(date).toLocaleDateString("ko-KR", {
       month: "long",
       day: "numeric",
@@ -157,12 +126,11 @@ export const MissionsPage: React.FC = () => {
             )}
           </CardHeader>
           <CardContent>
-            <div className="flex items-center gap-2 mb-4">
-              <BookOpenIcon className="h-5 w-5 text-primary" />
-              <span className="text-lg font-semibold">
-                {formatBibleReference(todayMission)}
-              </span>
-            </div>
+            <ScriptureDisplay
+              mission={todayMission}
+              variant="default"
+              className="mb-4"
+            />
 
             {todayMission.description && (
               <p className="text-muted-foreground mb-4">
@@ -301,11 +269,11 @@ export const MissionsPage: React.FC = () => {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg font-semibold">
-                    {formatBibleReference(selectedMission)}
-                  </span>
-                </div>
+                <ScriptureDisplay
+                  mission={selectedMission}
+                  variant="default"
+                  className="mb-3"
+                />
 
                 {selectedMission.description && (
                   <p className="text-muted-foreground mb-3">

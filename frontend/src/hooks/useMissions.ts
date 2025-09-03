@@ -1,22 +1,9 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { missionsAPI } from "@/lib/api";
 import { missionKeys } from "@/queries";
+import type { Mission } from "@/lib/types";
 
-export interface Mission {
-  id: string;
-  date: Date;
-  startBook: string;
-  startChapter: number;
-  startVerse?: number;
-  endBook?: string;
-  endChapter?: number;
-  endVerse?: number;
-  title?: string;
-  description?: string;
-  completionCount?: number;
-  totalUsers?: number;
-  completionRate?: number;
-}
+export type { Mission };
 
 export interface UserProgress {
   totalMissions: number;

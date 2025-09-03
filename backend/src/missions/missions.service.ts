@@ -4,7 +4,7 @@ import {
   ConflictException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, Between, MoreThanOrEqual, LessThanOrEqual } from 'typeorm';
+import { Repository, MoreThanOrEqual } from 'typeorm';
 import { Mission } from '../entities/mission.entity';
 import { MissionScripture } from '../entities/mission-scripture.entity';
 import { UserMission } from '../entities/user-mission.entity';
@@ -166,7 +166,7 @@ export class MissionsService {
     missionId: string,
     userId: string,
   ): Promise<{ completed: boolean }> {
-    const mission = await this.findOne(missionId);
+    await this.findOne(missionId);
 
     let userMission = await this.userMissionsRepository.findOne({
       where: { missionId, userId },
@@ -255,51 +255,17 @@ export class MissionsService {
       throw new ConflictException('Mission for this date already exists');
     }
 
-    // 하위 호환성: 기존 단일 구절 형식 지원
-    let scriptureData = scriptures;
-    if (!scriptures || scriptures.length === 0) {
-      const {
-        startBook,
-        startChapter,
-        startVerse,
-        endBook,
-        endChapter,
-        endVerse,
-      } = createMissionDto;
-
-      if (startBook && startChapter) {
-        scriptureData = [
-          {
-            startBook,
-            startChapter,
-            startVerse,
-            endBook: endBook || startBook,
-            endChapter,
-            endVerse,
-            order: 0,
-          },
-        ];
-      }
-    }
-
     const mission = this.missionsRepository.create({
       date: new Date(date),
       title,
       description,
-      // 하위 호환성을 위해 첫 번째 구절을 메인 필드에 저장
-      startBook: scriptureData?.[0]?.startBook,
-      startChapter: scriptureData?.[0]?.startChapter,
-      startVerse: scriptureData?.[0]?.startVerse,
-      endBook: scriptureData?.[0]?.endBook,
-      endChapter: scriptureData?.[0]?.endChapter,
-      endVerse: scriptureData?.[0]?.endVerse,
     });
 
     const savedMission = await this.missionsRepository.save(mission);
 
     // 성경구절들 저장
-    if (scriptureData && scriptureData.length > 0) {
-      const missionScriptures = scriptureData.map((scripture) =>
+    if (scriptures && scriptures.length > 0) {
+      const missionScriptures = scriptures.map((scripture) =>
         this.missionScripturesRepository.create({
           ...scripture,
           missionId: savedMission.id,
@@ -326,15 +292,12 @@ export class MissionsService {
     }
 
     // 날짜가 변경되는 경우 중복 체크
-    if (
-      updateMissionDto.date &&
-      updateMissionDto.date !== mission.date.toISOString().split('T')[0]
-    ) {
+    if (updateMissionDto.date) {
       const existingMission = await this.missionsRepository.findOne({
         where: { date: new Date(updateMissionDto.date) },
       });
 
-      if (existingMission) {
+      if (existingMission && existingMission.id !== id) {
         throw new ConflictException('Mission for this date already exists');
       }
     }
@@ -347,52 +310,18 @@ export class MissionsService {
     // 업데이트할 필드들 설정
     const { scriptures, ...missionUpdates } = updateMissionDto;
 
-    // 하위 호환성: 새로운 scriptures가 없으면 기존 단일 구절 형식 사용
-    let scriptureData = scriptures;
-    if (!scriptures || scriptures.length === 0) {
-      const {
-        startBook,
-        startChapter,
-        startVerse,
-        endBook,
-        endChapter,
-        endVerse,
-      } = updateMissionDto;
-
-      if (startBook && startChapter) {
-        scriptureData = [
-          {
-            startBook,
-            startChapter,
-            startVerse,
-            endBook: endBook || startBook,
-            endChapter,
-            endVerse,
-            order: 0,
-          },
-        ];
-      }
-    }
-
     Object.assign(mission, {
       ...missionUpdates,
       date: updateMissionDto.date
         ? new Date(updateMissionDto.date)
         : mission.date,
-      // 하위 호환성을 위해 첫 번째 구절을 메인 필드에 저장
-      startBook: scriptureData?.[0]?.startBook || mission.startBook,
-      startChapter: scriptureData?.[0]?.startChapter || mission.startChapter,
-      startVerse: scriptureData?.[0]?.startVerse || mission.startVerse,
-      endBook: scriptureData?.[0]?.endBook || mission.endBook,
-      endChapter: scriptureData?.[0]?.endChapter || mission.endChapter,
-      endVerse: scriptureData?.[0]?.endVerse || mission.endVerse,
     });
 
     const savedMission = await this.missionsRepository.save(mission);
 
     // 새로운 성경구절들 저장
-    if (scriptureData && scriptureData.length > 0) {
-      const missionScriptures = scriptureData.map((scripture) =>
+    if (scriptures && scriptures.length > 0) {
+      const missionScriptures = scriptures.map((scripture) =>
         this.missionScripturesRepository.create({
           ...scripture,
           missionId: savedMission.id,
@@ -518,6 +447,7 @@ export class MissionsService {
         date: MoreThanOrEqual(sevenDaysAgo),
         isActive: true,
       },
+      relations: ['scriptures'],
       order: { date: 'DESC' },
     });
 
@@ -530,10 +460,16 @@ export class MissionsService {
         where: { missionId: mission.id },
       });
 
+      // scriptures에서 첫 번째 구절로 제목 생성
+      let defaultTitle = '미션';
+      if (mission.scriptures && mission.scriptures.length > 0) {
+        const firstScripture = mission.scriptures[0];
+        defaultTitle = `${firstScripture.startBook} ${firstScripture.startChapter}장`;
+      }
+
       recentStats.push({
         date: mission.date,
-        title:
-          mission.title || `${mission.startBook} ${mission.startChapter}장`,
+        title: mission.title || defaultTitle,
         completionCount,
         totalUsers,
         completionRate:

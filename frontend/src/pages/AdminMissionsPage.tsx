@@ -30,6 +30,7 @@ import {
   useSoftDeleteMission,
 } from "@/hooks/useAdmin";
 import { AdminNav } from "@/components/layout/AdminNav";
+import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
 import { format } from "date-fns";
 import { ko } from "date-fns/locale";
 import {
@@ -143,29 +144,11 @@ export const AdminMissionsPage: React.FC = () => {
   const openEditDialog = (mission: Mission) => {
     setEditingMission(mission);
 
-    // 기존 미션이 scriptures를 가지고 있으면 사용하고, 없으면 하위 호환성으로 단일 구절 생성
-    let scriptures: MissionScripture[] = [];
-    if (mission.scriptures && mission.scriptures.length > 0) {
-      scriptures = mission.scriptures;
-    } else if (mission.startBook && mission.startChapter) {
-      scriptures = [
-        {
-          startBook: mission.startBook,
-          startChapter: mission.startChapter,
-          startVerse: mission.startVerse,
-          endBook: mission.endBook,
-          endChapter: mission.endChapter,
-          endVerse: mission.endVerse,
-          order: 0,
-        },
-      ];
-    }
-
     setFormData({
       date: format(new Date(mission.date), "yyyy-MM-dd"),
       scriptures:
-        scriptures.length > 0
-          ? scriptures
+        mission.scriptures && mission.scriptures.length > 0
+          ? mission.scriptures
           : [
               {
                 startBook: "",
@@ -306,41 +289,11 @@ export const AdminMissionsPage: React.FC = () => {
                       </p>
                     )}
 
-                    <div className="flex items-center gap-6 text-sm text-gray-500">
+                    {/* 날짜와 완료율 정보 */}
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-gray-500 mb-4">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
                         <span>{format(new Date(mission.date), "MM/dd")}</span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <BookOpen className="h-4 w-4" />
-                        <span>
-                          {mission.scriptures &&
-                          mission.scriptures.length > 0 ? (
-                            mission.scriptures.map((scripture, index) => (
-                              <span key={index}>
-                                {index > 0 && ", "}
-                                {scripture.startBook} {scripture.startChapter}
-                                {scripture.startVerse &&
-                                  `:${scripture.startVerse}`}
-                                {scripture.endBook &&
-                                  scripture.endBook !== scripture.startBook &&
-                                  ` - ${scripture.endBook}`}
-                                {scripture.endChapter &&
-                                  ` ${scripture.endChapter}`}
-                                {scripture.endVerse && `:${scripture.endVerse}`}
-                              </span>
-                            ))
-                          ) : (
-                            <>
-                              {mission.startBook} {mission.startChapter}
-                              {mission.startVerse && `:${mission.startVerse}`}
-                              {" - "}
-                              {mission.endBook && `${mission.endBook}`}
-                              {mission.endChapter && ` ${mission.endChapter}`}
-                              {mission.endVerse && `:${mission.endVerse}`}
-                            </>
-                          )}
-                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Target className="h-4 w-4" />
@@ -351,6 +304,13 @@ export const AdminMissionsPage: React.FC = () => {
                         </span>
                       </div>
                     </div>
+
+                    {/* 구절 표시 */}
+                    <ScriptureDisplay
+                      mission={mission}
+                      variant="detailed"
+                      className="mt-4"
+                    />
                   </div>
 
                   <div className="flex gap-2">

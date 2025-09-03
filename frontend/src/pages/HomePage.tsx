@@ -12,6 +12,7 @@ import {
 import { useAuth } from "@/contexts/auth";
 import { useTodayMission } from "@/hooks/useMissions";
 import { usePosts, type Post } from "@/hooks/usePosts";
+import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -56,16 +57,10 @@ export const HomePage: React.FC = () => {
           ) : todayMission ? (
             <div className="space-y-3">
               <div>
-                <h3 className="font-semibold">
+                <h3 className="font-semibold mb-3">
                   {todayMission.title || "오늘의 성경 읽기"}
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  {todayMission.startBook} {todayMission.startChapter}
-                  {todayMission.startVerse && `:${todayMission.startVerse}`}
-                  {todayMission.endBook &&
-                    ` - ${todayMission.endBook} ${todayMission.endChapter}`}
-                  {todayMission.endVerse && `:${todayMission.endVerse}`}
-                </p>
+                <ScriptureDisplay mission={todayMission} variant="compact" />
               </div>
               {todayMission.description && (
                 <p className="text-sm">{todayMission.description}</p>

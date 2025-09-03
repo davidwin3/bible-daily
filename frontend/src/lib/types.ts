@@ -12,17 +12,10 @@ export interface MissionScripture {
 export interface Mission {
   id: string;
   date: string;
-  scriptures?: MissionScripture[];
-  // 하위 호환성을 위한 필드들
-  startBook?: string;
-  startChapter?: number;
-  startVerse?: number;
-  endBook?: string;
-  endChapter?: number;
-  endVerse?: number;
+  scriptures: MissionScripture[];
   title?: string;
   description?: string;
-  isActive: boolean;
+  isActive?: boolean;
   completionCount?: number;
   totalUsers?: number;
   completionRate?: number;
