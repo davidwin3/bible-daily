@@ -128,7 +128,8 @@ export const MissionsPage: React.FC = () => {
           <CardContent>
             <ScriptureDisplay
               mission={todayMission}
-              variant="default"
+              variant="mobile"
+              showActions={true}
               className="mb-4"
             />
 
