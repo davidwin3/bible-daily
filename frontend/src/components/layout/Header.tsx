@@ -24,14 +24,14 @@ export const Header: React.FC = () => {
           Bible Daily
         </Link>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4">
           {user ? (
             <>
               {user.role === "admin" && (
                 <Link to="/admin">
-                  <Button variant="ghost" size="sm">
-                    <Settings className="h-4 w-4 mr-2" />
-                    관리자
+                  <Button variant="ghost" size="sm" className="px-2 sm:px-3">
+                    <Settings className="h-4 w-4" />
+                    <span className="hidden sm:inline ml-2">관리자</span>
                   </Button>
                 </Link>
               )}
@@ -43,7 +43,13 @@ export const Header: React.FC = () => {
                   </AvatarFallback>
                 </Avatar>
               </Link>
-              <Button variant="ghost" size="sm" onClick={handleLogout}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="px-2 sm:px-3"
+                aria-label="로그아웃"
+              >
                 <LogOut className="h-4 w-4" />
               </Button>
             </>
