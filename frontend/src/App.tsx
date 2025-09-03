@@ -18,8 +18,10 @@ import { AdminDashboardPage } from "@/pages/AdminDashboardPage";
 import { AdminMissionsPage } from "@/pages/AdminMissionsPage";
 import { AdminCellsPage } from "@/pages/AdminCellsPage";
 import { AdminUsersPage } from "@/pages/AdminUsersPage";
+import { InAppTestPage } from "@/pages/InAppTestPage";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
+import { InAppBrowserAlert } from "@/components/common/InAppBrowserHandler";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +42,8 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
+          {/* 인앱 브라우저 알림 (전역) */}
+          <InAppBrowserAlert />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route path="/" element={<Layout />}>
@@ -114,6 +118,8 @@ function App() {
                   </AdminRoute>
                 }
               />
+              {/* 인앱 브라우저 테스트 페이지 */}
+              <Route path="inapp-test" element={<InAppTestPage />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

@@ -21,6 +21,161 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="Bible Daily" />
     <link rel="apple-touch-icon" href="/vite.svg" />
+
+    <!-- 인앱 브라우저 우회 스크립트 -->
+    <script type="text/javascript">
+      (function () {
+        var inappdeny_exec_vanillajs = function (callback) {
+          if (document.readyState !== "loading") {
+            callback();
+          } else {
+            document.addEventListener("DOMContentLoaded", callback);
+          }
+        };
+
+        inappdeny_exec_vanillajs(function () {
+          var useragt = navigator.userAgent.toLowerCase();
+          var target_url = window.location.href;
+
+          function copytoclipboard(val) {
+            try {
+              if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(val);
+                return true;
+              }
+
+              var t = document.createElement("textarea");
+              document.body.appendChild(t);
+              t.value = val;
+              t.select();
+              document.execCommand("copy");
+              document.body.removeChild(t);
+              return true;
+            } catch (e) {
+              console.error("클립보드 복사 실패:", e);
+              return false;
+            }
+          }
+
+          function inappbrowserout() {
+            copytoclipboard(window.location.href);
+            alert(
+              "URL주소가 클립보드에 복사되었습니다.\n외부 브라우저(Safari/Chrome)를 열어서 주소창에 붙여넣기 하여 접속해주세요."
+            );
+
+            if (useragt.match(/iphone|ipad|ipod/i)) {
+              // iOS - Safari 실행 시도
+              try {
+                window.location.href = "x-web-search://?";
+              } catch (e) {
+                console.log("Safari 실행 실패");
+              }
+            } else {
+              // Android - Chrome 실행
+              try {
+                var cleanUrl = target_url.replace(/https?:\/\//i, "");
+                window.location.href =
+                  "intent://" +
+                  cleanUrl +
+                  "#Intent;scheme=http;package=com.android.chrome;end";
+              } catch (e) {
+                console.log("Chrome 실행 실패");
+              }
+            }
+          }
+
+          // 카카오톡 인앱 브라우저 감지 및 우회
+          if (useragt.match(/kakaotalk/i)) {
+            try {
+              // 카카오톡 외부 브라우저 열기 스킴 사용
+              window.location.href =
+                "kakaotalk://web/openExternal?url=" +
+                encodeURIComponent(target_url);
+            } catch (e) {
+              console.error("카카오톡 외부 브라우저 실행 실패:", e);
+              setTimeout(inappbrowserout, 100);
+            }
+          }
+          // 라인 인앱 브라우저 감지 및 우회
+          else if (useragt.match(/line/i)) {
+            try {
+              if (target_url.indexOf("?") !== -1) {
+                window.location.href = target_url + "&openExternalBrowser=1";
+              } else {
+                window.location.href = target_url + "?openExternalBrowser=1";
+              }
+            } catch (e) {
+              console.error("라인 외부 브라우저 실행 실패:", e);
+              setTimeout(inappbrowserout, 100);
+            }
+          }
+          // 기타 인앱 브라우저들
+          else if (
+            useragt.match(
+              /inapp|naver|snapchat|wirtschaftswoche|thunderbird|instagram|everytimeapp|whatsapp|electron|wadiz|aliapp|zumapp|iphone(.*)whale|android(.*)whale|kakaostory|band|twitter|daumapps|daumdevice\/mobile|fb_iab|fb4a|fban|fbios|fbss|trill|samsungbrowser\/[^1]/i
+            )
+          ) {
+            if (useragt.match(/iphone|ipad|ipod/i)) {
+              // iOS - 수동 안내 페이지 표시
+              setTimeout(function () {
+                var mobile = document.createElement("meta");
+                mobile.name = "viewport";
+                mobile.content =
+                  "width=device-width, initial-scale=1, shrink-to-fit=no, user-scalable=no, minimal-ui";
+                document.getElementsByTagName("head")[0].appendChild(mobile);
+
+                var fonts = document.createElement("link");
+                fonts.href =
+                  "https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@100;300;400;500;700;900&display=swap";
+                fonts.rel = "stylesheet";
+                document.getElementsByTagName("head")[0].appendChild(fonts);
+
+                document.body.innerHTML =
+                  "<style>" +
+                  "body{margin:0;padding:0;font-family: 'Noto Sans KR', sans-serif;overflow: hidden;height: 100vh;background:#f8f9fa;}" +
+                  ".container{padding:20px;text-align:center;max-width:400px;margin:0 auto;}" +
+                  ".icon{font-size:48px;margin:40px 0 20px 0;}" +
+                  ".title{font-size:20px;font-weight:700;color:#333;margin-bottom:10px;line-height:1.4;}" +
+                  ".description{font-size:16px;color:#666;margin-bottom:30px;line-height:1.5;}" +
+                  ".button{min-width:200px;height:50px;background:#f97316;color:#fff;border:none;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;margin:10px;}" +
+                  ".button:hover{background:#ea580c;}" +
+                  ".steps{text-align:left;background:#fff;padding:20px;border-radius:12px;margin:20px 0;box-shadow:0 2px 8px rgba(0,0,0,0.1);}" +
+                  ".steps h3{margin:0 0 15px 0;font-size:16px;color:#333;}" +
+                  ".steps ol{margin:0;padding-left:20px;}" +
+                  ".steps li{margin:8px 0;font-size:14px;color:#555;line-height:1.4;}" +
+                  "</style>" +
+                  "<div class='container'>" +
+                  "<div class='icon'>📱➡️🌐</div>" +
+                  "<h2 class='title'>인앱브라우저 호환문제로 인해<br />Safari로 접속해야합니다</h2>" +
+                  "<p class='description'>더 나은 서비스 이용을 위해<br />외부 브라우저로 접속해주세요</p>" +
+                  "<button onclick='inappbrowserout();' class='button'>Safari로 열기</button>" +
+                  "<div class='steps'>" +
+                  "<h3>📋 접속 방법</h3>" +
+                  "<ol>" +
+                  "<li>위 버튼을 눌러 URL 복사</li>" +
+                  "<li>Safari 브라우저 실행</li>" +
+                  "<li>주소창을 길게 터치</li>" +
+                  "<li>'붙여넣기 및 이동' 선택</li>" +
+                  "</ol>" +
+                  "</div>" +
+                  "</div>";
+
+                window.inappbrowserout = inappbrowserout;
+              }, 500);
+            } else {
+              // Android - Chrome으로 바로 리다이렉트
+              setTimeout(function () {
+                var cleanUrl = target_url.replace(/https?:\/\//i, "");
+                window.location.href =
+                  "intent://" +
+                  cleanUrl +
+                  "#Intent;scheme=http;package=com.android.chrome;end";
+              }, 100);
+            }
+          }
+        });
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
