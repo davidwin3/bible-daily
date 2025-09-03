@@ -60,7 +60,12 @@ export const HomePage: React.FC = () => {
                 <h3 className="font-semibold mb-3">
                   {todayMission.title || "오늘의 성경 읽기"}
                 </h3>
-                <ScriptureDisplay mission={todayMission} variant="compact" />
+                <ScriptureDisplay
+                  mission={todayMission}
+                  variant="compact"
+                  showActions={true}
+                  allowExpand={true}
+                />
               </div>
               {todayMission.description && (
                 <p className="text-sm">{todayMission.description}</p>

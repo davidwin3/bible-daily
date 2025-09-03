@@ -94,7 +94,7 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
     );
   }
 
-  // compact 버전 - 한 줄로 표시 (모바일 개선)
+  // compact 버전 - 모바일 우선으로 PC에서도 비슷한 느낌
   if (variant === "compact") {
     const displayText = getAllScripturesText();
     const isLongText = displayText.length > 30;
@@ -102,12 +102,12 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
 
     return (
       <div className={cn("space-y-2", className)}>
-        <div className="flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2 min-w-0 flex-1">
-            <BookOpen className="h-3 w-3 flex-shrink-0 text-primary" />
+        <div className="flex items-center justify-between gap-2 p-2 md:p-3 bg-muted/20 hover:bg-muted/30 rounded-lg transition-colors">
+          <div className="flex items-center gap-2 min-w-0 flex-1 md:gap-3">
+            <BookOpen className="h-3 w-3 flex-shrink-0 text-primary md:h-4 md:w-4" />
             <span
               className={cn(
-                "text-sm text-muted-foreground font-medium",
+                "text-sm text-muted-foreground font-medium md:text-base",
                 shouldTruncate && isLongText && "truncate"
               )}
               title={displayText}
@@ -118,18 +118,18 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
             </span>
           </div>
 
-          <div className="flex items-center gap-1 flex-shrink-0">
+          <div className="flex items-center gap-1 flex-shrink-0 md:gap-2">
             {allowExpand && isLongText && (
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="h-6 w-6 p-0"
+                className="h-6 w-6 p-0 md:h-8 md:w-8"
               >
                 {isExpanded ? (
-                  <ChevronUp className="h-3 w-3" />
+                  <ChevronUp className="h-3 w-3 md:h-4 md:w-4" />
                 ) : (
-                  <ChevronDown className="h-3 w-3" />
+                  <ChevronDown className="h-3 w-3 md:h-4 md:w-4" />
                 )}
               </Button>
             )}
@@ -140,13 +140,13 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={copyToClipboard}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 md:h-8 md:w-8"
                   title="성경 구절 복사"
                 >
                   {copied ? (
-                    <Check className="h-3 w-3 text-green-600" />
+                    <Check className="h-3 w-3 text-green-600 md:h-4 md:w-4" />
                   ) : (
-                    <Copy className="h-3 w-3" />
+                    <Copy className="h-3 w-3 md:h-4 md:w-4" />
                   )}
                 </Button>
 
@@ -154,10 +154,10 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
                   variant="ghost"
                   size="sm"
                   onClick={openBibleApp}
-                  className="h-6 w-6 p-0"
+                  className="h-6 w-6 p-0 md:h-8 md:w-8"
                   title="성경 앱에서 열기"
                 >
-                  <ExternalLink className="h-3 w-3" />
+                  <ExternalLink className="h-3 w-3 md:h-4 md:w-4" />
                 </Button>
               </>
             )}
@@ -167,13 +167,13 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
     );
   }
 
-  // mobile 버전 - 모바일 최적화된 터치 친화적 디자인
+  // mobile 버전 - 모바일 우선 디자인으로 PC에서도 동일한 경험 제공
   if (variant === "mobile") {
     return (
       <div className={cn("space-y-3", className)}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <BookOpen className="h-4 w-4 text-primary" />
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground md:text-base">
+            <BookOpen className="h-4 w-4 text-primary md:h-5 md:w-5" />
             <span>읽을 말씀</span>
           </div>
 
@@ -183,16 +183,16 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={copyToClipboard}
-                className="h-8 px-2 text-xs"
+                className="h-8 px-2 text-xs md:h-9 md:px-3 md:text-sm"
               >
                 {copied ? (
                   <>
-                    <Check className="h-3 w-3 mr-1 text-green-600" />
+                    <Check className="h-3 w-3 mr-1 text-green-600 md:h-4 md:w-4" />
                     복사됨
                   </>
                 ) : (
                   <>
-                    <Copy className="h-3 w-3 mr-1" />
+                    <Copy className="h-3 w-3 mr-1 md:h-4 md:w-4" />
                     복사
                   </>
                 )}
@@ -202,28 +202,37 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
                 variant="ghost"
                 size="sm"
                 onClick={openBibleApp}
-                className="h-8 px-2 text-xs"
+                className="h-8 px-2 text-xs md:h-9 md:px-3 md:text-sm"
               >
-                <ExternalLink className="h-3 w-3 mr-1" />
+                <ExternalLink className="h-3 w-3 mr-1 md:h-4 md:w-4" />
                 성경앱
               </Button>
             </div>
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 md:space-y-3">
           {scriptures.map((scripture, index) => (
             <div
               key={index}
-              className="bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg p-3 touch-manipulation"
+              className="bg-gradient-to-r from-primary/5 to-primary/10 border border-primary/20 rounded-lg p-3 touch-manipulation 
+                         md:p-4 md:rounded-xl md:hover:from-primary/8 md:hover:to-primary/15 md:transition-all md:duration-200
+                         cursor-pointer"
+              onClick={() => {
+                navigator.clipboard.writeText(formatScripture(scripture));
+              }}
+              title="클릭하여 복사"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-semibold text-primary">
+                <span className="text-sm font-semibold text-primary md:text-base">
                   {formatScripture(scripture)}
                 </span>
-                <Badge variant="secondary" className="text-xs">
-                  {index + 1}
-                </Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="secondary" className="text-xs md:text-sm">
+                    {index + 1}
+                  </Badge>
+                  <Copy className="h-3 w-3 text-muted-foreground opacity-0 md:group-hover:opacity-100 transition-opacity md:h-4 md:w-4" />
+                </div>
               </div>
             </div>
           ))}
@@ -290,28 +299,28 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
     );
   }
 
-  // default 버전 - 모바일 친화적인 세로 레이아웃 (개선)
+  // default 버전 - 모바일 우선으로 PC에서도 동일한 경험
   return (
     <div className={cn("space-y-3", className)}>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-          <BookOpen className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground md:text-base">
+          <BookOpen className="h-4 w-4 text-primary md:h-5 md:w-5" />
           <span>읽을 말씀</span>
         </div>
 
         {showActions && (
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 md:gap-2">
             <Button
               variant="ghost"
               size="sm"
               onClick={copyToClipboard}
-              className="h-7 w-7 p-0"
+              className="h-7 w-7 p-0 md:h-8 md:w-8"
               title="성경 구절 복사"
             >
               {copied ? (
-                <Check className="h-3 w-3 text-green-600" />
+                <Check className="h-3 w-3 text-green-600 md:h-4 md:w-4" />
               ) : (
-                <Copy className="h-3 w-3" />
+                <Copy className="h-3 w-3 md:h-4 md:w-4" />
               )}
             </Button>
 
@@ -319,30 +328,39 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
               variant="ghost"
               size="sm"
               onClick={openBibleApp}
-              className="h-7 w-7 p-0"
+              className="h-7 w-7 p-0 md:h-8 md:w-8"
               title="성경 앱에서 열기"
             >
-              <ExternalLink className="h-3 w-3" />
+              <ExternalLink className="h-3 w-3 md:h-4 md:w-4" />
             </Button>
           </div>
         )}
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 md:space-y-3">
         {scriptures.map((scripture, index) => (
           <div
             key={index}
-            className="bg-muted/50 hover:bg-muted/70 rounded-lg px-4 py-3 transition-colors cursor-pointer touch-manipulation"
+            className="bg-muted/50 hover:bg-muted/70 rounded-lg px-4 py-3 md:rounded-xl 
+                       transition-colors cursor-pointer touch-manipulation
+                       md:hover:bg-primary/5 md:hover:border-primary/20 md:border md:border-transparent"
             onClick={() => {
               navigator.clipboard.writeText(formatScripture(scripture));
             }}
             title="클릭하여 복사"
           >
             <div className="flex items-center justify-between">
-              <span className="font-medium text-sm">
+              <span className="font-medium text-sm md:text-base">
                 {formatScripture(scripture)}
               </span>
-              <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
+              <div className="flex items-center gap-2">
+                {scriptures.length > 1 && (
+                  <Badge variant="secondary" className="text-xs md:text-sm">
+                    {index + 1}
+                  </Badge>
+                )}
+                <Copy className="h-3 w-3 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity md:h-4 md:w-4" />
+              </div>
             </div>
           </div>
         ))}
