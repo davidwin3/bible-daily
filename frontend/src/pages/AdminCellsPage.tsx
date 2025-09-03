@@ -11,6 +11,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
 import {
   Plus,
@@ -20,6 +25,9 @@ import {
   UserPlus,
   UserMinus,
   Eye,
+  ChevronDown,
+  UserCog,
+  ShieldCheck,
 } from "lucide-react";
 import {
   useAdminCells,
@@ -185,9 +193,11 @@ export const AdminCellsPage: React.FC = () => {
     <>
       <AdminNav />
       <div className="container mx-auto px-4 py-8">
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">셀 관리</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+              셀 관리
+            </h1>
             <p className="text-gray-600">
               소그룹 셀을 관리하고 멤버를 배정하세요.
             </p>
@@ -197,7 +207,7 @@ export const AdminCellsPage: React.FC = () => {
             onOpenChange={setIsCreateDialogOpen}
           >
             <DialogTrigger asChild>
-              <Button>
+              <Button className="w-full sm:w-auto">
                 <Plus className="h-4 w-4 mr-2" />새 셀 추가
               </Button>
             </DialogTrigger>
@@ -221,27 +231,31 @@ export const AdminCellsPage: React.FC = () => {
         <div className="grid gap-4">
           {cells?.map((cell) => (
             <Card key={cell.id}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
+              <CardContent className="p-4 sm:p-6">
+                <div className="flex flex-col lg:flex-row lg:justify-between lg:items-start gap-4">
                   <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge variant={cell.isActive ? "default" : "secondary"}>
-                        {cell.isActive ? "활성" : "비활성"}
-                      </Badge>
-                      <span className="text-sm text-gray-500">
-                        ID: {cell.id.slice(0, 8)}
-                      </span>
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Badge
+                          variant={cell.isActive ? "default" : "secondary"}
+                        >
+                          {cell.isActive ? "활성" : "비활성"}
+                        </Badge>
+                        <span className="text-xs sm:text-sm text-gray-500">
+                          ID: {cell.id.slice(0, 8)}
+                        </span>
+                      </div>
                     </div>
 
                     <h3 className="text-lg font-semibold mb-2">{cell.name}</h3>
 
                     {cell.description && (
-                      <p className="text-gray-600 mb-3 whitespace-pre-wrap">
+                      <p className="text-gray-600 mb-3 whitespace-pre-wrap text-sm">
                         {cell.description}
                       </p>
                     )}
 
-                    <div className="flex items-center gap-6 text-sm text-gray-500">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
                         <span>리더: {cell.leader.name}</span>
@@ -253,20 +267,24 @@ export const AdminCellsPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="flex flex-row lg:flex-col gap-2 w-full lg:w-auto">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openDetailDialog(cell.id)}
+                      className="flex-1 lg:flex-initial"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4 lg:mr-2" />
+                      <span className="hidden lg:inline">상세</span>
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openEditDialog(cell)}
+                      className="flex-1 lg:flex-initial"
                     >
-                      <Edit className="h-4 w-4" />
+                      <Edit className="h-4 w-4 lg:mr-2" />
+                      <span className="hidden lg:inline">수정</span>
                     </Button>
                     <Button
                       variant="outline"
@@ -274,10 +292,11 @@ export const AdminCellsPage: React.FC = () => {
                       onClick={() =>
                         handleDelete(cell.id, cell.memberCount || 0)
                       }
-                      className="text-red-600 hover:text-red-700"
+                      className="text-red-600 hover:text-red-700 flex-1 lg:flex-initial"
                       disabled={(cell.memberCount || 0) > 0}
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 lg:mr-2" />
+                      <span className="hidden lg:inline">삭제</span>
                     </Button>
                   </div>
                 </div>
@@ -314,7 +333,7 @@ export const AdminCellsPage: React.FC = () => {
 
         {/* 셀 상세 다이얼로그 */}
         <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto mx-4">
             <DialogHeader>
               <DialogTitle>셀 상세 정보</DialogTitle>
             </DialogHeader>
@@ -323,39 +342,52 @@ export const AdminCellsPage: React.FC = () => {
                 {/* 셀 기본 정보 */}
                 <div>
                   <h3 className="text-lg font-semibold mb-3">기본 정보</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">셀 이름:</span>
-                      <span className="ml-2 font-medium">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
+                    <div className="flex flex-col sm:block">
+                      <span className="text-gray-500 text-xs sm:text-sm">
+                        셀 이름:
+                      </span>
+                      <span className="font-medium mt-1 sm:ml-2 sm:mt-0">
                         {cellDetail.name}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-gray-500">리더:</span>
-                      <span className="ml-2 font-medium">
+                    <div className="flex flex-col sm:block">
+                      <span className="text-gray-500 text-xs sm:text-sm">
+                        리더:
+                      </span>
+                      <span className="font-medium mt-1 sm:ml-2 sm:mt-0">
                         {cellDetail.leader.name}
                       </span>
                     </div>
-                    <div>
-                      <span className="text-gray-500">멤버 수:</span>
-                      <span className="ml-2 font-medium">
+                    <div className="flex flex-col sm:block">
+                      <span className="text-gray-500 text-xs sm:text-sm">
+                        멤버 수:
+                      </span>
+                      <span className="font-medium mt-1 sm:ml-2 sm:mt-0">
                         {cellDetail.memberCount}명
                       </span>
                     </div>
-                    <div>
-                      <span className="text-gray-500">상태:</span>
-                      <Badge
-                        variant={cellDetail.isActive ? "default" : "secondary"}
-                        className="ml-2"
-                      >
-                        {cellDetail.isActive ? "활성" : "비활성"}
-                      </Badge>
+                    <div className="flex flex-col sm:block">
+                      <span className="text-gray-500 text-xs sm:text-sm">
+                        상태:
+                      </span>
+                      <div className="mt-1 sm:ml-2 sm:mt-0 sm:inline">
+                        <Badge
+                          variant={
+                            cellDetail.isActive ? "default" : "secondary"
+                          }
+                        >
+                          {cellDetail.isActive ? "활성" : "비활성"}
+                        </Badge>
+                      </div>
                     </div>
                   </div>
                   {cellDetail.description && (
-                    <div className="mt-3">
-                      <span className="text-gray-500">설명:</span>
-                      <p className="mt-1 text-sm whitespace-pre-wrap">
+                    <div className="mt-4">
+                      <span className="text-gray-500 text-xs sm:text-sm">
+                        설명:
+                      </span>
+                      <p className="mt-2 text-sm whitespace-pre-wrap bg-gray-50 p-3 rounded-md">
                         {cellDetail.description}
                       </p>
                     </div>
@@ -424,56 +456,75 @@ export const AdminCellsPage: React.FC = () => {
                     {cellDetail.members?.map((member: any) => (
                       <div
                         key={member.id}
-                        className="flex justify-between items-center p-3 border rounded-lg"
+                        className="flex flex-col lg:flex-row lg:justify-between p-3 border rounded-lg gap-3"
                       >
                         <div className="flex-1">
-                          <div className="flex items-center gap-3">
-                            <div>
-                              <p className="font-medium">{member.user.name}</p>
-                              <p className="text-sm text-gray-500">
+                          <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm sm:text-base">
+                                {member.user.name}
+                              </p>
+                              <p className="text-xs sm:text-sm text-gray-500 break-all">
                                 {member.user.email}
                               </p>
                             </div>
-                            <Badge variant="outline">
-                              {member.user.role === "admin"
-                                ? "관리자"
-                                : member.user.role === "teacher"
-                                ? "선생님"
-                                : "학생"}
-                            </Badge>
-                            {!member.isActive && (
-                              <Badge variant="secondary">비활성</Badge>
-                            )}
+                            <div className="flex gap-2 flex-wrap">
+                              <Badge variant="outline" className="text-xs">
+                                {member.user.role === "admin"
+                                  ? "관리자"
+                                  : member.user.role === "teacher"
+                                  ? "선생님"
+                                  : "학생"}
+                              </Badge>
+                              {!member.isActive && (
+                                <Badge variant="secondary" className="text-xs">
+                                  비활성
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                          <div className="flex items-center gap-4 text-xs text-gray-500 mt-2">
-                            <span>
-                              가입일:{" "}
-                              {new Date(member.joinedAt).toLocaleDateString()}
-                            </span>
-                            <span>최근 미션: {member.recentMissions}개</span>
-                            <span>
-                              완료율: {member.completionRate?.toFixed(1)}%
-                            </span>
-                            {member.user.lastLoginAt && (
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-gray-500 mt-3">
+                            <div className="flex flex-col">
+                              <span className="text-gray-400">가입일</span>
                               <span>
-                                최근 로그인:{" "}
-                                {new Date(
-                                  member.user.lastLoginAt
-                                ).toLocaleDateString()}
+                                {new Date(member.joinedAt).toLocaleDateString()}
                               </span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-400">최근 미션</span>
+                              <span>{member.recentMissions}개</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-gray-400">완료율</span>
+                              <span>{member.completionRate?.toFixed(1)}%</span>
+                            </div>
+                            {member.user.lastLoginAt && (
+                              <div className="flex flex-col">
+                                <span className="text-gray-400">
+                                  최근 로그인
+                                </span>
+                                <span>
+                                  {new Date(
+                                    member.user.lastLoginAt
+                                  ).toLocaleDateString()}
+                                </span>
+                              </div>
                             )}
                           </div>
                         </div>
                         {member.isActive && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleRemoveMember(member.userId)}
-                            className="text-red-600 hover:text-red-700"
-                            disabled={removeMember.isPending}
-                          >
-                            <UserMinus className="h-4 w-4" />
-                          </Button>
+                          <div className="flex lg:flex-col justify-end">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleRemoveMember(member.userId)}
+                              className="text-red-600 hover:text-red-700 w-full lg:w-auto"
+                              disabled={removeMember.isPending}
+                            >
+                              <UserMinus className="h-4 w-4 lg:mr-2" />
+                              <span className="hidden lg:inline">제거</span>
+                            </Button>
+                          </div>
                         )}
                       </div>
                     ))}
@@ -512,6 +563,16 @@ const CellForm: React.FC<CellFormProps> = ({
   submitText,
   leaders,
 }) => {
+  const selectedLeader = leaders.find((leader) => leader.id === formData.leaderId);
+
+  const getRoleIcon = (role: string) => {
+    return role === "admin" ? ShieldCheck : UserCog;
+  };
+
+  const getRoleLabel = (role: string) => {
+    return role === "admin" ? "관리자" : "선생님";
+  };
+
   return (
     <form onSubmit={onSubmit} className="space-y-4">
       <div>
@@ -526,24 +587,63 @@ const CellForm: React.FC<CellFormProps> = ({
       </div>
 
       <div>
-        <Label htmlFor="leaderId">셀 리더</Label>
-        <select
-          id="leaderId"
-          value={formData.leaderId}
-          onChange={(e) =>
-            setFormData({ ...formData, leaderId: e.target.value })
-          }
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-          required
-        >
-          <option value="">리더를 선택하세요</option>
-          {leaders.map((leader) => (
-            <option key={leader.id} value={leader.id}>
-              {leader.name} ({leader.email}) -{" "}
-              {leader.role === "admin" ? "관리자" : "선생님"}
-            </option>
-          ))}
-        </select>
+        <Label>셀 리더</Label>
+        <Popover>
+          <PopoverTrigger asChild>
+            <Button
+              variant="outline"
+              className="w-full justify-between"
+              disabled={isLoading}
+            >
+              {selectedLeader ? (
+                <div className="flex items-center gap-2">
+                  {(() => {
+                    const Icon = getRoleIcon(selectedLeader.role);
+                    return <Icon className="h-4 w-4" />;
+                  })()}
+                  <span className="text-sm">
+                    {selectedLeader.name} ({getRoleLabel(selectedLeader.role)})
+                  </span>
+                </div>
+              ) : (
+                <span className="text-gray-500">리더를 선택하세요</span>
+              )}
+              <ChevronDown className="h-4 w-4 opacity-50" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-80 p-2">
+            <div className="space-y-1 max-h-48 overflow-y-auto">
+              {leaders.map((leader) => {
+                const Icon = getRoleIcon(leader.role);
+                return (
+                  <Button
+                    key={leader.id}
+                    variant={formData.leaderId === leader.id ? "secondary" : "ghost"}
+                    className="w-full justify-start gap-2 h-auto p-3"
+                    onClick={() => setFormData({ ...formData, leaderId: leader.id })}
+                  >
+                    <Icon className="h-4 w-4 flex-shrink-0" />
+                    <div className="flex-1 text-left min-w-0">
+                      <p className="text-sm font-medium truncate">{leader.name}</p>
+                      <p className="text-xs text-gray-500 truncate">{leader.email}</p>
+                      <Badge variant="outline" className="text-xs mt-1">
+                        {getRoleLabel(leader.role)}
+                      </Badge>
+                    </div>
+                    {formData.leaderId === leader.id && (
+                      <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
+                    )}
+                  </Button>
+                );
+              })}
+              {leaders.length === 0 && (
+                <div className="p-4 text-center text-gray-500">
+                  <p className="text-sm">선택 가능한 리더가 없습니다.</p>
+                </div>
+              )}
+            </div>
+          </PopoverContent>
+        </Popover>
       </div>
 
       <div>

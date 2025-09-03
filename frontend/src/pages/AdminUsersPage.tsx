@@ -9,7 +9,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Users, Eye, UserCheck, UserX, Search, Filter } from "lucide-react";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Users, Eye, UserCheck, UserX, Search, Filter, ChevronDown, UserCog, ShieldCheck, GraduationCap } from "lucide-react";
 import {
   useAdminUsers,
   useAdminUserDetail,
@@ -98,6 +103,25 @@ export const AdminUsersPage: React.FC = () => {
     }
   };
 
+  const getRoleIcon = (role: string) => {
+    switch (role) {
+      case "admin":
+        return ShieldCheck;
+      case "teacher":
+        return UserCog;
+      case "student":
+        return GraduationCap;
+      default:
+        return UserCog;
+    }
+  };
+
+  const roleOptions = [
+    { value: "student", label: "학생", icon: GraduationCap },
+    { value: "teacher", label: "선생님", icon: UserCog },
+    { value: "admin", label: "관리자", icon: ShieldCheck },
+  ];
+
   const getRoleBadgeVariant = (role: string) => {
     switch (role) {
       case "admin":
@@ -135,42 +159,47 @@ export const AdminUsersPage: React.FC = () => {
   return (
     <>
       <AdminNav />
-      <div className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">사용자 관리</h1>
-          <p className="text-gray-600">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="mb-6 sm:mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            사용자 관리
+          </h1>
+          <p className="text-sm sm:text-base text-gray-600">
             등록된 사용자를 관리하고 권한을 설정하세요.
           </p>
         </div>
 
         {/* 필터 */}
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Filter className="h-5 w-5" />
+        <Card className="mb-4 sm:mb-6">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base sm:text-lg flex items-center gap-2">
+              <Filter className="h-4 w-4 sm:h-5 sm:w-5" />
               필터
             </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">검색</label>
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
-                    placeholder="이름 또는 이메일"
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-10"
-                  />
-                </div>
+          <CardContent className="space-y-4">
+            {/* 검색 필드 (모바일에서 전체 너비) */}
+            <div>
+              <label className="block text-sm font-medium mb-2">검색</label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="이름 또는 이메일"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
+            </div>
+
+            {/* 역할 및 상태 필터 (모바일에서 2열) */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4">
               <div>
                 <label className="block text-sm font-medium mb-2">역할</label>
                 <select
                   value={roleFilter}
                   onChange={(e) => setRoleFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">전체</option>
                   <option value="admin">관리자</option>
@@ -183,14 +212,14 @@ export const AdminUsersPage: React.FC = () => {
                 <select
                   value={statusFilter}
                   onChange={(e) => setStatusFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
                 >
                   <option value="">전체</option>
                   <option value="active">활성</option>
                   <option value="inactive">비활성</option>
                 </select>
               </div>
-              <div className="flex items-end">
+              <div className="col-span-2 sm:col-span-1 flex items-end">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -198,7 +227,8 @@ export const AdminUsersPage: React.FC = () => {
                     setRoleFilter("");
                     setStatusFilter("");
                   }}
-                  className="w-full"
+                  className="w-full text-sm"
+                  size="sm"
                 >
                   초기화
                 </Button>
@@ -208,82 +238,135 @@ export const AdminUsersPage: React.FC = () => {
         </Card>
 
         {/* 사용자 목록 */}
-        <div className="grid gap-4">
+        <div className="grid gap-3 sm:gap-4">
           {filteredUsers.map((user) => (
             <Card key={user.id}>
-              <CardContent className="p-6">
-                <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <Badge variant={getRoleBadgeVariant(user.role)}>
+              <CardContent className="p-4 sm:p-6">
+                {/* 모바일: 세로 배치, 데스크톱: 가로 배치 */}
+                <div className="space-y-4 sm:space-y-0 sm:flex sm:justify-between sm:items-start">
+                  <div className="flex-1 space-y-3 sm:space-y-2">
+                    {/* 뱃지들 */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Badge
+                        variant={getRoleBadgeVariant(user.role)}
+                        className="text-xs"
+                      >
                         {getRoleLabel(user.role)}
                       </Badge>
-                      <Badge variant={user.isActive ? "default" : "secondary"}>
+                      <Badge
+                        variant={user.isActive ? "default" : "secondary"}
+                        className="text-xs"
+                      >
                         {user.isActive ? "활성" : "비활성"}
                       </Badge>
                       {user.cellInfo && (
-                        <Badge variant="outline">{user.cellInfo.name}</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {user.cellInfo.name}
+                        </Badge>
                       )}
                     </div>
 
-                    <div className="flex items-center gap-4 mb-2">
+                    {/* 사용자 기본 정보 */}
+                    <div className="flex items-center gap-3">
                       {user.profileImage && (
                         <img
                           src={user.profileImage}
                           alt={user.name}
-                          className="w-10 h-10 rounded-full"
+                          className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0"
                         />
                       )}
-                      <div>
-                        <h3 className="text-lg font-semibold">{user.name}</h3>
-                        <p className="text-gray-600">{user.email}</p>
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-base sm:text-lg font-semibold truncate">
+                          {user.name}
+                        </h3>
+                        <p className="text-sm text-gray-600 truncate">
+                          {user.email}
+                        </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-6 text-sm text-gray-500">
-                      <span>
+                    {/* 통계 정보 - 모바일에서 세로 배치 */}
+                    <div className="space-y-1 sm:space-y-0 sm:flex sm:items-center sm:gap-6 text-xs sm:text-sm text-gray-500">
+                      <span className="block sm:inline">
                         가입일: {new Date(user.createdAt).toLocaleDateString()}
                       </span>
                       {user.lastLoginAt && (
-                        <span>
+                        <span className="block sm:inline">
                           최근 로그인:{" "}
                           {new Date(user.lastLoginAt).toLocaleDateString()}
                         </span>
                       )}
-                      {user.recentMissions !== undefined && (
-                        <span>최근 미션: {user.recentMissions}개</span>
-                      )}
-                      {user.completionRate !== undefined && (
-                        <span>완료율: {user.completionRate.toFixed(1)}%</span>
-                      )}
-                      {user.totalPosts !== undefined && (
-                        <span>게시물: {user.totalPosts}개</span>
-                      )}
+                      <div className="flex items-center gap-4 sm:gap-6">
+                        {user.recentMissions !== undefined && (
+                          <span>최근 미션: {user.recentMissions}개</span>
+                        )}
+                        {user.completionRate !== undefined && (
+                          <span>완료율: {user.completionRate.toFixed(1)}%</span>
+                        )}
+                        {user.totalPosts !== undefined && (
+                          <span>게시물: {user.totalPosts}개</span>
+                        )}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="flex gap-2">
+                  {/* 액션 버튼들 - 모바일에서는 분리된 행으로 */}
+                  <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => openDetailDialog(user.id)}
+                      className="flex-shrink-0"
                     >
-                      <Eye className="h-4 w-4" />
+                      <Eye className="h-4 w-4 sm:mr-1" />
+                      <span className="hidden sm:inline">상세</span>
                     </Button>
 
                     {/* 역할 변경 */}
-                    <select
-                      value={user.role}
-                      onChange={(e) =>
-                        handleRoleChange(user.id, e.target.value)
-                      }
-                      className="px-2 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                      disabled={updateUserRole.isPending}
-                    >
-                      <option value="student">학생</option>
-                      <option value="teacher">선생님</option>
-                      <option value="admin">관리자</option>
-                    </select>
+                    <div className="flex-1 sm:flex-none">
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="w-full sm:w-auto justify-between"
+                            disabled={updateUserRole.isPending}
+                          >
+                            <div className="flex items-center gap-1">
+                              {(() => {
+                                const Icon = getRoleIcon(user.role);
+                                return <Icon className="h-3 w-3" />;
+                              })()}
+                              <span className="text-xs">{getRoleLabel(user.role)}</span>
+                            </div>
+                            <ChevronDown className="h-3 w-3 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-48 p-1" align="end">
+                          <div className="space-y-1">
+                            {roleOptions.map((option) => {
+                              const Icon = option.icon;
+                              return (
+                                <Button
+                                  key={option.value}
+                                  variant={user.role === option.value ? "secondary" : "ghost"}
+                                  size="sm"
+                                  className="w-full justify-start gap-2 h-8"
+                                  onClick={() => handleRoleChange(user.id, option.value)}
+                                  disabled={updateUserRole.isPending}
+                                >
+                                  <Icon className="h-3 w-3" />
+                                  <span className="text-xs">{option.label}</span>
+                                  {user.role === option.value && (
+                                    <div className="ml-auto h-1 w-1 rounded-full bg-primary" />
+                                  )}
+                                </Button>
+                              );
+                            })}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
 
                     {/* 활성화/비활성화 */}
                     <Button
@@ -292,11 +375,11 @@ export const AdminUsersPage: React.FC = () => {
                       onClick={() =>
                         handleToggleUserStatus(user.id, user.isActive)
                       }
-                      className={
+                      className={`flex-shrink-0 ${
                         user.isActive
                           ? "text-red-600 hover:text-red-700"
                           : "text-green-600 hover:text-green-700"
-                      }
+                      }`}
                       disabled={
                         deactivateUser.isPending || reactivateUser.isPending
                       }
@@ -315,9 +398,9 @@ export const AdminUsersPage: React.FC = () => {
 
           {filteredUsers.length === 0 && (
             <Card>
-              <CardContent className="p-12 text-center">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">
+              <CardContent className="p-8 sm:p-12 text-center">
+                <Users className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+                <p className="text-sm sm:text-base text-gray-500">
                   {searchTerm || roleFilter || statusFilter
                     ? "조건에 맞는 사용자가 없습니다."
                     : "등록된 사용자가 없습니다."}
@@ -329,36 +412,46 @@ export const AdminUsersPage: React.FC = () => {
 
         {/* 사용자 상세 다이얼로그 */}
         <Dialog open={isDetailDialogOpen} onOpenChange={setIsDetailDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
             <DialogHeader>
-              <DialogTitle>사용자 상세 정보</DialogTitle>
+              <DialogTitle className="text-lg sm:text-xl">
+                사용자 상세 정보
+              </DialogTitle>
             </DialogHeader>
             {userDetail && (
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* 기본 정보 */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">기본 정보</h3>
-                  <div className="flex items-start gap-4 mb-4">
+                  <h3 className="text-base sm:text-lg font-semibold mb-3">
+                    기본 정보
+                  </h3>
+                  <div className="flex items-start gap-3 sm:gap-4 mb-4">
                     {userDetail.profileImage && (
                       <img
                         src={userDetail.profileImage}
                         alt={userDetail.name}
-                        className="w-16 h-16 rounded-full"
+                        className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex-shrink-0"
                       />
                     )}
-                    <div className="flex-1">
-                      <h4 className="text-xl font-semibold">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-lg sm:text-xl font-semibold truncate">
                         {userDetail.name}
                       </h4>
-                      <p className="text-gray-600">{userDetail.email}</p>
-                      <div className="flex gap-2 mt-2">
-                        <Badge variant={getRoleBadgeVariant(userDetail.role)}>
+                      <p className="text-sm sm:text-base text-gray-600 truncate">
+                        {userDetail.email}
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        <Badge
+                          variant={getRoleBadgeVariant(userDetail.role)}
+                          className="text-xs"
+                        >
                           {getRoleLabel(userDetail.role)}
                         </Badge>
                         <Badge
                           variant={
                             userDetail.isActive ? "default" : "secondary"
                           }
+                          className="text-xs"
                         >
                           {userDetail.isActive ? "활성" : "비활성"}
                         </Badge>
@@ -366,16 +459,16 @@ export const AdminUsersPage: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 text-xs sm:text-sm">
                     <div>
                       <span className="text-gray-500">가입일:</span>
-                      <span className="ml-2">
+                      <span className="ml-2 block sm:inline">
                         {new Date(userDetail.createdAt).toLocaleDateString()}
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-500">최근 로그인:</span>
-                      <span className="ml-2">
+                      <span className="ml-2 block sm:inline">
                         {userDetail.lastLoginAt
                           ? new Date(
                               userDetail.lastLoginAt
@@ -383,9 +476,9 @@ export const AdminUsersPage: React.FC = () => {
                           : "없음"}
                       </span>
                     </div>
-                    <div>
+                    <div className="col-span-2">
                       <span className="text-gray-500">Firebase UID:</span>
-                      <span className="ml-2 font-mono text-xs">
+                      <span className="ml-2 font-mono text-xs break-all">
                         {userDetail.firebaseUid}
                       </span>
                     </div>
@@ -394,44 +487,54 @@ export const AdminUsersPage: React.FC = () => {
 
                 {/* 셀 정보 */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">셀 정보</h3>
+                  <h3 className="text-base sm:text-lg font-semibold mb-3">
+                    셀 정보
+                  </h3>
                   {userDetail.cellInfo ? (
-                    <div className="p-4 bg-gray-50 rounded-lg">
-                      <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
+                      <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 text-xs sm:text-sm">
                         <div>
                           <span className="text-gray-500">셀 이름:</span>
-                          <span className="ml-2 font-medium">
+                          <span className="ml-2 font-medium block sm:inline">
                             {userDetail.cellInfo.name}
                           </span>
                         </div>
                         <div>
                           <span className="text-gray-500">셀 리더:</span>
-                          <span className="ml-2">
+                          <span className="ml-2 block sm:inline">
                             {userDetail.cellInfo.leader.name}
                           </span>
                         </div>
                       </div>
                       {userDetail.cellInfo.description && (
-                        <div className="mt-2">
-                          <span className="text-gray-500">설명:</span>
-                          <p className="mt-1 text-sm whitespace-pre-wrap">
+                        <div className="mt-3 sm:mt-2">
+                          <span className="text-gray-500 text-xs sm:text-sm">
+                            설명:
+                          </span>
+                          <p className="mt-1 text-xs sm:text-sm whitespace-pre-wrap">
                             {userDetail.cellInfo.description}
                           </p>
                         </div>
                       )}
                     </div>
                   ) : (
-                    <p className="text-gray-500">소속된 셀이 없습니다.</p>
+                    <p className="text-gray-500 text-sm">
+                      소속된 셀이 없습니다.
+                    </p>
                   )}
                 </div>
 
                 {/* 미션 통계 */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">미션 통계</h3>
-                  <div className="grid grid-cols-2 gap-6">
+                  <h3 className="text-base sm:text-lg font-semibold mb-3">
+                    미션 통계
+                  </h3>
+                  <div className="space-y-4 sm:grid sm:grid-cols-2 sm:gap-6 sm:space-y-0">
                     <div className="space-y-2">
-                      <h4 className="font-medium">전체 통계</h4>
-                      <div className="text-sm space-y-1">
+                      <h4 className="font-medium text-sm sm:text-base">
+                        전체 통계
+                      </h4>
+                      <div className="text-xs sm:text-sm space-y-1">
                         <div className="flex justify-between">
                           <span className="text-gray-500">전체 미션:</span>
                           <span>{userDetail.missionStats.totalMissions}개</span>
@@ -454,8 +557,10 @@ export const AdminUsersPage: React.FC = () => {
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <h4 className="font-medium">최근 30일</h4>
-                      <div className="text-sm space-y-1">
+                      <h4 className="font-medium text-sm sm:text-base">
+                        최근 30일
+                      </h4>
+                      <div className="text-xs sm:text-sm space-y-1">
                         <div className="flex justify-between">
                           <span className="text-gray-500">최근 미션:</span>
                           <span>
@@ -484,8 +589,10 @@ export const AdminUsersPage: React.FC = () => {
 
                 {/* 게시물 통계 */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-3">게시물 통계</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                  <h3 className="text-base sm:text-lg font-semibold mb-3">
+                    게시물 통계
+                  </h3>
+                  <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 text-xs sm:text-sm">
                     <div className="flex justify-between">
                       <span className="text-gray-500">전체 게시물:</span>
                       <span>{userDetail.postStats.totalPosts}개</span>
