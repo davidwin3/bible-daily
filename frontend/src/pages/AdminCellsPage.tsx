@@ -236,7 +236,9 @@ export const AdminCellsPage: React.FC = () => {
                     <h3 className="text-lg font-semibold mb-2">{cell.name}</h3>
 
                     {cell.description && (
-                      <p className="text-gray-600 mb-3">{cell.description}</p>
+                      <p className="text-gray-600 mb-3 whitespace-pre-wrap">
+                        {cell.description}
+                      </p>
                     )}
 
                     <div className="flex items-center gap-6 text-sm text-gray-500">
@@ -353,7 +355,9 @@ export const AdminCellsPage: React.FC = () => {
                   {cellDetail.description && (
                     <div className="mt-3">
                       <span className="text-gray-500">설명:</span>
-                      <p className="mt-1 text-sm">{cellDetail.description}</p>
+                      <p className="mt-1 text-sm whitespace-pre-wrap">
+                        {cellDetail.description}
+                      </p>
                     </div>
                   )}
                 </div>

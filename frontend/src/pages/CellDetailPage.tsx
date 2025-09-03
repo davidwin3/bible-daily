@@ -167,7 +167,7 @@ export const CellDetailPage: React.FC = () => {
             <div>
               <CardTitle className="text-xl">{cell.name}</CardTitle>
               {cell.description && (
-                <CardDescription className="mt-2">
+                <CardDescription className="mt-2 whitespace-pre-wrap">
                   {cell.description}
                 </CardDescription>
               )}

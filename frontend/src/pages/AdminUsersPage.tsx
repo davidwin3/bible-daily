@@ -414,7 +414,7 @@ export const AdminUsersPage: React.FC = () => {
                       {userDetail.cellInfo.description && (
                         <div className="mt-2">
                           <span className="text-gray-500">설명:</span>
-                          <p className="mt-1 text-sm">
+                          <p className="mt-1 text-sm whitespace-pre-wrap">
                             {userDetail.cellInfo.description}
                           </p>
                         </div>

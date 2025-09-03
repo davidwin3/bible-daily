@@ -134,7 +134,7 @@ export const MissionsPage: React.FC = () => {
             />
 
             {todayMission.description && (
-              <p className="text-muted-foreground mb-4">
+              <p className="text-muted-foreground mb-4 whitespace-pre-wrap">
                 {todayMission.description}
               </p>
             )}
@@ -277,7 +277,7 @@ export const MissionsPage: React.FC = () => {
                 />
 
                 {selectedMission.description && (
-                  <p className="text-muted-foreground mb-3">
+                  <p className="text-muted-foreground mb-3 whitespace-pre-wrap">
                     {selectedMission.description}
                   </p>
                 )}

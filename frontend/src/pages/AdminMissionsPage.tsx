@@ -284,7 +284,7 @@ export const AdminMissionsPage: React.FC = () => {
                     </h3>
 
                     {mission.description && (
-                      <p className="text-gray-600 mb-3">
+                      <p className="text-gray-600 mb-3 whitespace-pre-wrap">
                         {mission.description}
                       </p>
                     )}

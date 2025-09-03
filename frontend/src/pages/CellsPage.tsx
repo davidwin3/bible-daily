@@ -68,7 +68,7 @@ export const CellsPage: React.FC = () => {
                   <div>
                     <h3 className="font-semibold text-lg">{userCell.name}</h3>
                     {userCell.description && (
-                      <p className="text-muted-foreground mt-1">
+                      <p className="text-muted-foreground mt-1 whitespace-pre-wrap">
                         {userCell.description}
                       </p>
                     )}
@@ -151,7 +151,7 @@ export const CellsPage: React.FC = () => {
                     <Badge variant="outline">{cell.memberCount || 0}명</Badge>
                   </div>
                   {cell.description && (
-                    <CardDescription className="line-clamp-2">
+                    <CardDescription className="line-clamp-2 whitespace-pre-wrap">
                       {cell.description}
                     </CardDescription>
                   )}

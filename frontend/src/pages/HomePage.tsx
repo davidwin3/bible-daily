@@ -68,7 +68,9 @@ export const HomePage: React.FC = () => {
                 />
               </div>
               {todayMission.description && (
-                <p className="text-sm">{todayMission.description}</p>
+                <p className="text-sm whitespace-pre-wrap">
+                  {todayMission.description}
+                </p>
               )}
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
