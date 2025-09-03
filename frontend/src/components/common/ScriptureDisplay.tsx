@@ -44,7 +44,17 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
     return result;
   };
 
-  const scriptures = mission.scriptures.sort((a, b) => a.order - b.order);
+  const scriptures =
+    mission.scriptures?.sort((a, b) => a.order - b.order) || [];
+
+  // scriptures가 없는 경우 처리
+  if (scriptures.length === 0) {
+    return (
+      <div className={cn("text-sm text-muted-foreground", className)}>
+        <span>성경 구절 정보가 없습니다.</span>
+      </div>
+    );
+  }
 
   // compact 버전 - 한 줄로 표시
   if (variant === "compact") {
@@ -96,10 +106,7 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
       </div>
       <div className="space-y-1">
         {scriptures.map((scripture, index) => (
-          <div
-            key={index}
-            className="text-sm bg-muted/50 rounded-md px-3 py-2"
-          >
+          <div key={index} className="text-sm bg-muted/50 rounded-md px-3 py-2">
             <span className="font-medium">{formatScripture(scripture)}</span>
           </div>
         ))}

@@ -18,8 +18,6 @@ export class CreateMissionDto {
   @Type(() => CreateMissionScriptureDto)
   scriptures: CreateMissionScriptureDto[];
 
-
-
   @IsOptional()
   @IsString()
   @Length(1, 200)

@@ -32,6 +32,12 @@ export class MissionsService {
         date: today,
         isActive: true,
       },
+      relations: ['scriptures'],
+      order: {
+        scriptures: {
+          order: 'ASC',
+        },
+      },
     });
 
     if (mission) {
@@ -56,8 +62,10 @@ export class MissionsService {
     const { startDate, endDate, month } = getMissionsDto;
     const queryBuilder = this.missionsRepository
       .createQueryBuilder('mission')
+      .leftJoinAndSelect('mission.scriptures', 'scriptures')
       .where('mission.isActive = :isActive', { isActive: true })
-      .orderBy('mission.date', 'DESC');
+      .orderBy('mission.date', 'DESC')
+      .addOrderBy('scriptures.order', 'ASC');
 
     if (month) {
       // YYYY-MM 형식으로 월별 조회
@@ -111,6 +119,12 @@ export class MissionsService {
   async findOne(id: string): Promise<Mission> {
     const mission = await this.missionsRepository.findOne({
       where: { id, isActive: true },
+      relations: ['scriptures'],
+      order: {
+        scriptures: {
+          order: 'ASC',
+        },
+      },
     });
 
     if (!mission) {
@@ -141,6 +155,12 @@ export class MissionsService {
       where: {
         date: targetDate,
         isActive: true,
+      },
+      relations: ['scriptures'],
+      order: {
+        scriptures: {
+          order: 'ASC',
+        },
       },
     });
 
@@ -374,7 +394,9 @@ export class MissionsService {
     const { startDate, endDate, month } = getMissionsDto;
     const queryBuilder = this.missionsRepository
       .createQueryBuilder('mission')
-      .orderBy('mission.date', 'DESC');
+      .leftJoinAndSelect('mission.scriptures', 'scriptures')
+      .orderBy('mission.date', 'DESC')
+      .addOrderBy('scriptures.order', 'ASC');
 
     if (month) {
       const startOfMonth = new Date(`${month}-01`);

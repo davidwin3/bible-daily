@@ -66,7 +66,7 @@ interface MissionScripture {
 interface Mission {
   id: string;
   date: string;
-  scriptures: MissionScripture[];
+  scriptures?: MissionScripture[];
   title?: string;
   description?: string;
   isActive: boolean;

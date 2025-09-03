@@ -38,7 +38,6 @@ export class Mission {
 
   @OneToMany(() => MissionScripture, (scripture) => scripture.mission, {
     cascade: true,
-    eager: true,
   })
   scriptures: MissionScripture[];
 
