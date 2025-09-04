@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
 
 // Firebase 설정
@@ -16,8 +17,14 @@ const VAPID_KEY = import.meta.env.VITE_FIREBASE_VAPID_KEY;
 // Firebase 앱 초기화
 const app = initializeApp(firebaseConfig);
 
+// Auth 인스턴스 생성
+export const auth = getAuth(app);
+
+// Google Auth Provider 생성
+export const googleProvider = new GoogleAuthProvider();
+
 // Messaging 인스턴스 생성 (브라우저 환경에서만)
-let messaging: any = null;
+let messaging: ReturnType<typeof getMessaging> | null = null;
 
 if (typeof window !== "undefined" && "serviceWorker" in navigator) {
   messaging = getMessaging(app);
@@ -80,18 +87,6 @@ export function setupForegroundMessageListener() {
             badge: "/vite.svg",
             tag: "bible-daily-notification",
             data: payload.data,
-            actions: [
-              {
-                action: "explore",
-                title: "확인하기",
-                icon: "/vite.svg",
-              },
-              {
-                action: "close",
-                title: "닫기",
-                icon: "/vite.svg",
-              },
-            ],
           }
         );
       });

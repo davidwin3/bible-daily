@@ -32,9 +32,11 @@ export class NotificationsService {
     token: string,
     userAgent?: string,
   ): Promise<FcmToken> {
+    const userIdNumber = parseInt(userId, 10);
+
     // 기존 토큰 확인
     const existingToken = await this.fcmTokenRepository.findOne({
-      where: { userId, token },
+      where: { userId: userIdNumber, token },
     });
 
     if (existingToken) {
@@ -49,7 +51,7 @@ export class NotificationsService {
 
     // 새 토큰 생성
     const newToken = this.fcmTokenRepository.create({
-      userId,
+      userId: userIdNumber,
       token,
       platform: 'web',
       userAgent,
@@ -67,9 +69,11 @@ export class NotificationsService {
     payload: NotificationPayload,
   ): Promise<{ success: boolean; error?: string }> {
     try {
+      const userIdNumber = parseInt(userId, 10);
+
       // 사용자의 활성 FCM 토큰 가져오기
       const tokens = await this.fcmTokenRepository.find({
-        where: { userId, isActive: true },
+        where: { userId: userIdNumber, isActive: true },
       });
 
       if (tokens.length === 0) {
@@ -179,8 +183,9 @@ export class NotificationsService {
    * 사용자의 FCM 토큰 비활성화
    */
   async deactivateUserTokens(userId: string): Promise<void> {
+    const userIdNumber = parseInt(userId, 10);
     await this.fcmTokenRepository.update(
-      { userId, isActive: true },
+      { userId: userIdNumber, isActive: true },
       { isActive: false },
     );
   }
@@ -189,7 +194,11 @@ export class NotificationsService {
    * 특정 토큰 제거
    */
   async removeFcmToken(userId: string, token: string): Promise<boolean> {
-    const result = await this.fcmTokenRepository.delete({ userId, token });
+    const userIdNumber = parseInt(userId, 10);
+    const result = await this.fcmTokenRepository.delete({
+      userId: userIdNumber,
+      token,
+    });
     return (result.affected || 0) > 0;
   }
 }

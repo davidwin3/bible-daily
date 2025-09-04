@@ -89,8 +89,10 @@ jobs:
     outputs:
       backend_changed: ${{ steps.changes.outputs.backend }}
       frontend_changed: ${{ steps.changes.outputs.frontend }}
+      entities_changed: ${{ steps.changes.outputs.entities }}
       deploy_backend: ${{ steps.deploy.outputs.backend }}
       deploy_frontend: ${{ steps.deploy.outputs.frontend }}
+      auto_db_sync: ${{ steps.deploy.outputs.auto_db_sync }}
       version: ${{ steps.version.outputs.version }}
       backend_image_tag: ${{ steps.backend_meta.outputs.tags }}
       frontend_image_tag: ${{ steps.frontend_meta.outputs.tags }}
@@ -111,10 +113,23 @@ jobs:
             frontend:
               - 'frontend/**'
               - 'docker-compose.prod.yml'
+            entities:
+              - 'backend/src/entities/**/*.entity.ts'
 
       - name: Determine deployment targets
         id: deploy
         run: |
+          # 엔티티 변경 감지 시 자동 DB 동기화 활성화
+          ENTITIES_CHANGED="${{ steps.changes.outputs.entities }}"
+          AUTO_DB_SYNC="false"
+
+          if [ "$ENTITIES_CHANGED" = "true" ]; then
+            echo "🔄 Entity files changed - enabling automatic database synchronization"
+            AUTO_DB_SYNC="true"
+          fi
+
+          echo "auto_db_sync=$AUTO_DB_SYNC" >> $GITHUB_OUTPUT
+
           if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
             SERVICE="${{ github.event.inputs.service }}"
             FORCE_DEPLOY="${{ github.event.inputs.force_deploy }}"
@@ -549,7 +564,7 @@ jobs:
             DB_PASSWORD=${{ secrets.DB_PASSWORD }}
             DB_ROOT_PASSWORD=${{ secrets.DB_ROOT_PASSWORD }}
             DB_DATABASE=${{ secrets.DB_DATABASE }}
-            DB_SYNCHRONIZE=${{ github.event.inputs.enable_db_sync || 'false' }}
+            DB_SYNCHRONIZE=${{ github.event.inputs.enable_db_sync || needs.setup.outputs.auto_db_sync || 'false' }}
 
             # Redis
             REDIS_HOST=${{ secrets.REDIS_HOST }}
@@ -724,13 +739,16 @@ jobs:
               # docker-compose -f $COMPOSE_FILE exec -T backend npm run migration:run
               echo "Migration commands would run here (not implemented yet)"
               
-            elif [ "${{ github.event.inputs.enable_db_sync }}" = "true" ]; then
+            elif [ "${{ github.event.inputs.enable_db_sync }}" = "true" ] || [ "${{ needs.setup.outputs.auto_db_sync }}" = "true" ]; then
               echo "🔄 Database synchronization is enabled via DB_SYNCHRONIZE=true"
+              if [ "${{ needs.setup.outputs.auto_db_sync }}" = "true" ]; then
+                echo "🔄 Auto-sync enabled due to entity file changes detected"
+              fi
               echo "Schema will be automatically synchronized on backend startup"
             fi
 
             # Wait for backend to be ready after any database operations
-            if [ "$MIGRATION_MODE" != "none" ] || [ "${{ github.event.inputs.enable_db_sync }}" = "true" ]; then
+            if [ "$MIGRATION_MODE" != "none" ] || [ "${{ github.event.inputs.enable_db_sync }}" = "true" ] || [ "${{ needs.setup.outputs.auto_db_sync }}" = "true" ]; then
               echo "⏳ Waiting for backend to initialize after database operations..."
               sleep 60
             fi
@@ -920,7 +938,7 @@ jobs:
                     },
                     {
                       "title": "Database Sync",
-                      "value": "${{ github.event.inputs.enable_db_sync == 'true' && '🔄 Enabled' || '❌ Disabled' }}",
+                      "value": "${{ (github.event.inputs.enable_db_sync == 'true' || needs.setup.outputs.auto_db_sync == 'true') && '🔄 Enabled' || '❌ Disabled' }}${{ needs.setup.outputs.auto_db_sync == 'true' && ' (Auto)' || '' }}",
                       "short": true
                     },
                     {
@@ -994,7 +1012,7 @@ jobs:
           echo "**SSL Configuration:** 🔒 **HTTPS with Let's Encrypt** (Always enabled)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### Deployment Options" >> $GITHUB_STEP_SUMMARY
-          echo "- **Database Sync:** ${{ github.event.inputs.enable_db_sync == 'true' && '🔄 Enabled' || '❌ Disabled' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Database Sync:** ${{ (github.event.inputs.enable_db_sync == 'true' || needs.setup.outputs.auto_db_sync == 'true') && '🔄 Enabled' || '❌ Disabled' }}${{ needs.setup.outputs.auto_db_sync == 'true' && ' (Auto-detected from entity changes)' || '' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Migration Mode:** ${{ github.event.inputs.migration_mode == 'reset_database' && '⚠️ Reset Database' || (github.event.inputs.migration_mode == 'run_migrations' && '🔄 Run Migrations' || '➖ None') }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Maintenance Mode:** ${{ github.event.inputs.maintenance_mode == 'true' && '🚧 Enabled' || '✅ Normal Operation' }}" >> $GITHUB_STEP_SUMMARY
           if [ -n "${{ github.event.inputs.rollback_version }}" ] && [ "${{ github.event.inputs.rollback_version }}" != "" ]; then

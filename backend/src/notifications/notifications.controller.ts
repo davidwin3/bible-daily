@@ -10,10 +10,8 @@ import {
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../auth/admin.guard';
-import {
-  NotificationsService,
-  NotificationPayload,
-} from './notifications.service';
+import { NotificationsService } from './notifications.service';
+import type { NotificationPayload } from './notifications.service';
 
 interface AuthenticatedRequest extends Request {
   user: {

@@ -35,14 +35,13 @@ export const EditPostPage: React.FC = () => {
   const { data: post, isLoading, error } = usePost(id!);
   const updatePostMutation = useUpdatePost();
 
-  // 로그인하지 않은 사용자는 로그인 페이지로 리다이렉트
-  if (!user) {
-    navigate("/login");
-    return null;
-  }
-
   // 게시물 데이터로 폼 초기화
   useEffect(() => {
+    // 로그인하지 않은 사용자는 로그인 페이지로 리다이렉트
+    if (!user) {
+      navigate("/login");
+      return;
+    }
     if (post) {
       // 게시물 작성자가 아니면 접근 불가
       if (post.author.id !== user.id) {
@@ -57,7 +56,12 @@ export const EditPostPage: React.FC = () => {
         bibleVerse: post.bibleVerse || "",
       });
     }
-  }, [post, user.id, id, navigate]);
+  }, [post, user?.id, id, navigate]);
+
+  // 로그인하지 않은 사용자는 로그인 페이지로 리다이렉트
+  if (!user) {
+    return null;
+  }
 
   const validateForm = (): boolean => {
     const newErrors: Partial<EditPostForm> = {};

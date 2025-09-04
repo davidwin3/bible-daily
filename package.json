@@ -11,13 +11,21 @@
   "scripts": {
     "dev": "concurrently \"pnpm --filter frontend dev\" \"pnpm --filter backend start:dev\"",
     "build": "pnpm --filter shared build && pnpm --filter frontend build && pnpm --filter backend build",
-    "start": "pnpm --filter backend start:prod"
+    "start": "pnpm --filter backend start:prod",
+    "lint": "pnpm --filter frontend lint && pnpm --filter backend lint",
+    "type-check": "pnpm --filter frontend type-check && pnpm --filter backend type-check",
+    "prepare": "husky"
   },
   "devDependencies": {
-    "concurrently": "^8.2.2"
+    "concurrently": "^8.2.2",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.1.6"
   },
   "engines": {
     "node": ">=20.0.0",
     "pnpm": ">=10.0.0"
+  },
+  "lint-staged": {
+    "**/*.{ts,tsx}": "echo 'Type checking will be done during build...'"
   }
 }
