@@ -130,4 +130,128 @@ export class FirebaseService {
       throw new UnauthorizedException('User not found in Firebase');
     }
   }
+
+  /**
+   * 푸시 알림 전송
+   * @param token FCM 토큰
+   * @param title 알림 제목
+   * @param body 알림 내용
+   * @param data 추가 데이터
+   */
+  async sendPushNotification(
+    token: string,
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+  ): Promise<void> {
+    try {
+      if (!this.firebaseApp) {
+        if (this.configService.get('NODE_ENV') === 'development') {
+          console.log('Development mode: Push notification would be sent:', {
+            token,
+            title,
+            body,
+            data,
+          });
+          return;
+        }
+        throw new Error('Firebase not initialized');
+      }
+
+      const message = {
+        token,
+        notification: {
+          title,
+          body,
+        },
+        data: data || {},
+        webpush: {
+          notification: {
+            title,
+            body,
+            icon: '/vite.svg',
+            badge: '/vite.svg',
+            tag: 'bible-daily-notification',
+            requireInteraction: false,
+          },
+          fcmOptions: {
+            link: '/',
+          },
+        },
+      };
+
+      await admin.messaging().send(message);
+      console.log('Push notification sent successfully');
+    } catch (error) {
+      console.error('Failed to send push notification:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 여러 토큰에 푸시 알림 전송
+   * @param tokens FCM 토큰 배열
+   * @param title 알림 제목
+   * @param body 알림 내용
+   * @param data 추가 데이터
+   */
+  async sendPushNotificationToMultiple(
+    tokens: string[],
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+  ): Promise<{ successCount: number; failureCount: number }> {
+    try {
+      if (!this.firebaseApp) {
+        if (this.configService.get('NODE_ENV') === 'development') {
+          console.log(
+            'Development mode: Bulk push notification would be sent:',
+            {
+              tokenCount: tokens.length,
+              title,
+              body,
+              data,
+            },
+          );
+          return { successCount: tokens.length, failureCount: 0 };
+        }
+        throw new Error('Firebase not initialized');
+      }
+
+      const message = {
+        notification: {
+          title,
+          body,
+        },
+        data: data || {},
+        webpush: {
+          notification: {
+            title,
+            body,
+            icon: '/vite.svg',
+            badge: '/vite.svg',
+            tag: 'bible-daily-notification',
+            requireInteraction: false,
+          },
+          fcmOptions: {
+            link: '/',
+          },
+        },
+        tokens,
+      };
+
+      const response = await admin.messaging().sendEachForMulticast(message);
+      console.log(
+        `Push notifications sent: ${response.successCount} success, ${response.failureCount} failure`,
+      );
+
+      return {
+        successCount: response.successCount,
+        failureCount: response.failureCount,
+      };
+    } catch (error) {
+      console.error('Failed to send bulk push notifications:', error);
+      throw error;
+    }
+  }
 }

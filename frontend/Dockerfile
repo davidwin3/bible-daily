@@ -58,12 +58,8 @@ RUN apk add --no-cache curl gettext
 # Copy nginx configuration template
 COPY frontend/nginx.conf.template /etc/nginx/nginx.conf.template
 
-# Copy built application from build stage
+# Copy built application from build stage (includes all PWA files)
 COPY --from=build /app/frontend/dist /usr/share/nginx/html
-
-# Copy PWA files to root
-COPY --from=build /app/frontend/dist/manifest.json /usr/share/nginx/html/
-COPY --from=build /app/frontend/dist/sw.js /usr/share/nginx/html/
 
 # Create non-root user for security
 RUN addgroup -g 1001 -S nginx-user

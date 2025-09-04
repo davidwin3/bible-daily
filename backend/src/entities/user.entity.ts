@@ -12,6 +12,7 @@ import { Like } from './like.entity';
 import { UserMission } from './user-mission.entity';
 import { CellMember } from './cell-member.entity';
 import { RefreshToken } from './refresh-token.entity';
+import { FcmToken } from './fcm-token.entity';
 
 export enum UserRole {
   STUDENT = 'student',
@@ -75,4 +76,7 @@ export class User {
 
   @OneToMany(() => RefreshToken, (refreshToken) => refreshToken.user)
   refreshTokens: RefreshToken[];
+
+  @OneToMany(() => FcmToken, (fcmToken) => fcmToken.user)
+  fcmTokens: FcmToken[];
 }
