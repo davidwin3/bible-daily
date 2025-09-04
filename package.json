@@ -14,7 +14,7 @@
     "start": "pnpm --filter backend start:prod",
     "lint": "pnpm --filter frontend lint && pnpm --filter backend lint",
     "type-check": "pnpm --filter frontend type-check && pnpm --filter backend type-check",
-    "prepare": "husky"
+    "prepare": "node -e \"if (process.env.HUSKY === '0' || process.env.CI) process.exit(0); try { require('husky') } catch (e) { if (e.code !== 'MODULE_NOT_FOUND') throw e }\""
   },
   "devDependencies": {
     "concurrently": "^8.2.2",

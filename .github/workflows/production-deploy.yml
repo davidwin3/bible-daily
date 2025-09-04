@@ -80,6 +80,7 @@ env:
   FRONTEND_IMAGE_NAME: ${{ github.repository }}/frontend
   NODE_VERSION: "20"
   PNPM_VERSION: "10"
+  HUSKY: 0 # CI/CD 환경에서 husky 비활성화
 
 jobs:
   # 변경사항 감지 및 환경 설정
