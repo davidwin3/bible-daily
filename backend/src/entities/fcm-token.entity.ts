@@ -16,7 +16,7 @@ export class FcmToken {
   @PrimaryGeneratedColumn()
   id: number;
 
-  @Column({ type: 'text' })
+  @Column({ type: 'varchar', length: 500 })
   token: string;
 
   @Column({ type: 'varchar', length: 100, default: 'web' })
