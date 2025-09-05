@@ -23,7 +23,6 @@ export interface InAppBrowserInfo {
  */
 export function detectInAppBrowser(): InAppBrowserInfo {
   const userAgent = navigator.userAgent.toLowerCase();
-  console.log("userAgent", userAgent);
   const isIOS = /iphone|ipad|ipod/i.test(userAgent);
   const isAndroid = /android/i.test(userAgent);
 

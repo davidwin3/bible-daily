@@ -116,7 +116,7 @@ export class MissionsServiceOptimized {
       const startOfMonth = new Date(`${month}-01`);
       const endOfMonth = new Date(
         startOfMonth.getFullYear(),
-        startOfMonth.getMonth() + 1,
+        startOfMonth.getMonth() + 2,
         0,
       );
 
@@ -236,7 +236,7 @@ export class MissionsServiceOptimized {
       const startOfMonth = new Date(`${month}-01`);
       const endOfMonth = new Date(
         startOfMonth.getFullYear(),
-        startOfMonth.getMonth() + 1,
+        startOfMonth.getMonth() + 2,
         0,
       );
 
@@ -408,7 +408,7 @@ export class MissionsServiceOptimized {
     const startOfMonth = new Date(`${month}-01`);
     const endOfMonth = new Date(
       startOfMonth.getFullYear(),
-      startOfMonth.getMonth() + 1,
+      startOfMonth.getMonth() + 2,
       0,
     );
 
