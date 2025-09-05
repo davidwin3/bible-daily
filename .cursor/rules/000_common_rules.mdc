@@ -102,4 +102,9 @@ alwaysApply: true
 - SQL Injection 및 XSS 방지
 - 권한 기반 접근 제어 구현
 
+### 개발 서버 실행
+
+- nvm use 로 node version 싱크 필수
+- pnpm dev는 루트 폴더에서 실행
+
 자세한 내용은 `DEVELOPMENT-GUIDELINES.md` 문서를 참조하세요.
