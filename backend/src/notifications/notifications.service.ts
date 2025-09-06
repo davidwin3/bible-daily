@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, LessThan } from 'typeorm';
 import { FcmToken } from '../entities/fcm-token.entity';
-import { User } from '../entities/user.entity';
+import { User, UserRole } from '../entities/user.entity';
 import { FirebaseService } from '../auth/firebase.service';
 
 export interface NotificationPayload {
@@ -32,11 +32,9 @@ export class NotificationsService {
     token: string,
     userAgent?: string,
   ): Promise<FcmToken> {
-    const userIdNumber = parseInt(userId, 10);
-
     // 기존 토큰 확인
     const existingToken = await this.fcmTokenRepository.findOne({
-      where: { userId: userIdNumber, token },
+      where: { userId, token },
     });
 
     if (existingToken) {
@@ -51,7 +49,7 @@ export class NotificationsService {
 
     // 새 토큰 생성
     const newToken = this.fcmTokenRepository.create({
-      userId: userIdNumber,
+      userId,
       token,
       platform: 'web',
       userAgent,
@@ -69,11 +67,9 @@ export class NotificationsService {
     payload: NotificationPayload,
   ): Promise<{ success: boolean; error?: string }> {
     try {
-      const userIdNumber = parseInt(userId, 10);
-
       // 사용자의 활성 FCM 토큰 가져오기
       const tokens = await this.fcmTokenRepository.find({
-        where: { userId: userIdNumber, isActive: true },
+        where: { userId, isActive: true },
       });
 
       if (tokens.length === 0) {
@@ -97,7 +93,10 @@ export class NotificationsService {
       return { success: result.successCount > 0 };
     } catch (error) {
       console.error('Failed to send notification to user:', error);
-      return { success: false, error: error.message };
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
     }
   }
 
@@ -152,11 +151,11 @@ export class NotificationsService {
    * 특정 역할의 사용자들에게 알림 전송
    */
   async sendNotificationToRole(
-    role: string,
+    role: UserRole,
     payload: NotificationPayload,
   ): Promise<{ successCount: number; failureCount: number }> {
     const users = await this.userRepository.find({
-      where: { isActive: true, role: role as any },
+      where: { isActive: true, role },
       select: ['id'],
     });
 
@@ -173,7 +172,7 @@ export class NotificationsService {
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
     const result = await this.fcmTokenRepository.delete({
-      lastUsedAt: { $lt: thirtyDaysAgo } as any,
+      lastUsedAt: LessThan(thirtyDaysAgo),
     });
 
     return result.affected || 0;
@@ -183,9 +182,8 @@ export class NotificationsService {
    * 사용자의 FCM 토큰 비활성화
    */
   async deactivateUserTokens(userId: string): Promise<void> {
-    const userIdNumber = parseInt(userId, 10);
     await this.fcmTokenRepository.update(
-      { userId: userIdNumber, isActive: true },
+      { userId, isActive: true },
       { isActive: false },
     );
   }
@@ -194,9 +192,8 @@ export class NotificationsService {
    * 특정 토큰 제거
    */
   async removeFcmToken(userId: string, token: string): Promise<boolean> {
-    const userIdNumber = parseInt(userId, 10);
     const result = await this.fcmTokenRepository.delete({
-      userId: userIdNumber,
+      userId,
       token,
     });
     return (result.affected || 0) > 0;

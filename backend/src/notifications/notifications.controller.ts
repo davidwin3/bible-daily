@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { AdminGuard } from '../auth/admin.guard';
 import { NotificationsService } from './notifications.service';
 import type { NotificationPayload } from './notifications.service';
+import { UserRole } from '../entities/user.entity';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -131,7 +132,7 @@ export class NotificationsController {
   @UseGuards(AdminGuard)
   @HttpCode(HttpStatus.OK)
   async sendToRole(
-    @Body() body: { role: string; payload: NotificationPayload },
+    @Body() body: { role: UserRole; payload: NotificationPayload },
   ) {
     const { role, payload } = body;
 

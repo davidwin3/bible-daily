@@ -42,6 +42,6 @@ export class FcmToken {
   @JoinColumn({ name: 'userId' })
   user: User;
 
-  @Column()
-  userId: number;
+  @Column('uuid')
+  userId: string;
 }

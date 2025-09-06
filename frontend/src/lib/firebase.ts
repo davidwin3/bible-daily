@@ -120,3 +120,63 @@ export async function requestNotificationPermission(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * 자동으로 FCM 토큰을 등록하는 함수
+ * 이미 알림 권한이 있는 경우에만 실행됩니다.
+ */
+export async function autoRegisterFCMToken(): Promise<{
+  success: boolean;
+  token?: string;
+  error?: string;
+}> {
+  try {
+    // 알림 권한이 없으면 토큰 등록하지 않음
+    if (Notification.permission !== "granted") {
+      console.log(
+        "Notification permission not granted, skipping FCM token registration"
+      );
+      return { success: false, error: "Permission not granted" };
+    }
+
+    // FCM 토큰 가져오기
+    const token = await getFCMToken();
+
+    if (!token) {
+      console.log("FCM token not available");
+      return { success: false, error: "Token not available" };
+    }
+
+    // 인증 토큰 확인
+    const authToken = localStorage.getItem("authToken");
+    if (!authToken) {
+      console.log("No auth token available");
+      return { success: false, error: "No auth token" };
+    }
+
+    // 서버에 토큰 등록
+    const response = await fetch("/api/notifications/subscribe", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${authToken}`,
+      },
+      body: JSON.stringify({ fcmToken: token }),
+    });
+
+    if (response.ok) {
+      console.log("FCM token registered successfully:", token);
+      return { success: true, token };
+    } else {
+      const error = await response.text();
+      console.error("Failed to register FCM token:", error);
+      return { success: false, error };
+    }
+  } catch (error) {
+    console.error("Error during FCM token registration:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}

@@ -5,7 +5,7 @@ import {
   signInWithPopup,
   signOut,
 } from "firebase/auth";
-import { auth, googleProvider } from "@/lib/firebase";
+import { auth, googleProvider, autoRegisterFCMToken } from "@/lib/firebase";
 import { authAPI } from "@/lib/api";
 
 interface User {
@@ -57,6 +57,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           // Store token and user info
           localStorage.setItem("authToken", response.data.accessToken);
           setUser(response.data.user);
+
+          // 로그인 성공 후 FCM 토큰 자동 등록 시도
+          // 약간의 지연을 두어 로그인 프로세스가 완료된 후 실행
+          setTimeout(async () => {
+            try {
+              const fcmResult = await autoRegisterFCMToken();
+              if (fcmResult.success) {
+                console.log("FCM token auto-registered successfully");
+              } else {
+                console.log(
+                  "FCM token auto-registration skipped or failed:",
+                  fcmResult.error
+                );
+              }
+            } catch (error) {
+              console.error("FCM token auto-registration error:", error);
+            }
+          }, 1000); // 1초 후 실행
         } catch (error) {
           console.error("Login failed:", error);
           await signOut(auth);
