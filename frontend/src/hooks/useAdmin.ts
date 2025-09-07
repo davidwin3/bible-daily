@@ -122,6 +122,13 @@ interface User {
   totalPosts?: number;
 }
 
+const ADMIN_QUERY_OPTIONS = {
+  staleTime: 0,
+  gcTime: 0,
+  refetchOnMount: true,
+  refetchOnWindowFocus: true,
+} as const;
+
 // Query keys
 export const adminKeys = {
   all: ["admin"] as const,
@@ -148,6 +155,7 @@ export function useAdminDashboard() {
       const response = await api.get("/admin/dashboard");
       return response.data;
     },
+    ...ADMIN_QUERY_OPTIONS,
   });
 }
 
@@ -159,6 +167,7 @@ export function useAdminMissions(filters: Record<string, any> = {}) {
       const response = await missionsAPI.getAllMissionsForAdmin(filters);
       return response.data;
     },
+    ...ADMIN_QUERY_OPTIONS,
   });
 }
 
@@ -169,6 +178,7 @@ export function useAdminMissionStatistics() {
       const response = await missionsAPI.getMissionStatistics();
       return response.data;
     },
+    ...ADMIN_QUERY_OPTIONS,
   });
 }
 
@@ -246,6 +256,7 @@ export function useAdminCells() {
       const response = await api.get("/cells/admin/all");
       return response.data;
     },
+    ...ADMIN_QUERY_OPTIONS,
   });
 }
 
@@ -256,6 +267,7 @@ export function useAdminCellStatistics() {
       const response = await api.get("/cells/admin/statistics");
       return response.data;
     },
+    ...ADMIN_QUERY_OPTIONS,
   });
 }
 
@@ -267,6 +279,7 @@ export function useAdminCellDetail(id: string) {
       return response.data;
     },
     enabled: !!id,
+    ...ADMIN_QUERY_OPTIONS,
   });
 }
 
@@ -375,6 +388,7 @@ export function useAdminUsers() {
       const response = await api.get("/users/admin/all");
       return response.data;
     },
+    ...ADMIN_QUERY_OPTIONS,
   });
 }
 
@@ -385,6 +399,7 @@ export function useAdminUserStatistics() {
       const response = await api.get("/users/admin/statistics");
       return response.data;
     },
+    ...ADMIN_QUERY_OPTIONS,
   });
 }
 
@@ -396,6 +411,7 @@ export function useAdminUserDetail(id: string) {
       return response.data;
     },
     enabled: !!id,
+    ...ADMIN_QUERY_OPTIONS,
   });
 }
 
