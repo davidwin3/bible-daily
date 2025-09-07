@@ -36,6 +36,8 @@
 - **NestJS**: Node.js 기반 서버 프레임워크
 - **TypeORM**: TypeScript 기반 ORM (Object-Relational Mapping)
 - **MySQL**: 관계형 데이터베이스
+- **Node.js 버전**: 20.x
+- **패키지 매니저**: pnpm
 
 #### 2.3 인증
 

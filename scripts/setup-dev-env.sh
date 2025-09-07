@@ -70,14 +70,14 @@ FIREBASE_TOKEN_URI=https://oauth2.googleapis.com/token
 # Google OAuth 설정 (실제 값으로 변경 필요)
 GOOGLE_CLIENT_ID=your-google-client-id
 GOOGLE_CLIENT_SECRET=your-google-client-secret
-GOOGLE_CALLBACK_URL=http://localhost:3001/auth/google/callback
+GOOGLE_CALLBACK_URL=http://localhost:3000/auth/google/callback
 
 # VAPID 키 (푸시 알림용 - 실제 값으로 변경 필요)
 VAPID_PUBLIC_KEY=your-vapid-public-key
 VAPID_PRIVATE_KEY=your-vapid-private-key
 
 # 서버 설정
-PORT=3001
+PORT=3000
 NODE_ENV=development
 
 # 관리 도구 포트
@@ -85,7 +85,7 @@ ADMINER_PORT=8080
 REDIS_COMMANDER_PORT=8081
 
 # 프론트엔드 환경변수
-VITE_API_URL=http://localhost:3001/api
+VITE_API_URL=http://localhost:3000/api
 VITE_GOOGLE_CLIENT_ID=your-google-client-id
 VITE_VAPID_PUBLIC_KEY=your-vapid-public-key
 VITE_FIREBASE_CONFIG={"apiKey":"your-api-key","authDomain":"your-auth-domain","projectId":"your-project-id"}

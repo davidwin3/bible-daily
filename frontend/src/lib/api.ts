@@ -60,6 +60,16 @@ export const missionsAPI = {
     api.get(`/missions/${id}/completion-status`),
   getUserProgress: (month?: string) =>
     api.get("/missions/user/progress", { params: { month } }),
+  // Admin API
+  getAllMissionsForAdmin: (params: any) =>
+    api.get("/missions/admin/all", { params }),
+  getMissionStatistics: () => api.get("/missions/admin/statistics"),
+  createMission: (data: any) => api.post("/missions/admin", data),
+  updateMission: (id: string, data: any) =>
+    api.put(`/missions/admin/${id}`, data),
+  deleteMission: (id: string) => api.delete(`/missions/admin/${id}`),
+  softDeleteMission: (id: string) =>
+    api.put(`/missions/admin/${id}/soft-delete`),
 };
 
 // Cells API

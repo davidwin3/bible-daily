@@ -317,64 +317,86 @@ export class MissionsService {
     id: string,
     updateMissionDto: UpdateMissionDto,
   ): Promise<Mission> {
-    const mission = await this.missionsRepository.findOne({
-      where: { id, isActive: true },
-      relations: ['scriptures'],
-    });
+    // 트랜잭션 내에서 업데이트 수행
+    return await this.missionsRepository.manager.transaction(
+      async (transactionalEntityManager) => {
+        const mission = await transactionalEntityManager.findOne(Mission, {
+          where: { id, isActive: true },
+          relations: ['scriptures'],
+        });
 
-    if (!mission) {
-      throw new NotFoundException('Mission not found');
-    }
+        if (!mission) {
+          throw new NotFoundException('Mission not found');
+        }
 
-    // 날짜가 변경되는 경우 중복 체크
-    if (updateMissionDto.date) {
-      // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
-      const dateStr = new Date(updateMissionDto.date)
-        .toISOString()
-        .split('T')[0];
-      const existingMission = await this.missionsRepository
-        .createQueryBuilder('mission')
-        .where('mission.date = :date', { date: dateStr })
-        .getOne();
+        // 날짜가 변경되는 경우 중복 체크
+        if (updateMissionDto.date) {
+          // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
+          const dateStr = new Date(updateMissionDto.date)
+            .toISOString()
+            .split('T')[0];
+          const existingMission = await transactionalEntityManager
+            .createQueryBuilder(Mission, 'mission')
+            .where('mission.date = :date', { date: dateStr })
+            .andWhere('mission.id != :id', { id })
+            .getOne();
 
-      if (existingMission && existingMission.id !== id) {
-        throw new ConflictException('Mission for this date already exists');
-      }
-    }
+          if (existingMission) {
+            throw new ConflictException('Mission for this date already exists');
+          }
+        }
 
-    // 기존 성경구절들 삭제
-    if (mission.scriptures && mission.scriptures.length > 0) {
-      await this.missionScripturesRepository.remove(mission.scriptures);
-    }
+        // 기존 성경구절들 완전 삭제 (CASCADE로 자동 삭제되지만 명시적으로 처리)
+        if (mission.scriptures && mission.scriptures.length > 0) {
+          await transactionalEntityManager.delete('MissionScripture', {
+            missionId: id,
+          });
+        }
 
-    // 업데이트할 필드들 설정
-    const { scriptures, ...missionUpdates } = updateMissionDto;
+        // 업데이트할 필드들 설정
+        const { scriptures, ...missionUpdates } = updateMissionDto;
 
-    Object.assign(mission, {
-      ...missionUpdates,
-      date: updateMissionDto.date
-        ? new Date(
-            new Date(updateMissionDto.date).toISOString().split('T')[0] +
-              'T00:00:00.000Z',
-          )
-        : mission.date,
-    });
+        // 미션 기본 정보 업데이트
+        await transactionalEntityManager.update(Mission, id, {
+          ...missionUpdates,
+          date: updateMissionDto.date
+            ? new Date(
+                new Date(updateMissionDto.date).toISOString().split('T')[0] +
+                  'T00:00:00.000Z',
+              )
+            : mission.date,
+        });
 
-    const savedMission = await this.missionsRepository.save(mission);
+        // 새로운 성경구절들 저장
+        if (scriptures && scriptures.length > 0) {
+          const missionScriptures = scriptures.map((scripture, index) => ({
+            ...scripture,
+            missionId: id,
+            order: scripture.order ?? index, // order가 없으면 배열 인덱스 사용
+          }));
 
-    // 새로운 성경구절들 저장
-    if (scriptures && scriptures.length > 0) {
-      const missionScriptures = scriptures.map((scripture) =>
-        this.missionScripturesRepository.create({
-          ...scripture,
-          missionId: savedMission.id,
-        }),
-      );
+          await transactionalEntityManager.save(
+            'MissionScripture',
+            missionScriptures,
+          );
+        }
 
-      await this.missionScripturesRepository.save(missionScriptures);
-    }
+        // 업데이트된 미션 반환 (관계 포함)
+        const updatedMission = await transactionalEntityManager.findOne(
+          Mission,
+          {
+            where: { id },
+            relations: ['scriptures'],
+          },
+        );
 
-    return savedMission;
+        if (!updatedMission) {
+          throw new NotFoundException('Updated mission not found');
+        }
+
+        return updatedMission;
+      },
+    );
   }
 
   async deleteMission(id: string): Promise<void> {

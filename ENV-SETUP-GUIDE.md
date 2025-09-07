@@ -7,6 +7,7 @@
 ## 환경 변수 파일 구조
 
 ### 개발 환경 (.env.development)
+
 ```bash
 # Database
 DB_HOST=localhost
@@ -38,7 +39,7 @@ FIREBASE_AUTH_URI="https://accounts.google.com/o/oauth2/auth"
 FIREBASE_TOKEN_URI="https://oauth2.googleapis.com/token"
 
 # Server
-PORT=3001
+PORT=3000
 NODE_ENV=development
 
 # SSL Configuration (production only)
@@ -46,6 +47,7 @@ USE_SSL=false
 ```
 
 ### 운영 환경 (.env.production)
+
 ```bash
 # Database
 DB_HOST=mysql
@@ -78,7 +80,7 @@ FIREBASE_AUTH_URI="https://accounts.google.com/o/oauth2/auth"
 FIREBASE_TOKEN_URI="https://oauth2.googleapis.com/token"
 
 # Server
-PORT=3001
+PORT=3000
 NODE_ENV=production
 
 # SSL Configuration
@@ -92,8 +94,9 @@ EMAIL=your-email@domain.com
 ### 1. 따옴표 사용 규칙
 
 **반드시 따옴표를 사용해야 하는 경우:**
+
 - 값에 공백이 포함된 경우
-- 특수 문자가 포함된 경우 (!, @, #, $, %, ^, &, *, 등)
+- 특수 문자가 포함된 경우 (!, @, #, $, %, ^, &, \*, 등)
 - 멀티라인 값 (RSA 키 등)
 - 빈 값
 
@@ -157,10 +160,12 @@ MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...
 ### 검증 항목
 
 1. **파일 형식 검증**
+
    - 올바른 환경 변수 형식 (KEY=VALUE)
    - 유효한 변수명 형식
 
 2. **값 검증**
+
    - 따옴표가 필요한 값 확인
    - 멀티라인 값 감지
    - 빈 값 확인
@@ -230,21 +235,23 @@ gpg -c .env.production
 ### 일반적인 오류
 
 1. **"command not found" 오류**
+
    ```bash
    # 원인: 따옴표 없이 특수 문자 사용
    PRIVATE_KEY=-----BEGIN PRIVATE KEY-----
-   
+
    # 해결: 따옴표 추가
    PRIVATE_KEY="-----BEGIN PRIVATE KEY-----"
    ```
 
 2. **"unexpected token" 오류**
+
    ```bash
    # 원인: 멀티라인 값에 따옴표 없음
    PRIVATE_KEY=-----BEGIN PRIVATE KEY-----
    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...
    -----END PRIVATE KEY-----
-   
+
    # 해결: 전체를 따옴표로 감싸기
    PRIVATE_KEY="-----BEGIN PRIVATE KEY-----
    MIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQC...
@@ -252,13 +259,14 @@ gpg -c .env.production
    ```
 
 3. **환경 변수가 로드되지 않는 경우**
+
    ```bash
    # 파일 권한 확인
    ls -la .env.production
-   
+
    # 파일 형식 확인
    ./scripts/validate-env.sh .env.production
-   
+
    # Docker Compose 로그 확인
    docker-compose logs backend
    ```

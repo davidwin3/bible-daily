@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { api } from "@/lib/api";
+import { api, missionsAPI } from "@/lib/api";
 
 // Types
 interface AdminDashboard {
@@ -156,11 +156,7 @@ export function useAdminMissions(filters: Record<string, any> = {}) {
   return useQuery<Mission[]>({
     queryKey: adminKeys.missionsList(filters),
     queryFn: async () => {
-      const params = new URLSearchParams();
-      Object.entries(filters).forEach(([key, value]) => {
-        if (value) params.append(key, value);
-      });
-      const response = await api.get(`/missions/admin/all?${params}`);
+      const response = await missionsAPI.getAllMissionsForAdmin(filters);
       return response.data;
     },
   });
@@ -170,7 +166,7 @@ export function useAdminMissionStatistics() {
   return useQuery({
     queryKey: adminKeys.missionStatistics(),
     queryFn: async () => {
-      const response = await api.get("/missions/admin/statistics");
+      const response = await missionsAPI.getMissionStatistics();
       return response.data;
     },
   });
@@ -181,7 +177,7 @@ export function useCreateMission() {
 
   return useMutation({
     mutationFn: async (data: CreateMissionData) => {
-      const response = await api.post("/missions/admin", data);
+      const response = await missionsAPI.createMission(data);
       return response.data;
     },
     onSuccess: () => {
@@ -202,7 +198,7 @@ export function useUpdateMission() {
       id: string;
       data: Partial<CreateMissionData>;
     }) => {
-      const response = await api.put(`/missions/admin/${id}`, data);
+      const response = await missionsAPI.updateMission(id, data);
       return response.data;
     },
     onSuccess: () => {
@@ -217,7 +213,7 @@ export function useDeleteMission() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.delete(`/missions/admin/${id}`);
+      const response = await missionsAPI.deleteMission(id);
       return response.data;
     },
     onSuccess: () => {
@@ -232,7 +228,7 @@ export function useSoftDeleteMission() {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      const response = await api.put(`/missions/admin/${id}/soft-delete`);
+      const response = await missionsAPI.softDeleteMission(id);
       return response.data;
     },
     onSuccess: () => {
