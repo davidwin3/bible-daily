@@ -22,6 +22,7 @@ import { InAppTestPage } from "@/pages/InAppTestPage";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { InAppBrowserAlert } from "@/components/common/InAppBrowserHandler";
+import { PWADebugPanel, usePWADebugPanel } from "@/components/PWADebugPanel";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -38,6 +39,8 @@ const queryClient = new QueryClient({
 });
 
 function App() {
+  const { isVisible } = usePWADebugPanel();
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
@@ -125,6 +128,10 @@ function App() {
           </Routes>
         </BrowserRouter>
       </AuthProvider>
+
+      {/* PWA 디버그 패널 (개발 환경에서만, Ctrl+Shift+P로 토글) */}
+      {import.meta.env.DEV && <PWADebugPanel isVisible={isVisible} />}
+
       {/* React Query 개발자 도구 (개발 환경에서만) */}
       {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
