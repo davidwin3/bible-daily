@@ -22,7 +22,7 @@ interface AuthenticatedRequest extends Request {
   };
 }
 
-@Controller('api/notifications')
+@Controller('notifications')
 @UseGuards(JwtAuthGuard)
 export class NotificationsController {
   constructor(private readonly notificationsService: NotificationsService) {}
