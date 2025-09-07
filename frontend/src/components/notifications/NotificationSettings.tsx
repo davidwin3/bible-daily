@@ -42,7 +42,7 @@ export function NotificationSettings() {
 
           if (token) {
             // 서버에 토큰 저장
-            await api.post("/api/notifications/subscribe", {
+            await api.post("/notifications/subscribe", {
               fcmToken: token,
             });
 
@@ -64,7 +64,7 @@ export function NotificationSettings() {
       } else {
         // 알림 비활성화
         if (fcmToken) {
-          await api.delete("/api/notifications/unsubscribe", {
+          await api.delete("/notifications/unsubscribe", {
             data: { fcmToken },
           });
         }
@@ -83,7 +83,7 @@ export function NotificationSettings() {
 
   const sendTestNotification = async () => {
     try {
-      await api.post("/api/notifications/test");
+      await api.post("/notifications/test");
     } catch (error) {
       console.error("테스트 알림 전송 실패:", error);
     }

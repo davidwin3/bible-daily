@@ -11,6 +11,7 @@ import { CellsModule } from './cells/cells.module';
 import { AdminModule } from './admin/admin.module';
 import { CacheModule } from './cache/cache.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { SyncModule } from './sync/sync.module';
 import { User } from './entities/user.entity';
 import { Post } from './entities/post.entity';
 import { Like } from './entities/like.entity';
@@ -42,6 +43,7 @@ import { getDatabaseConfig } from './config/database.config';
     CellsModule,
     AdminModule,
     NotificationsModule,
+    SyncModule,
   ],
   controllers: [AppController],
   providers: [AppService],

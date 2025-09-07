@@ -44,6 +44,10 @@ export class Post {
   @Column({ type: 'datetime', nullable: true })
   deletedAt: Date;
 
+  @Column({ nullable: true, length: 100 })
+  @Index('idx_posts_client_id')
+  clientId: string; // 오프라인 동기화를 위한 클라이언트 ID
+
   // Relations
   @ManyToOne(() => User, (user) => user.posts, { nullable: false })
   @JoinColumn({ name: 'authorId' })

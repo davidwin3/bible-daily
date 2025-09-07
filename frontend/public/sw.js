@@ -301,12 +301,47 @@ self.addEventListener("sync", (event) => {
 
 function doBackgroundSync() {
   // 오프라인 상태에서 저장된 데이터 동기화
-  return fetch("/api/sync")
-    .then(() => {
-      console.log("Background sync completed");
+  const API_BASE = self.location.origin.includes("localhost")
+    ? "http://localhost:3000"
+    : "https://api.bible-daily.com"; // 운영 환경 API URL
+
+  return fetch(`${API_BASE}/sync/background`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+  })
+    .then((response) => {
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    })
+    .then((data) => {
+      console.log("Background sync completed:", data);
+
+      // 동기화 완료를 클라이언트에 알림
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: "SYNC_COMPLETED",
+            data: data,
+          });
+        });
+      });
     })
     .catch((error) => {
       console.error("Background sync failed:", error);
+
+      // 실패를 클라이언트에 알림
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.postMessage({
+            type: "SYNC_FAILED",
+            error: error.message,
+          });
+        });
+      });
     });
 }
 

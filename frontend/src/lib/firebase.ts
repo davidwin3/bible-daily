@@ -155,7 +155,7 @@ export async function autoRegisterFCMToken(): Promise<{
     }
 
     // 서버에 토큰 등록
-    const response = await fetch("/api/notifications/subscribe", {
+    const response = await fetch("/notifications/subscribe", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

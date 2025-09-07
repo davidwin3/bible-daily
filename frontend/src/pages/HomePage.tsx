@@ -13,6 +13,7 @@ import { useAuth } from "@/contexts/auth";
 import { useTodayMission } from "@/hooks/useMissions";
 import { usePosts, type Post } from "@/hooks/usePosts";
 import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
+import { OfflineSyncStatus } from "@/components/OfflineSyncStatus";
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -22,6 +23,9 @@ export const HomePage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-20">
+      {/* 오프라인 동기화 상태 */}
+      <OfflineSyncStatus />
+      
       {/* 환영 메시지 */}
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">
