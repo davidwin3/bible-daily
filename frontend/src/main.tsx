@@ -11,6 +11,22 @@ import {
   getBrowserEnvironment,
 } from "./lib/pwa";
 
+// Locator.js 개발 도구 (개발 환경에서만)
+if (import.meta.env.DEV) {
+  import("@locator/runtime")
+    .then((locatorModule) => {
+      const setupLocator =
+        (locatorModule as any).setupLocator ||
+        (locatorModule as any).default?.setupLocator;
+      if (setupLocator) {
+        setupLocator({
+          adapter: "vscode",
+        });
+      }
+    })
+    .catch(console.error);
+}
+
 // 브라우저 환경 초기화 및 Service Worker 관리
 window.addEventListener("load", async () => {
   const environment = getBrowserEnvironment();
