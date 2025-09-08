@@ -14,6 +14,50 @@
     /* Safari and Chrome */
     display: none;
   }
+
+  /* iOS Safe Area and Navigation Fixes */
+  .navigation-bottom {
+    /* iOS에서 홈 인디케이터와 겹치지 않도록 안전 영역 확보 */
+    padding-bottom: env(safe-area-inset-bottom);
+    /* 동적 뷰포트 높이 대응을 위한 고정 위치 */
+    bottom: 0;
+    position: fixed;
+    /* iOS Chrome에서 주소창 숨김/표시에 영향받지 않도록 */
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+  }
+
+  .safe-area-padding-bottom {
+    /* 네비게이션 아이템에 추가 패딩 */
+    padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+  }
+
+  .main-content-with-nav {
+    /* 하단 네비게이션 높이만큼 여백 추가 */
+    padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+    /* iOS에서 스크롤 바운스 방지 */
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* iOS에서 viewport height 문제 해결 */
+  .min-h-screen {
+    min-height: 100vh;
+    /* iOS Safari와 Chrome의 동적 뷰포트 지원 */
+    min-height: 100dvh;
+  }
+
+  /* iOS Chrome에서 하단 네비게이션 오버레이 방지 */
+  @supports (-webkit-touch-callout: none) {
+    .navigation-bottom {
+      /* iOS Safari와 Chrome에서만 적용 */
+      bottom: env(safe-area-inset-bottom, 0px);
+      padding-bottom: 0;
+    }
+
+    .safe-area-padding-bottom {
+      padding-bottom: 0.75rem;
+    }
+  }
 }
 
 @layer base {

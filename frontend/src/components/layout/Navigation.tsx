@@ -14,7 +14,7 @@ export const Navigation: React.FC = () => {
   const location = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50">
+    <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 navigation-bottom">
       <div className="container mx-auto px-4 max-w-4xl">
         <div className="grid grid-cols-5 gap-1">
           {navItems.map(({ href, label, icon: Icon }) => {
@@ -24,7 +24,7 @@ export const Navigation: React.FC = () => {
                 key={href}
                 to={href}
                 className={cn(
-                  "flex flex-col items-center py-3 px-2 text-xs transition-colors",
+                  "flex flex-col items-center py-3 px-2 text-xs transition-colors safe-area-padding-bottom",
                   isActive
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
