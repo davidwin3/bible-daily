@@ -121,7 +121,8 @@ export function usePWADebug() {
 
     setDebugInfo((prev) => ({
       ...prev,
-      notificationPermission: Notification.permission,
+      notificationPermission:
+        "Notification" in window ? Notification.permission : "default",
       isOnline: navigator.onLine,
       connectionType: (navigator as any).connection?.effectiveType || "unknown",
       isStandalone: window.matchMedia("(display-mode: standalone)").matches,
