@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, BookOpen, Heart, Target } from "lucide-react";
 import { useAdminDashboard } from "@/hooks/useAdmin";
 import { AdminNav } from "@/components/layout/AdminNav";
+import { dayjsUtils } from "@/lib/dayjs";
 
 export const AdminDashboardPage: React.FC = () => {
   const { data: dashboard, isLoading, error } = useAdminDashboard();
@@ -139,10 +140,7 @@ export const AdminDashboardPage: React.FC = () => {
                           className="flex justify-between items-center text-sm"
                         >
                           <span className="text-gray-600">
-                            {new Date(stat.date).toLocaleDateString("ko-KR", {
-                              month: "short",
-                              day: "numeric",
-                            })}
+                            {dayjsUtils.parse(stat.date)?.format("M월 D일")}
                           </span>
                           <span className="font-medium">
                             {stat.completionRate.toFixed(1)}% (

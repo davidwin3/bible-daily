@@ -14,6 +14,7 @@ import { useTodayMission } from "@/hooks/useMissions";
 import { usePosts, type Post } from "@/hooks/usePosts";
 import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
 import { OfflineSyncStatus } from "@/components/OfflineSyncStatus";
+import { dayjsUtils } from "@/lib/dayjs";
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
@@ -25,7 +26,7 @@ export const HomePage: React.FC = () => {
     <div className="space-y-6 pb-20">
       {/* 오프라인 동기화 상태 */}
       <OfflineSyncStatus />
-      
+
       {/* 환영 메시지 */}
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">
@@ -48,7 +49,7 @@ export const HomePage: React.FC = () => {
             </div>
             <Badge variant="secondary">
               <Calendar className="h-3 w-3 mr-1" />
-              {new Date().toLocaleDateString("ko-KR")}
+              {dayjsUtils.formatKorean(dayjsUtils.now())}
             </Badge>
           </div>
         </CardHeader>
@@ -140,9 +141,7 @@ export const HomePage: React.FC = () => {
                     </p>
                     <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
                       <span>{post.author.name}</span>
-                      <span>
-                        {new Date(post.createdAt).toLocaleDateString("ko-KR")}
-                      </span>
+                      <span>{dayjsUtils.formatSimple(post.createdAt)}</span>
                     </div>
                   </div>
                 </Link>

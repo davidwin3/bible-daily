@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import { dayjsUtils } from "@/lib/dayjs";
 import {
   Card,
   CardContent,
@@ -92,8 +93,7 @@ export const CellDetailPage: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR");
+    return dayjsUtils.formatKorean(dateString);
   };
 
   if (isLoading) {

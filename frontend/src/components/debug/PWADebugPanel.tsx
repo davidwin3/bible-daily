@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { usePWADebug } from "@/hooks/usePWADebug";
+import { dayjsUtils } from "@/lib/dayjs";
 import {
   RefreshCw,
   Trash2,
@@ -348,7 +349,8 @@ export function PWADebugPanel({ className }: PWADebugPanelProps) {
                   <strong>환경:</strong> {process.env.NODE_ENV}
                 </div>
                 <div className="p-2 bg-muted rounded">
-                  <strong>빌드 시간:</strong> {new Date().toLocaleString()}
+                  <strong>빌드 시간:</strong>{" "}
+                  {dayjsUtils.now().format("YYYY-MM-DD HH:mm:ss")}
                 </div>
                 <div className="p-2 bg-muted rounded">
                   <strong>화면 크기:</strong> {window.innerWidth} x{" "}

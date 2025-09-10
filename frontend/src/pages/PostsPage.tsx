@@ -15,6 +15,7 @@ import { useAuth } from "@/contexts/auth";
 import { usePosts } from "@/hooks/usePosts";
 import { LikeButton } from "@/components/ui/LikeButton";
 import { PlusIcon, SearchIcon, CalendarIcon, UserIcon } from "lucide-react";
+import { dayjsUtils } from "@/lib/dayjs";
 
 export const PostsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -42,17 +43,7 @@ export const PostsPage: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const now = new Date();
-    const diffInHours = (now.getTime() - date.getTime()) / (1000 * 60 * 60);
-
-    if (diffInHours < 24) {
-      return `${Math.floor(diffInHours)}시간 전`;
-    } else if (diffInHours < 24 * 7) {
-      return `${Math.floor(diffInHours / 24)}일 전`;
-    } else {
-      return date.toLocaleDateString("ko-KR");
-    }
+    return dayjsUtils.fromNow(dateString);
   };
 
   const truncateContent = (content: string, maxLength: number = 100) => {

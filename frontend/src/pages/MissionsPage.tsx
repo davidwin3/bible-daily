@@ -27,13 +27,20 @@ import {
   TargetIcon,
 } from "lucide-react";
 import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
+import dayjs, { dayjsUtils } from "@/lib/dayjs";
 
 export const MissionsPage: React.FC = () => {
   const { user } = useAuth();
-  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState<Date>(
+    dayjsUtils.toDate(dayjsUtils.now()) || new Date()
+  );
+  const [currentMonth, setCurrentMonth] = useState(
+    dayjsUtils.toDate(dayjsUtils.now()) || new Date()
+  );
 
-  const month = currentMonth.toISOString().slice(0, 7);
+  const month =
+    dayjsUtils.parse(currentMonth)?.format("YYYY-MM") ||
+    dayjs().format("YYYY-MM");
 
   const { data: todayMission } = useTodayMission();
   const { data: missions = [], isLoading } = useMissions({ month });
@@ -59,17 +66,12 @@ export const MissionsPage: React.FC = () => {
   };
 
   const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString("ko-KR", {
-      month: "long",
-      day: "numeric",
-      weekday: "short",
-    });
+    return dayjsUtils.parse(date)?.format("M월 D일 (ddd)") || "";
   };
 
   const getMissionForDate = (date: Date) => {
     return missions.find((mission) => {
-      const missionDate = new Date(mission.date);
-      return missionDate.toDateString() === date.toDateString();
+      return dayjsUtils.isSameDay(mission.date, date);
     });
   };
 

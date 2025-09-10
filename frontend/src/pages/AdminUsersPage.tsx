@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { dayjsUtils } from "@/lib/dayjs";
 import {
   Dialog,
   DialogContent,
@@ -299,12 +300,12 @@ export const AdminUsersPage: React.FC = () => {
                     {/* 통계 정보 - 모바일에서 세로 배치 */}
                     <div className="space-y-1 sm:space-y-0 sm:flex sm:items-center sm:gap-6 text-xs sm:text-sm text-gray-500">
                       <span className="block sm:inline">
-                        가입일: {new Date(user.createdAt).toLocaleDateString()}
+                        가입일: {dayjsUtils.formatSimple(user.createdAt)}
                       </span>
                       {user.lastLoginAt && (
                         <span className="block sm:inline">
                           최근 로그인:{" "}
-                          {new Date(user.lastLoginAt).toLocaleDateString()}
+                          {dayjsUtils.formatSimple(user.lastLoginAt)}
                         </span>
                       )}
                       <div className="flex items-center gap-4 sm:gap-6">
@@ -484,16 +485,14 @@ export const AdminUsersPage: React.FC = () => {
                     <div>
                       <span className="text-gray-500">가입일:</span>
                       <span className="ml-2 block sm:inline">
-                        {new Date(userDetail.createdAt).toLocaleDateString()}
+                        {dayjsUtils.formatKorean(userDetail.createdAt)}
                       </span>
                     </div>
                     <div>
                       <span className="text-gray-500">최근 로그인:</span>
                       <span className="ml-2 block sm:inline">
                         {userDetail.lastLoginAt
-                          ? new Date(
-                              userDetail.lastLoginAt
-                            ).toLocaleDateString()
+                          ? dayjsUtils.formatKorean(userDetail.lastLoginAt)
                           : "없음"}
                       </span>
                     </div>

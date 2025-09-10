@@ -7,6 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useAuth } from "@/contexts/auth";
 import { usePost, useDeletePost } from "@/hooks/usePosts";
 import { LikeButton } from "@/components/ui/LikeButton";
+import { dayjsUtils } from "@/lib/dayjs";
 import {
   ArrowLeftIcon,
   HeartIcon,
@@ -51,14 +52,7 @@ export const PostDetailPage: React.FC = () => {
   };
 
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    return date.toLocaleDateString("ko-KR", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
+    return dayjsUtils.parse(dateString)?.format("YYYY년 MM월 DD일 HH:mm") || "";
   };
 
   const formatContent = (content: string) => {

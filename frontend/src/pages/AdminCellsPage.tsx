@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { dayjsUtils } from "@/lib/dayjs";
 import {
   Dialog,
   DialogContent,
@@ -487,7 +488,7 @@ export const AdminCellsPage: React.FC = () => {
                             <div className="flex flex-col">
                               <span className="text-gray-400">가입일</span>
                               <span>
-                                {new Date(member.joinedAt).toLocaleDateString()}
+                                {dayjsUtils.formatSimple(member.joinedAt)}
                               </span>
                             </div>
                             <div className="flex flex-col">
@@ -504,9 +505,9 @@ export const AdminCellsPage: React.FC = () => {
                                   최근 로그인
                                 </span>
                                 <span>
-                                  {new Date(
+                                  {dayjsUtils.formatSimple(
                                     member.user.lastLoginAt
-                                  ).toLocaleDateString()}
+                                  )}
                                 </span>
                               </div>
                             )}
@@ -563,7 +564,9 @@ const CellForm: React.FC<CellFormProps> = ({
   submitText,
   leaders,
 }) => {
-  const selectedLeader = leaders.find((leader) => leader.id === formData.leaderId);
+  const selectedLeader = leaders.find(
+    (leader) => leader.id === formData.leaderId
+  );
 
   const getRoleIcon = (role: string) => {
     return role === "admin" ? ShieldCheck : UserCog;
@@ -618,14 +621,22 @@ const CellForm: React.FC<CellFormProps> = ({
                 return (
                   <Button
                     key={leader.id}
-                    variant={formData.leaderId === leader.id ? "secondary" : "ghost"}
+                    variant={
+                      formData.leaderId === leader.id ? "secondary" : "ghost"
+                    }
                     className="w-full justify-start gap-2 h-auto p-3"
-                    onClick={() => setFormData({ ...formData, leaderId: leader.id })}
+                    onClick={() =>
+                      setFormData({ ...formData, leaderId: leader.id })
+                    }
                   >
                     <Icon className="h-4 w-4 flex-shrink-0" />
                     <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-medium truncate">{leader.name}</p>
-                      <p className="text-xs text-gray-500 truncate">{leader.email}</p>
+                      <p className="text-sm font-medium truncate">
+                        {leader.name}
+                      </p>
+                      <p className="text-xs text-gray-500 truncate">
+                        {leader.email}
+                      </p>
                       <Badge variant="outline" className="text-xs mt-1">
                         {getRoleLabel(leader.role)}
                       </Badge>

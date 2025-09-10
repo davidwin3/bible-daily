@@ -10,6 +10,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import { useAuth } from "@/contexts/auth";
+import { dayjsUtils } from "@/lib/dayjs";
 import {
   UserIcon,
   BellIcon,
@@ -85,7 +86,7 @@ export const ProfilePage: React.FC = () => {
                 <CalendarIcon className="h-4 w-4" />
                 <span>
                   {user.createdAt
-                    ? new Date(user.createdAt).toLocaleDateString("ko-KR")
+                    ? dayjsUtils.formatKorean(user.createdAt)
                     : "알 수 없음"}{" "}
                   가입
                 </span>

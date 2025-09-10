@@ -1,19 +1,24 @@
-import { useState } from 'react';
-import { 
-  Wifi, 
-  WifiOff, 
-  Loader2, 
-  CheckCircle, 
-  AlertCircle, 
+import { useState } from "react";
+import {
+  Wifi,
+  WifiOff,
+  Loader2,
+  CheckCircle,
+  AlertCircle,
   RefreshCw,
   Clock,
-  X
-} from 'lucide-react';
-import { Button } from './ui/button';
-import { Badge } from './ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from './ui/collapsible';
-import { useOfflineSync } from '../hooks/useOfflineSync';
+  X,
+} from "lucide-react";
+import { Button } from "./ui/button";
+import { Badge } from "./ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "./ui/collapsible";
+import { dayjsUtils } from "../lib/dayjs";
+import { useOfflineSync } from "../hooks/useOfflineSync";
 // import { cn } from '../lib/utils'; // 현재 사용하지 않음
 
 export function OfflineSyncStatus() {
@@ -35,12 +40,18 @@ export function OfflineSyncStatus() {
 
   const getActionTypeLabel = (type: string) => {
     switch (type) {
-      case 'CREATE_POST': return '게시물 작성';
-      case 'UPDATE_POST': return '게시물 수정';
-      case 'DELETE_POST': return '게시물 삭제';
-      case 'TOGGLE_LIKE': return '좋아요';
-      case 'COMPLETE_MISSION': return '미션 완료';
-      default: return type;
+      case "CREATE_POST":
+        return "게시물 작성";
+      case "UPDATE_POST":
+        return "게시물 수정";
+      case "DELETE_POST":
+        return "게시물 삭제";
+      case "TOGGLE_LIKE":
+        return "좋아요";
+      case "COMPLETE_MISSION":
+        return "미션 완료";
+      default:
+        return type;
     }
   };
 
@@ -56,9 +67,9 @@ export function OfflineSyncStatus() {
                 ) : (
                   <WifiOff className="h-4 w-4 text-red-600" />
                 )}
-                
+
                 <CardTitle className="text-sm">
-                  {isOnline ? '온라인' : '오프라인'}
+                  {isOnline ? "온라인" : "오프라인"}
                 </CardTitle>
 
                 {isSyncing && (
@@ -87,10 +98,9 @@ export function OfflineSyncStatus() {
 
             {hasPendingActions && (
               <p className="text-xs text-muted-foreground mt-1">
-                {isOnline 
-                  ? '동기화 대기 중인 작업이 있습니다' 
-                  : '오프라인 상태입니다. 온라인 시 자동 동기화됩니다'
-                }
+                {isOnline
+                  ? "동기화 대기 중인 작업이 있습니다"
+                  : "오프라인 상태입니다. 온라인 시 자동 동기화됩니다"}
               </p>
             )}
           </CardHeader>
@@ -138,7 +148,7 @@ export function OfflineSyncStatus() {
                         <span>{getActionTypeLabel(action.type)}</span>
                       </div>
                       <span className="text-muted-foreground">
-                        {new Date(action.timestamp).toLocaleTimeString()}
+                        {dayjsUtils.parse(action.timestamp)?.format("HH:mm:ss")}
                       </span>
                     </div>
                   ))}
@@ -150,13 +160,13 @@ export function OfflineSyncStatus() {
             {lastSyncResult && (
               <div className="mt-4 pt-4 border-t">
                 <h4 className="text-sm font-medium mb-2">마지막 동기화 결과</h4>
-                
+
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div className="flex items-center gap-2">
                     <CheckCircle className="h-3 w-3 text-green-600" />
                     <span>성공: {lastSyncResult.successful.length}개</span>
                   </div>
-                  
+
                   {lastSyncResult.failed.length > 0 && (
                     <div className="flex items-center gap-2">
                       <AlertCircle className="h-3 w-3 text-red-600" />
@@ -167,7 +177,9 @@ export function OfflineSyncStatus() {
 
                 {lastSyncResult.failed.length > 0 && (
                   <div className="mt-2 space-y-1">
-                    <p className="text-xs font-medium text-red-600">실패한 작업:</p>
+                    <p className="text-xs font-medium text-red-600">
+                      실패한 작업:
+                    </p>
                     {lastSyncResult.failed.map((failed, index) => (
                       <div key={index} className="text-xs text-red-600 pl-2">
                         • {getActionTypeLabel(failed.type)}: {failed.error}
@@ -182,16 +194,15 @@ export function OfflineSyncStatus() {
             <div className="mt-4 p-3 bg-muted/30 rounded text-xs">
               {!isOnline ? (
                 <p className="text-amber-600">
-                  📵 현재 오프라인 상태입니다. 작업한 내용은 자동으로 저장되며, 
+                  📵 현재 오프라인 상태입니다. 작업한 내용은 자동으로 저장되며,
                   온라인 연결 시 자동으로 동기화됩니다.
                 </p>
               ) : isSyncing ? (
-                <p className="text-blue-600">
-                  🔄 동기화 진행 중입니다...
-                </p>
+                <p className="text-blue-600">🔄 동기화 진행 중입니다...</p>
               ) : hasPendingActions ? (
                 <p className="text-amber-600">
-                  ⏳ 동기화 대기 중인 작업이 있습니다. 수동으로 동기화하거나 잠시 기다려주세요.
+                  ⏳ 동기화 대기 중인 작업이 있습니다. 수동으로 동기화하거나
+                  잠시 기다려주세요.
                 </p>
               ) : (
                 <p className="text-green-600">

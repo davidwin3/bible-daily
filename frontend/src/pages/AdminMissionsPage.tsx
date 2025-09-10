@@ -31,8 +31,7 @@ import {
 } from "@/hooks/useAdmin";
 import { AdminNav } from "@/components/layout/AdminNav";
 import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
-import { format } from "date-fns";
-import { ko } from "date-fns/locale";
+import { dayjsUtils } from "@/lib/dayjs";
 import {
   OLD_TESTAMENT_BOOKS,
   NEW_TESTAMENT_BOOKS,
@@ -44,13 +43,13 @@ import type { Mission, MissionFormData, MissionScripture } from "@/lib/types";
 
 export const AdminMissionsPage: React.FC = () => {
   const [filters, setFilters] = useState({
-    month: format(new Date(), "yyyy-MM"),
+    month: dayjsUtils.now().format("YYYY-MM"),
   });
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingMission, setEditingMission] = useState<Mission | null>(null);
   const [formData, setFormData] = useState<MissionFormData>({
-    date: format(new Date(), "yyyy-MM-dd"),
+    date: dayjsUtils.today(),
     scriptures: [
       {
         startBook: "",
@@ -145,7 +144,7 @@ export const AdminMissionsPage: React.FC = () => {
     setEditingMission(mission);
 
     setFormData({
-      date: format(new Date(mission.date), "yyyy-MM-dd"),
+      date: dayjsUtils.formatForAPI(mission.date),
       scriptures:
         mission.scriptures && mission.scriptures.length > 0
           ? mission.scriptures
@@ -168,7 +167,7 @@ export const AdminMissionsPage: React.FC = () => {
 
   const resetForm = () => {
     setFormData({
-      date: format(new Date(), "yyyy-MM-dd"),
+      date: dayjsUtils.today(),
       scriptures: [
         {
           startBook: "",
@@ -288,9 +287,7 @@ export const AdminMissionsPage: React.FC = () => {
                         {mission.isActive ? "활성" : "비활성"}
                       </Badge>
                       <span className="text-xs sm:text-sm text-gray-500">
-                        {format(new Date(mission.date), "MM월 dd일", {
-                          locale: ko,
-                        })}
+                        {dayjsUtils.parse(mission.date)?.format("MM월 DD일")}
                       </span>
                     </div>
                   </div>
@@ -335,7 +332,7 @@ export const AdminMissionsPage: React.FC = () => {
                     <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>{format(new Date(mission.date), "MM/dd")}</span>
+                        <span>{dayjsUtils.formatSimple(mission.date)}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Target className="h-3 w-3 sm:h-4 sm:w-4" />
