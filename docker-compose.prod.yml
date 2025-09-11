@@ -229,3 +229,7 @@ volumes:
       type: none
       o: bind
       device: /opt/bible-daily/data/redis
+
+networks:
+  my-network:
+    external: true

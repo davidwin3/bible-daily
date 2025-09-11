@@ -678,10 +678,6 @@ jobs:
               docker-compose -f $COMPOSE_FILE --env-file .env.production up -d mysql redis backend
             fi
 
-            # Always ensure nginx and certbot are running
-            echo '🌐 Deploying nginx for static file serving and reverse proxy...'
-            docker-compose -f $COMPOSE_FILE --env-file .env.production up -d nginx
-
             echo '🔒 Ensuring SSL certificate management...'
             docker-compose -f $COMPOSE_FILE --env-file .env.production up -d certbot
 
