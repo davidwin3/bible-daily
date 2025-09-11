@@ -11,6 +11,7 @@ import { CreateMissionScriptureDto } from './create-mission-scripture.dto';
 
 export class CreateMissionDto {
   @IsDateString()
+  @Length(10, 10)
   date: string;
 
   @IsArray()

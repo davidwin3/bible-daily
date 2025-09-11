@@ -18,8 +18,8 @@ export class Mission {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @Column({ type: 'date', unique: true })
-  date: Date;
+  @Column({ type: 'char', length: 10, unique: true })
+  date: string; // YYYY-MM-DD 형태의 문자열
 
   @Column({ length: 200, nullable: true })
   title: string;

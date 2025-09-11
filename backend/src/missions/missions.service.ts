@@ -87,17 +87,13 @@ export class MissionsService {
       );
     } else {
       if (startDate) {
-        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
-        const startDateStr = new Date(startDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date >= :startDate', {
-          startDate: startDateStr,
+          startDate,
         });
       }
       if (endDate) {
-        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
-        const endDateStr = new Date(endDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date <= :endDate', {
-          endDate: endDateStr,
+          endDate,
         });
       }
     }
@@ -154,13 +150,10 @@ export class MissionsService {
   }
 
   async getMissionByDate(date: string): Promise<Mission | null> {
-    // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환하여 Raw 쿼리 사용
-    const targetDateStr = new Date(date).toISOString().split('T')[0];
-
     const mission = await this.missionsRepository
       .createQueryBuilder('mission')
       .leftJoinAndSelect('mission.scriptures', 'scriptures')
-      .where('mission.date = :date', { date: targetDateStr })
+      .where('mission.date = :date', { date })
       .andWhere('mission.isActive = :isActive', { isActive: true })
       .orderBy('scriptures.order', 'ASC')
       .getOne();
@@ -277,13 +270,9 @@ export class MissionsService {
   async createMission(createMissionDto: CreateMissionDto): Promise<Mission> {
     const { date, scriptures, title, description } = createMissionDto;
 
-    // 날짜 중복 체크
-    // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
-    const dateStr = new Date(date).toISOString().split('T')[0];
-
     const existingMission = await this.missionsRepository
       .createQueryBuilder('mission')
-      .where('mission.date = :date', { date: dateStr })
+      .where('mission.date = :date', { date })
       .getOne();
 
     if (existingMission) {
@@ -291,7 +280,7 @@ export class MissionsService {
     }
 
     const mission = this.missionsRepository.create({
-      date: new Date(dateStr + 'T00:00:00.000Z'), // UTC 기준으로 날짜만 설정
+      date,
       title,
       description,
     });
@@ -331,13 +320,9 @@ export class MissionsService {
 
         // 날짜가 변경되는 경우 중복 체크
         if (updateMissionDto.date) {
-          // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
-          const dateStr = new Date(updateMissionDto.date)
-            .toISOString()
-            .split('T')[0];
           const existingMission = await transactionalEntityManager
             .createQueryBuilder(Mission, 'mission')
-            .where('mission.date = :date', { date: dateStr })
+            .where('mission.date = :date', { date: updateMissionDto.date })
             .andWhere('mission.id != :id', { id })
             .getOne();
 
@@ -359,12 +344,7 @@ export class MissionsService {
         // 미션 기본 정보 업데이트
         await transactionalEntityManager.update(Mission, id, {
           ...missionUpdates,
-          date: updateMissionDto.date
-            ? new Date(
-                new Date(updateMissionDto.date).toISOString().split('T')[0] +
-                  'T00:00:00.000Z',
-              )
-            : mission.date,
+          date: updateMissionDto.date ? updateMissionDto.date : mission.date,
         });
 
         // 새로운 성경구절들 저장
@@ -464,17 +444,13 @@ export class MissionsService {
       );
     } else {
       if (startDate) {
-        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
-        const startDateStr = new Date(startDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date >= :startDate', {
-          startDate: startDateStr,
+          startDate,
         });
       }
       if (endDate) {
-        // DATE 타입 컬럼에 맞춰 YYYY-MM-DD 형식으로 변환
-        const endDateStr = new Date(endDate).toISOString().split('T')[0];
         queryBuilder.andWhere('mission.date <= :endDate', {
-          endDate: endDateStr,
+          endDate,
         });
       }
     }
