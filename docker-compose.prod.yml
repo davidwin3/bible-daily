@@ -39,6 +39,7 @@ services:
       MYSQL_DATABASE: ${DB_DATABASE}
       MYSQL_USER: ${DB_USERNAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
+      TZ: Asia/Seoul
     volumes:
       - mysql_prod_data:/var/lib/mysql
       - ./backend/database/init:/docker-entrypoint-initdb.d
@@ -51,6 +52,7 @@ services:
       --default-authentication-plugin=mysql_native_password
       --character-set-server=utf8mb4
       --collation-server=utf8mb4_unicode_ci
+      --default-time-zone=+09:00
       --innodb-buffer-pool-size=512M
       --max-connections=200
       --slow-query-log=1
