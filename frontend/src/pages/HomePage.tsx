@@ -68,7 +68,6 @@ export const HomePage: React.FC = () => {
                 <ScriptureDisplay
                   mission={todayMission}
                   variant="compact"
-                  showActions={true}
                   allowExpand={true}
                 />
               </div>

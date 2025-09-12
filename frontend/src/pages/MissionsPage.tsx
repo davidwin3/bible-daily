@@ -131,7 +131,6 @@ export const MissionsPage: React.FC = () => {
             <ScriptureDisplay
               mission={todayMission}
               variant="mobile"
-              showActions={true}
               className="mb-4"
             />
 
