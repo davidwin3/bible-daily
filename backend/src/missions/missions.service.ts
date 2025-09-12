@@ -26,9 +26,9 @@ export class MissionsService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async getTodayMission(): Promise<Mission | null> {
+  async getTodayMission(date?: string): Promise<Mission | null> {
     // 오늘 날짜를 YYYY-MM-DD 형식으로 변환
-    const today = new Date().toISOString().split('T')[0];
+    const today = date || new Date().toISOString().split('T')[0];
 
     const mission = await this.missionsRepository
       .createQueryBuilder('mission')

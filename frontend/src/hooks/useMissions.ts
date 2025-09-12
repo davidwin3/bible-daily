@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { missionsAPI } from "@/lib/api";
 import { missionKeys } from "@/queries";
 import type { Mission } from "@/lib/types";
+import { dayjsUtils } from "@/lib/dayjs";
 
 export type { Mission };
 
@@ -15,10 +16,12 @@ export interface UserProgress {
 
 // 오늘의 미션 조회
 export const useTodayMission = () => {
+  const today = dayjsUtils.today();
+
   return useQuery({
     queryKey: missionKeys.today(),
     queryFn: async () => {
-      const response = await missionsAPI.getTodayMission();
+      const response = await missionsAPI.getTodayMission(today);
       return response.data as Mission;
     },
   });

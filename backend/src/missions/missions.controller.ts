@@ -25,8 +25,8 @@ export class MissionsController {
 
   @Public()
   @Get('today')
-  async getTodayMission() {
-    return await this.missionsService.getTodayMission();
+  async getTodayMission(@Query('date') date?: string) {
+    return await this.missionsService.getTodayMission(date);
   }
 
   @Public()

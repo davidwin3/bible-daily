@@ -50,7 +50,10 @@ export const postsAPI = {
 
 // Missions API
 export const missionsAPI = {
-  getTodayMission: () => api.get("/missions/today"),
+  getTodayMission: (date?: string) => {
+    const params = date ? { date } : {};
+    return api.get("/missions/today", { params });
+  },
   getMissions: (params: any) => api.get("/missions", { params }),
   getMission: (id: string) => api.get(`/missions/${id}`),
   getMissionByDate: (date: string) => api.get(`/missions/by-date/${date}`),
