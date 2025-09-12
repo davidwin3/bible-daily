@@ -1,0 +1,349 @@
+# 인프라 및 배포 규칙
+
+## 📦 패키지 매니저 규칙
+
+### pnpm 사용 필수
+- **모든 Node.js 프로젝트에서 pnpm 사용**
+- npm 또는 yarn 대신 pnpm을 기본 패키지 매니저로 사용
+- 의존성 설치: `pnpm install`
+- 패키지 추가: `pnpm add <package>`
+- 개발 의존성 추가: `pnpm add -D <package>`
+- 스크립트 실행: `pnpm run <script>` 또는 `pnpm <script>`
+
+```bash
+# ✅ 권장 사용법
+pnpm install
+pnpm add dayjs
+pnpm add -D @types/node
+pnpm dev
+pnpm build
+
+# ❌ 사용 금지
+npm install
+yarn add
+npm run dev
+```
+
+### 작업공간(Workspace) 설정
+- 모노레포 구조에서 pnpm workspace 활용
+- `pnpm-workspace.yaml` 파일로 작업공간 정의
+- 패키지 간 의존성 관리 최적화
+
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - "frontend"
+  - "backend"
+  - "shared"
+```
+
+## 🐳 Docker 컨테이너 규칙
+
+### Dockerfile 최적화
+```dockerfile
+# ✅ 권장 패턴
+# 멀티스테이지 빌드 사용
+FROM node:20-alpine AS base
+WORKDIR /app
+
+# 의존성 설치 단계
+FROM base AS deps
+# pnpm 설치
+RUN npm install -g pnpm
+COPY package*.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
+
+# 빌드 단계
+FROM base AS build
+RUN npm install -g pnpm
+COPY package*.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm build
+
+# 운영 단계
+FROM base AS runtime
+RUN npm install -g pnpm
+COPY --from=deps /app/node_modules ./node_modules
+COPY --from=build /app/dist ./dist
+COPY package*.json pnpm-lock.yaml ./
+
+USER node
+EXPOSE 3000
+CMD ["pnpm", "start"]
+```
+
+### 보안 규칙
+- 최소 권한 원칙: `USER node` 사용
+- Alpine Linux 기반 이미지 우선 사용
+- 불필요한 패키지 설치 금지
+- `.dockerignore` 활용하여 민감 파일 제외
+- 고정 태그 사용 (latest 태그 금지)
+
+## 🚀 CI/CD 파이프라인 규칙
+
+### GitHub Actions 워크플로우
+```yaml
+# .github/workflows/ci.yml
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [20.x]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run linting
+        run: pnpm lint
+
+      - name: Run type check
+        run: pnpm type-check
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+```
+
+### 배포 자동화 원칙
+- **단계별 배포**: 개발 → 스테이징 → 운영
+- **자동 롤백**: 배포 실패 시 이전 버전으로 자동 복구
+- **환경별 설정**: 각 환경에 맞는 설정 분리
+- **보안 검사**: 보안 취약점 자동 스캔
+- **성능 테스트**: 부하 테스트 자동 실행
+
+## 🌐 웹서버 및 프록시 설정
+
+### Nginx 최적화 설정
+```nginx
+# nginx.conf
+server {
+    listen 80;
+    listen [::]:80;
+    server_name bible-daily.com www.bible-daily.com;
+
+    # HTTPS 리다이렉트
+    return 301 https://$server_name$request_uri;
+}
+
+server {
+    listen 443 ssl http2;
+    listen [::]:443 ssl http2;
+    server_name bible-daily.com www.bible-daily.com;
+
+    # SSL 설정
+    ssl_certificate /etc/letsencrypt/live/bible-daily.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/bible-daily.com/privkey.pem;
+
+    # 보안 헤더
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-XSS-Protection "1; mode=block" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # Gzip 압축
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types text/plain text/css text/xml text/javascript application/javascript application/json;
+
+    # 정적 파일 캐싱
+    location ~* \.(js|css|png|jpg|jpeg|gif|ico|svg|woff|woff2)$ {
+        expires 1y;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # API 프록시
+    location /api/ {
+        proxy_pass http://backend:4000/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_cache_bypass $http_upgrade;
+
+        # 타임아웃 설정
+        proxy_connect_timeout 60s;
+        proxy_send_timeout 60s;
+        proxy_read_timeout 60s;
+    }
+
+    # 프론트엔드 SPA 설정
+    location / {
+        proxy_pass http://frontend:3000;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+
+        # SPA 라우팅 지원
+        try_files $uri $uri/ /index.html;
+    }
+}
+```
+
+## 📊 모니터링 및 로깅
+
+### 로그 관리 규칙
+```yaml
+# docker-compose에 로깅 설정
+logging:
+  driver: "json-file"
+  options:
+    max-size: "10m"
+    max-file: "3"
+    labels: "service=backend"
+```
+
+### 헬스체크 구현
+```typescript
+// backend/src/health.controller.ts
+@Controller("health")
+export class HealthController {
+  @Get()
+  getHealth() {
+    return {
+      status: "ok",
+      timestamp: new Date().toISOString(),
+      uptime: process.uptime(),
+      version: process.env.npm_package_version,
+    };
+  }
+
+  @Get("db")
+  async getDatabaseHealth() {
+    // 데이터베이스 연결 상태 확인
+    return { status: "ok", database: "connected" };
+  }
+}
+```
+
+## 🔒 SSL/TLS 및 보안
+
+### Let's Encrypt 자동 갱신
+```bash
+#!/bin/bash
+# scripts/ssl-renew.sh
+certbot renew --nginx --quiet
+
+# Nginx 재시작
+docker-compose exec nginx nginx -s reload
+
+# 로그 기록
+echo "$(date): SSL certificate renewed" >> /var/log/ssl-renew.log
+```
+
+### 보안 스캔 자동화
+```yaml
+# .github/workflows/security.yml
+name: Security Scan
+
+on:
+  schedule:
+    - cron: "0 2 * * 1" # 매주 월요일 2AM
+  push:
+    branches: [main]
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: "fs"
+          format: "sarif"
+          output: "trivy-results.sarif"
+
+      - name: Upload to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: "trivy-results.sarif"
+```
+
+## 📈 스케일링 및 성능
+
+### 수평 확장 설정
+```yaml
+# docker-compose.scale.yml
+version: "3.8"
+services:
+  backend:
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          cpus: "0.5"
+          memory: 512M
+        reservations:
+          cpus: "0.25"
+          memory: 256M
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+
+  nginx:
+    # 로드 밸런싱 설정
+    volumes:
+      - ./nginx/load-balancer.conf:/etc/nginx/nginx.conf
+```
+
+## 🔧 환경별 배포 설정
+
+### 환경 분리 전략
+```bash
+# 개발 환경
+docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
+
+# 스테이징 환경
+docker-compose -f docker-compose.yml -f docker-compose.staging.yml up
+
+# 운영 환경
+docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+```
+
+## 🚨 재해 복구 및 백업
+
+### 데이터베이스 백업
+```bash
+#!/bin/bash
+# scripts/backup-db.sh
+DATE=$(date +%Y%m%d_%H%M%S)
+BACKUP_DIR="/backups"
+
+# MySQL 백업
+docker-compose exec db mysqldump -u root -p${DB_ROOT_PASSWORD} bible_daily > ${BACKUP_DIR}/bible_daily_${DATE}.sql
+
+# 7일 이상된 백업 파일 삭제
+find ${BACKUP_DIR} -name "bible_daily_*.sql" -mtime +7 -delete
+
+echo "Backup completed: bible_daily_${DATE}.sql"
+```
