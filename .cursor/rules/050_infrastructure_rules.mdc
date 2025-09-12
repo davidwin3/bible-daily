@@ -15,6 +15,45 @@ globs:
 
 # 인프라 및 배포 규칙
 
+## 📦 패키지 매니저 규칙
+
+### pnpm 사용 필수
+
+- **모든 Node.js 프로젝트에서 pnpm 사용**
+- npm 또는 yarn 대신 pnpm을 기본 패키지 매니저로 사용
+- 의존성 설치: `pnpm install`
+- 패키지 추가: `pnpm add <package>`
+- 개발 의존성 추가: `pnpm add -D <package>`
+- 스크립트 실행: `pnpm run <script>` 또는 `pnpm <script>`
+
+```bash
+# ✅ 권장 사용법
+pnpm install
+pnpm add dayjs
+pnpm add -D @types/node
+pnpm dev
+pnpm build
+
+# ❌ 사용 금지
+npm install
+yarn add
+npm run dev
+```
+
+### 작업공간(Workspace) 설정
+
+- 모노레포 구조에서 pnpm workspace 활용
+- `pnpm-workspace.yaml` 파일로 작업공간 정의
+- 패키지 간 의존성 관리 최적화
+
+```yaml
+# pnpm-workspace.yaml
+packages:
+  - "frontend"
+  - "backend"
+  - "shared"
+```
+
 ## 🐳 Docker 컨테이너 규칙
 
 ### Dockerfile 최적화
@@ -27,25 +66,29 @@ WORKDIR /app
 
 # 의존성 설치 단계
 FROM base AS deps
-COPY package*.json ./
-RUN npm ci --only=production && npm cache clean --force
+# pnpm 설치
+RUN npm install -g pnpm
+COPY package*.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile --prod
 
 # 빌드 단계
 FROM base AS build
-COPY package*.json ./
-RUN npm ci
+RUN npm install -g pnpm
+COPY package*.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
 COPY . .
-RUN npm run build
+RUN pnpm build
 
 # 운영 단계
 FROM base AS runtime
+RUN npm install -g pnpm
 COPY --from=deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY package*.json ./
+COPY package*.json pnpm-lock.yaml ./
 
 USER node
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["pnpm", "start"]
 ```
 
 ### 보안 규칙
