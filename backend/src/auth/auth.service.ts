@@ -58,6 +58,7 @@ export class AuthService {
           name: user.name,
           profileImage: user.profileImage,
           role: user.role,
+          createdAt: user.createdAt,
         },
       };
     } catch (error) {

@@ -49,7 +49,9 @@ export class SyncService {
       total: actions.length,
     };
 
-    this.logger.log(`Starting sync for user ${userId} with ${actions.length} actions`);
+    this.logger.log(
+      `Starting sync for user ${userId} with ${actions.length} actions`,
+    );
 
     // 트랜잭션으로 처리
     await this.dataSource.transaction(async (manager) => {
@@ -72,7 +74,9 @@ export class SyncService {
       }
     });
 
-    this.logger.log(`Sync completed: ${results.successful.length} successful, ${results.failed.length} failed`);
+    this.logger.log(
+      `Sync completed: ${results.successful.length} successful, ${results.failed.length} failed`,
+    );
 
     return {
       success: true,
@@ -113,15 +117,19 @@ export class SyncService {
   /**
    * 게시물 생성 동기화
    */
-  private async syncCreatePost(action: OfflineAction, userId: string, manager: any) {
+  private async syncCreatePost(
+    action: OfflineAction,
+    userId: string,
+    manager: any,
+  ) {
     const { data } = action;
-    
+
     // 중복 확인 (클라이언트 ID 기반)
     if (data.clientId) {
       const existingPost = await manager.findOne(Post, {
         where: { clientId: data.clientId, authorId: userId },
       });
-      
+
       if (existingPost) {
         this.logger.warn(`Post with clientId ${data.clientId} already exists`);
         return;
@@ -144,7 +152,11 @@ export class SyncService {
   /**
    * 좋아요 토글 동기화
    */
-  private async syncToggleLike(action: OfflineAction, userId: string, manager: any) {
+  private async syncToggleLike(
+    action: OfflineAction,
+    userId: string,
+    manager: any,
+  ) {
     const { data } = action;
     const postId = data.postId;
 
@@ -167,12 +179,18 @@ export class SyncService {
   /**
    * 미션 완료 동기화
    */
-  private async syncCompleteMission(action: OfflineAction, userId: string, manager: any) {
+  private async syncCompleteMission(
+    action: OfflineAction,
+    userId: string,
+    manager: any,
+  ) {
     const { data } = action;
     const missionId = data.missionId;
 
     // 미션 존재 확인
-    const mission = await manager.findOne(Mission, { where: { id: missionId } });
+    const mission = await manager.findOne(Mission, {
+      where: { id: missionId },
+    });
     if (!mission) {
       throw new BadRequestException(`Mission ${missionId} not found`);
     }
@@ -194,13 +212,19 @@ export class SyncService {
     }
 
     await manager.save(userMission);
-    this.logger.log(`Updated mission completion: mission ${missionId}, user ${userId}, completed: ${data.isCompleted}`);
+    this.logger.log(
+      `Updated mission completion: mission ${missionId}, user ${userId}, completed: ${data.isCompleted}`,
+    );
   }
 
   /**
    * 게시물 수정 동기화
    */
-  private async syncUpdatePost(action: OfflineAction, userId: string, manager: any) {
+  private async syncUpdatePost(
+    action: OfflineAction,
+    userId: string,
+    manager: any,
+  ) {
     const { data } = action;
     const postId = data.postId;
 
@@ -209,7 +233,9 @@ export class SyncService {
     });
 
     if (!post) {
-      throw new BadRequestException(`Post ${postId} not found or not owned by user`);
+      throw new BadRequestException(
+        `Post ${postId} not found or not owned by user`,
+      );
     }
 
     if (data.title !== undefined) post.title = data.title;
@@ -224,7 +250,11 @@ export class SyncService {
   /**
    * 게시물 삭제 동기화
    */
-  private async syncDeletePost(action: OfflineAction, userId: string, manager: any) {
+  private async syncDeletePost(
+    action: OfflineAction,
+    userId: string,
+    manager: any,
+  ) {
     const { data } = action;
     const postId = data.postId;
 
@@ -233,7 +263,9 @@ export class SyncService {
     });
 
     if (!post) {
-      this.logger.warn(`Post ${postId} not found or not owned by user ${userId}`);
+      this.logger.warn(
+        `Post ${postId} not found or not owned by user ${userId}`,
+      );
       return;
     }
 
