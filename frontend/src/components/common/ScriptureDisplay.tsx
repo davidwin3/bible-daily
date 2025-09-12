@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { BookOpen, ExternalLink, ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Mission, MissionScripture } from "@/lib/types";
-import { generateGoodTVBibleLinkFromScriptures } from "@/lib/bible-book-mapping";
+import { generateCTSBibleLinkFromScriptures } from "@/lib/bible-book-mapping";
 
 interface ScriptureDisplayProps {
   mission: Mission;
@@ -53,9 +53,9 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
     mission.scriptures?.sort((a, b) => a.order - b.order) || [];
 
   const openBibleApp = () => {
-    // Good TV 성경 링크 생성 (첫 번째 구절을 기준으로)
-    const goodTVUrl = generateGoodTVBibleLinkFromScriptures(scriptures);
-    window.open(goodTVUrl, "_blank");
+    // CTS 성경 링크 생성 (첫 번째 구절을 기준으로)
+    const ctsUrl = generateCTSBibleLinkFromScriptures(scriptures);
+    window.open(ctsUrl, "_blank");
   };
 
   // scriptures가 없는 경우 처리
@@ -139,10 +139,8 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
                          md:p-4 md:rounded-xl md:hover:from-primary/8 md:hover:to-primary/15 md:transition-all md:duration-200
                          cursor-pointer"
               onClick={() => {
-                const goodTVUrl = generateGoodTVBibleLinkFromScriptures([
-                  scripture,
-                ]);
-                window.open(goodTVUrl, "_blank");
+                const ctsUrl = generateCTSBibleLinkFromScriptures([scripture]);
+                window.open(ctsUrl, "_blank");
               }}
               title="클릭하여 성경 앱에서 열기"
             >
@@ -180,10 +178,8 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
               variant="outline"
               className="text-xs py-1 px-2 cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-1"
               onClick={() => {
-                const goodTVUrl = generateGoodTVBibleLinkFromScriptures([
-                  scripture,
-                ]);
-                window.open(goodTVUrl, "_blank");
+                const ctsUrl = generateCTSBibleLinkFromScriptures([scripture]);
+                window.open(ctsUrl, "_blank");
               }}
               title="클릭하여 성경 앱에서 열기"
             >
@@ -212,10 +208,8 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
                        transition-colors cursor-pointer touch-manipulation
                        md:hover:bg-primary/5 md:hover:border-primary/20 md:border md:border-transparent"
             onClick={() => {
-              const goodTVUrl = generateGoodTVBibleLinkFromScriptures([
-                scripture,
-              ]);
-              window.open(goodTVUrl, "_blank");
+              const ctsUrl = generateCTSBibleLinkFromScriptures([scripture]);
+              window.open(ctsUrl, "_blank");
             }}
             title="클릭하여 성경 앱에서 열기"
           >

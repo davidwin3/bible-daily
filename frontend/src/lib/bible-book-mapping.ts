@@ -1,63 +1,67 @@
 /**
- * Good TV 성경 링크를 위한 성경책 매핑
- * URL 패턴: https://goodtvbible.goodtv.co.kr/onbibleread/0/{book_order}/{chapter}
+ * CTS 성경 링크를 위한 성경책 매핑
+ * URL 패턴: https://www.cts.tv/bible?b_code%5B%5D=COTR&b_title={encoded_book_name}&b_page={chapter}
  *
- * book_order는 구약성경부터 신약성경까지 1부터 시작하는 순서
+ * b_title은 URL 인코딩된 한글 성경책 이름
+ * b_page는 장 번호
  */
 
-// Good TV Bible 관련 상수
-export const GOODTV_BIBLE_CONSTANTS = {
-  BASE_URL: "https://goodtvbible.goodtv.co.kr",
-  BIBLE_READ_PATH: "/onbibleread/0",
-  DEFAULT_BOOK: 1, // 창세기
+// CTS Bible 관련 상수
+export const CTS_BIBLE_CONSTANTS = {
+  BASE_URL: "https://www.cts.tv",
+  BIBLE_READ_PATH: "/bible",
+  BIBLE_CODE: "COTR",
+  DEFAULT_BOOK: "창세기",
   DEFAULT_CHAPTER: 1,
 } as const;
 
 /**
- * Good TV Bible 전체 URL 생성
- * @param bookOrder 성경책 순서 (1-66)
+ * CTS Bible 전체 URL 생성
+ * @param bookName 성경책 이름 (한글)
  * @param chapter 장 번호
- * @returns 완전한 Good TV Bible URL
+ * @returns 완전한 CTS Bible URL
  */
-export function buildGoodTVBibleUrl(
-  bookOrder: number,
-  chapter: number
-): string {
+export function buildCTSBibleUrl(bookName: string, chapter: number): string {
   // 유효성 검증 후 잘못된 값이면 기본값 사용
-  const validBookOrder = isValidBookOrder(bookOrder)
-    ? bookOrder
-    : GOODTV_BIBLE_CONSTANTS.DEFAULT_BOOK;
+  const validBookName = bookName || CTS_BIBLE_CONSTANTS.DEFAULT_BOOK;
   const validChapter = isValidChapter(chapter)
     ? chapter
-    : GOODTV_BIBLE_CONSTANTS.DEFAULT_CHAPTER;
+    : CTS_BIBLE_CONSTANTS.DEFAULT_CHAPTER;
 
-  if (bookOrder !== validBookOrder || chapter !== validChapter) {
+  if (bookName !== validBookName || chapter !== validChapter) {
     console.warn(
-      `잘못된 매개변수가 전달되었습니다. bookOrder: ${bookOrder} -> ${validBookOrder}, chapter: ${chapter} -> ${validChapter}`
+      `잘못된 매개변수가 전달되었습니다. bookName: ${bookName} -> ${validBookName}, chapter: ${chapter} -> ${validChapter}`
     );
   }
 
-  return `${GOODTV_BIBLE_CONSTANTS.BASE_URL}${GOODTV_BIBLE_CONSTANTS.BIBLE_READ_PATH}/${validBookOrder}/${validChapter}`;
+  // URL 인코딩된 성경책 이름
+  const encodedBookName = encodeURIComponent(validBookName);
+
+  return `${CTS_BIBLE_CONSTANTS.BASE_URL}${CTS_BIBLE_CONSTANTS.BIBLE_READ_PATH}?b_code%5B%5D=${CTS_BIBLE_CONSTANTS.BIBLE_CODE}&b_title=${encodedBookName}&b_page=${validChapter}`;
 }
 
 /**
- * 기본 Good TV Bible URL 반환 (창세기 1장)
- * @returns 기본 Good TV Bible URL
+ * 기본 CTS Bible URL 반환 (창세기 1장)
+ * @returns 기본 CTS Bible URL
  */
-export function getDefaultGoodTVBibleUrl(): string {
-  return buildGoodTVBibleUrl(
-    GOODTV_BIBLE_CONSTANTS.DEFAULT_BOOK,
-    GOODTV_BIBLE_CONSTANTS.DEFAULT_CHAPTER
+export function getDefaultCTSBibleUrl(): string {
+  return buildCTSBibleUrl(
+    CTS_BIBLE_CONSTANTS.DEFAULT_BOOK,
+    CTS_BIBLE_CONSTANTS.DEFAULT_CHAPTER
   );
 }
 
 /**
- * 성경책 순서 번호 유효성 검증
- * @param bookOrder 성경책 순서 번호
- * @returns 유효한 범위(1-66)인지 여부
+ * 성경책 이름 유효성 검증
+ * @param bookName 성경책 이름
+ * @returns 유효한 성경책 이름인지 여부
  */
-export function isValidBookOrder(bookOrder: number): boolean {
-  return Number.isInteger(bookOrder) && bookOrder >= 1 && bookOrder <= 66;
+export function isValidBookName(bookName: string): boolean {
+  return (
+    typeof bookName === "string" &&
+    bookName.trim().length > 0 &&
+    getBookName(bookName) !== null
+  );
 }
 
 /**
@@ -245,29 +249,29 @@ export const BIBLE_BOOK_ALIASES: Record<string, string> = {
 };
 
 /**
- * 성경책 이름을 Good TV URL의 순서 번호로 변환
+ * 성경책 이름 정규화 (별칭을 표준 이름으로 변환)
  * @param bookName 성경책 이름
- * @returns Good TV URL에서 사용하는 순서 번호 (1-66), 찾을 수 없으면 null
+ * @returns 표준 성경책 이름, 찾을 수 없으면 null
  */
-export function getBookOrder(bookName: string): number | null {
+export function getBookName(bookName: string): string | null {
   // 먼저 직접 매핑에서 찾기
   if (BIBLE_BOOK_MAPPING[bookName]) {
-    return BIBLE_BOOK_MAPPING[bookName];
+    return bookName;
   }
 
   // 별칭에서 찾기
   const alias = BIBLE_BOOK_ALIASES[bookName];
   if (alias && BIBLE_BOOK_MAPPING[alias]) {
-    return BIBLE_BOOK_MAPPING[alias];
+    return alias;
   }
 
   // 부분 매칭 시도 (예: "마태" -> "마태복음")
-  for (const [fullName, order] of Object.entries(BIBLE_BOOK_MAPPING)) {
+  for (const fullName of Object.keys(BIBLE_BOOK_MAPPING)) {
     if (
       fullName.includes(bookName) ||
       bookName.includes(fullName.replace(/서$|기$|서$/, ""))
     ) {
-      return order;
+      return fullName;
     }
   }
 
@@ -275,34 +279,44 @@ export function getBookOrder(bookName: string): number | null {
 }
 
 /**
- * Good TV 성경 링크 생성
+ * 성경책 이름을 순서 번호로 변환 (하위 호환성을 위해 유지)
+ * @param bookName 성경책 이름
+ * @returns 순서 번호 (1-66), 찾을 수 없으면 null
+ */
+export function getBookOrder(bookName: string): number | null {
+  const standardName = getBookName(bookName);
+  return standardName ? BIBLE_BOOK_MAPPING[standardName] : null;
+}
+
+/**
+ * CTS 성경 링크 생성
  * @param bookName 성경책 이름
  * @param chapter 장 번호
- * @returns Good TV 성경 링크
+ * @returns CTS 성경 링크
  */
-export function generateGoodTVBibleLink(
+export function generateCTSBibleLink(
   bookName: string,
   chapter: number
 ): string {
-  const bookOrder = getBookOrder(bookName);
+  const standardBookName = getBookName(bookName);
 
-  if (!bookOrder) {
+  if (!standardBookName) {
     // 기본값으로 창세기 1장 반환
     console.warn(
       `성경책 "${bookName}"을(를) 찾을 수 없습니다. 창세기 1장으로 이동합니다.`
     );
-    return getDefaultGoodTVBibleUrl();
+    return getDefaultCTSBibleUrl();
   }
 
-  return buildGoodTVBibleUrl(bookOrder, chapter);
+  return buildCTSBibleUrl(standardBookName, chapter);
 }
 
 /**
- * 여러 성경 구절에 대한 Good TV 링크 생성 (첫 번째 구절 기준)
+ * 여러 성경 구절에 대한 CTS 링크 생성 (첫 번째 구절 기준)
  * @param scriptures 성경 구절 배열
- * @returns Good TV 성경 링크
+ * @returns CTS 성경 링크
  */
-export function generateGoodTVBibleLinkFromScriptures(
+export function generateCTSBibleLinkFromScriptures(
   scriptures: Array<{
     startBook: string;
     startChapter: number;
@@ -313,12 +327,12 @@ export function generateGoodTVBibleLinkFromScriptures(
   }>
 ): string {
   if (scriptures.length === 0) {
-    return getDefaultGoodTVBibleUrl();
+    return getDefaultCTSBibleUrl();
   }
 
   // 첫 번째 구절을 기준으로 링크 생성
   const firstScripture = scriptures[0];
-  return generateGoodTVBibleLink(
+  return generateCTSBibleLink(
     firstScripture.startBook,
     firstScripture.startChapter
   );
