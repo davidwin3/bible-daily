@@ -142,7 +142,6 @@ export const MissionsPage: React.FC = () => {
           alt="Bible Daily"
           className="h-20 w-20 mx-auto rounded-xl shadow-lg border-2 border-primary/20"
         />
-        <h1 className="text-3xl font-bold text-primary">미션 말씀</h1>
         <p className="text-muted-foreground text-lg">
           매일 하나님의 말씀과 함께하는 특별한 시간
         </p>
