@@ -88,7 +88,18 @@ export const MissionsPage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-20">
-      <h1 className="text-2xl font-bold">미션 말씀</h1>
+      {/* 페이지 헤더 섹션 */}
+      <div className="text-center space-y-4 py-6">
+        <img
+          src="/images/logo-title.png"
+          alt="Bible Daily"
+          className="h-20 w-20 mx-auto rounded-xl shadow-lg border-2 border-primary/20"
+        />
+        <h1 className="text-3xl font-bold text-primary">미션 말씀</h1>
+        <p className="text-muted-foreground text-lg">
+          매일 하나님의 말씀과 함께하는 특별한 시간
+        </p>
+      </div>
 
       {/* Today's Mission */}
       {todayMission && (
