@@ -5,11 +5,20 @@ const DYNAMIC_CACHE = "bible-daily-dynamic-v2";
 // 정적 파일들 (런타임에 동적으로 추가됨)
 const urlsToCache = ["/", "/manifest.json", "/vite.svg"];
 
+// 개발 환경 감지
+const isDev =
+  self.location.hostname === "localhost" ||
+  self.location.hostname === "127.0.0.1";
+
 // Service Worker 설치
 self.addEventListener("install", (event) => {
+  console.log(
+    `[SW] Service Worker 설치 중... (환경: ${isDev ? "개발" : "운영"})`
+  );
+
   event.waitUntil(
     caches.open(STATIC_CACHE).then((cache) => {
-      console.log("Opened cache");
+      console.log("[SW] 캐시 열기 성공:", STATIC_CACHE);
       return cache.addAll(urlsToCache);
     })
   );
@@ -18,18 +27,22 @@ self.addEventListener("install", (event) => {
 
 // 활성화 이벤트 - 오래된 캐시 삭제
 self.addEventListener("activate", (event) => {
+  console.log("[SW] Service Worker 활성화 중...");
+
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
           if (cacheName !== STATIC_CACHE && cacheName !== DYNAMIC_CACHE) {
-            console.log("Deleting old cache:", cacheName);
+            console.log("[SW] 오래된 캐시 삭제:", cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+
+  console.log("[SW] Service Worker 활성화 완료");
   self.clients.claim();
 });
 
@@ -38,18 +51,32 @@ self.addEventListener("fetch", (event) => {
   const { request } = event;
   const url = new URL(request.url);
 
+  // 개발 환경에서 디버깅 정보 출력
+  if (isDev) {
+    console.log(`[SW] Fetch 요청:`, url.pathname, request.method);
+  }
+
   // Skip cross-origin requests
   if (url.origin !== self.location.origin) {
+    if (isDev) {
+      console.log(`[SW] Cross-origin 요청 건너뜀:`, url.origin);
+    }
     return;
   }
 
   // API 요청에 대한 특별한 처리
   if (url.pathname.startsWith("/api/")) {
+    if (isDev) {
+      console.log(`[SW] API 요청 처리:`, url.pathname);
+    }
     event.respondWith(handleAPIRequest(request));
     return;
   }
 
   // 정적 파일에 대한 캐시 우선 전략
+  if (isDev) {
+    console.log(`[SW] 정적 파일 요청 처리:`, url.pathname);
+  }
   event.respondWith(handleStaticRequest(request));
 });
 
@@ -343,7 +370,7 @@ function doBackgroundSync() {
   // 오프라인 상태에서 저장된 데이터 동기화
   const API_BASE = self.location.origin.includes("localhost")
     ? "http://localhost:3000"
-    : `__VITE_API_BASE_URL__`; // 환경변수로 대체됨
+    : "__VITE_API_BASE_URL__"; // 환경변수로 대체됨
 
   return fetch(`${API_BASE}/sync/background`, {
     method: "POST",

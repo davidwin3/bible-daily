@@ -36,16 +36,23 @@ window.addEventListener("load", async () => {
   // 환경 변경 리스너 설정
   setupEnvironmentChangeListener();
 
-  if (environment.isPWA) {
-    // PWA 환경에서만 Service Worker 등록
-    console.log("PWA 환경에서 실행 중 - Service Worker 등록");
+  // 개발 환경에서는 항상 Service Worker 등록
+  const isDev = import.meta.env.DEV;
+
+  if (environment.isPWA || isDev) {
+    // PWA 환경 또는 개발 환경에서 Service Worker 등록
+    console.log(
+      isDev
+        ? "개발 환경에서 실행 중 - Service Worker 등록"
+        : "PWA 환경에서 실행 중 - Service Worker 등록"
+    );
 
     const registration = await registerServiceWorkerForPWA();
 
     if (registration) {
-      console.log("PWA Service Worker 등록 성공:", registration);
+      console.log("Service Worker 등록 성공:", registration);
 
-      // Firebase 포그라운드 메시지 리스너 설정 (PWA에서만)
+      // Firebase 포그라운드 메시지 리스너 설정
       setupForegroundMessageListener();
     }
   } else {

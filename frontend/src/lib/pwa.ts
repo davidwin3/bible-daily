@@ -58,11 +58,18 @@ export function getBrowserEnvironment() {
 }
 
 /**
- * Service Worker 등록 (PWA 환경에서만)
+ * Service Worker 등록 (PWA 환경 또는 개발 환경에서)
  */
 export async function registerServiceWorkerForPWA(): Promise<ServiceWorkerRegistration | null> {
-  if (!isPWAEnvironment() || !("serviceWorker" in navigator)) {
+  const isDev = import.meta.env.DEV;
+
+  if (!isDev && !isPWAEnvironment()) {
     console.log("PWA 환경이 아니므로 Service Worker를 등록하지 않습니다.");
+    return null;
+  }
+
+  if (!("serviceWorker" in navigator)) {
+    console.log("Service Worker를 지원하지 않는 브라우저입니다.");
     return null;
   }
 
