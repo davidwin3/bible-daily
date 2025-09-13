@@ -1,6 +1,13 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useNavigate,
+} from "react-router-dom";
+import { useEffect } from "react";
 import { AuthProvider } from "@/contexts/auth";
 import { Layout } from "@/components/layout/Layout";
 import { LoginPage } from "@/pages/LoginPage";
@@ -38,11 +45,39 @@ const queryClient = new QueryClient({
   },
 });
 
+// Service Worker 메시지 처리 컴포넌트
+function ServiceWorkerMessageHandler() {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.data?.type === "NAVIGATE_TO") {
+        console.log("Service Worker 네비게이션 요청:", event.data.url);
+        navigate(event.data.url);
+      }
+    };
+
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.addEventListener("message", handleMessage);
+    }
+
+    return () => {
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.removeEventListener("message", handleMessage);
+      }
+    };
+  }, [navigate]);
+
+  return null;
+}
+
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
         <BrowserRouter>
+          {/* Service Worker 메시지 처리 */}
+          <ServiceWorkerMessageHandler />
           {/* 인앱 브라우저 알림 (전역) */}
           <InAppBrowserAlert />
           <Routes>

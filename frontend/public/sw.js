@@ -270,23 +270,63 @@ self.addEventListener("notificationclick", (event) => {
     return;
   }
 
+  // 매일 성경 읽기 알림 특별 처리
+  if (event.notification.tag === "daily-bible-reminder") {
+    if (event.action === "remind-later") {
+      // 1시간 후 다시 알림
+      setTimeout(() => {
+        self.registration.showNotification("📖 성경 읽기 리마인더", {
+          body: "성경 읽기 시간입니다. 오늘의 말씀을 확인해보세요.",
+          icon: "/vite.svg",
+          badge: "/vite.svg",
+          tag: "daily-bible-reminder-snooze",
+          requireInteraction: true,
+          actions: [
+            {
+              action: "read-now",
+              title: "지금 읽기",
+            },
+          ],
+        });
+      }, 60 * 60 * 1000); // 1시간 후
+      return;
+    }
+  }
+
   // 앱이 이미 열려있는지 확인하고 포커스
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
-        const url = event.action === "explore" ? "/" : "/";
+        let targetUrl = "/";
 
-        // 이미 열린 탭이 있으면 포커스
+        // 알림 타입에 따른 URL 결정
+        if (
+          event.notification.tag === "daily-bible-reminder" ||
+          event.notification.tag === "daily-bible-reminder-snooze"
+        ) {
+          targetUrl = "/missions"; // 미션 페이지로 이동
+        } else if (event.action === "explore") {
+          targetUrl = "/";
+        }
+
+        // 이미 열린 탭이 있으면 포커스하고 해당 페이지로 이동
         for (const client of clientList) {
           if (client.url.includes(self.location.origin) && "focus" in client) {
-            return client.focus();
+            client.focus();
+            // 클라이언트에게 페이지 이동 메시지 전송
+            client.postMessage({
+              type: "NAVIGATE_TO",
+              url: targetUrl,
+              source: "notification-click",
+            });
+            return;
           }
         }
 
         // 열린 탭이 없으면 새로 열기
         if (clients.openWindow) {
-          return clients.openWindow(url);
+          return clients.openWindow(targetUrl);
         }
       })
   );

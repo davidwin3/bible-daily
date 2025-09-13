@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useNotifications } from "@/hooks/useNotifications";
+import { useDailyReminder } from "@/hooks/useDailyReminder";
 import { useAuth } from "@/contexts/auth";
 import {
   BellIcon,
@@ -63,6 +64,33 @@ export const NotificationSettingsPage: React.FC = () => {
     unsubscribeFromPush,
   } = useNotifications();
 
+  const { scheduleNextReminder, cancelDailyReminder } = useDailyReminder();
+
+  // 다음 알림 시간 계산
+  const getNextReminderDisplay = () => {
+    if (!settings.dailyReminder || !settings.dailyReminderTime) {
+      return null;
+    }
+
+    const now = new Date();
+    const [hours, minutes] = settings.dailyReminderTime.split(":").map(Number);
+
+    const nextReminder = new Date();
+    nextReminder.setHours(hours, minutes, 0, 0);
+
+    // 오늘 시간이 이미 지났다면 내일로 설정
+    if (nextReminder <= now) {
+      nextReminder.setDate(nextReminder.getDate() + 1);
+    }
+
+    return nextReminder.toLocaleString("ko-KR", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
   const [settings, setSettings] =
     useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [isLoading, setIsLoading] = useState(false);
@@ -78,6 +106,13 @@ export const NotificationSettingsPage: React.FC = () => {
   const saveSettings = (newSettings: NotificationSettings) => {
     setSettings(newSettings);
     localStorage.setItem("notificationSettings", JSON.stringify(newSettings));
+
+    // 매일 성경 읽기 리마인더 설정 변경 시 스케줄 업데이트
+    if (newSettings.dailyReminder && newSettings.dailyReminderTime) {
+      scheduleNextReminder(newSettings);
+    } else {
+      cancelDailyReminder();
+    }
   };
 
   const handlePermissionRequest = async () => {
@@ -123,6 +158,25 @@ export const NotificationSettingsPage: React.FC = () => {
       "5초 후에 도착한 알림입니다.",
       5000
     );
+  };
+
+  const handleDailyReminderTest = () => {
+    showNotification("📖 성경 읽기 시간입니다! (테스트)", {
+      body: "오늘의 성경 말씀을 읽어보세요. 하나님의 말씀으로 하루를 시작하세요.",
+      icon: "/vite.svg",
+      badge: "/vite.svg",
+      tag: "daily-bible-reminder",
+      requireInteraction: true,
+      data: {
+        type: "daily-reminder",
+        timestamp: Date.now(),
+      },
+    } as NotificationOptions & {
+      actions?: Array<{
+        action: string;
+        title: string;
+      }>;
+    });
   };
 
   const updateSetting = <K extends keyof NotificationSettings>(
@@ -265,6 +319,14 @@ export const NotificationSettingsPage: React.FC = () => {
                         예약 테스트
                       </Button>
                       <Button
+                        variant="outline"
+                        onClick={handleDailyReminderTest}
+                        size="sm"
+                        className="h-10 text-sm px-4 rounded-lg border-gray-200"
+                      >
+                        성경 알림 테스트
+                      </Button>
+                      <Button
                         variant="destructive"
                         onClick={handleDisableNotifications}
                         disabled={isLoading}
@@ -316,22 +378,36 @@ export const NotificationSettingsPage: React.FC = () => {
                 </div>
 
                 {settings.dailyReminder && (
-                  <div className="ml-0 pl-4 border-l-2 border-gray-100 space-y-2">
-                    <Label
-                      htmlFor="reminderTime"
-                      className="text-sm text-gray-700"
-                    >
-                      알림 시간
-                    </Label>
-                    <Input
-                      id="reminderTime"
-                      type="time"
-                      value={settings.dailyReminderTime}
-                      onChange={(e) =>
-                        updateSetting("dailyReminderTime", e.target.value)
-                      }
-                      className="w-36 h-10"
-                    />
+                  <div className="ml-0 pl-4 border-l-2 border-gray-100 space-y-3">
+                    <div>
+                      <Label
+                        htmlFor="reminderTime"
+                        className="text-sm text-gray-700"
+                      >
+                        알림 시간
+                      </Label>
+                      <Input
+                        id="reminderTime"
+                        type="time"
+                        value={settings.dailyReminderTime}
+                        onChange={(e) =>
+                          updateSetting("dailyReminderTime", e.target.value)
+                        }
+                        className="w-36 h-10 mt-1"
+                      />
+                    </div>
+
+                    {getNextReminderDisplay() && (
+                      <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                        <p className="text-sm text-green-800">
+                          <span className="font-medium">다음 알림:</span>{" "}
+                          {getNextReminderDisplay()}
+                        </p>
+                        <p className="text-xs text-green-600 mt-1">
+                          매일 설정된 시간에 성경 읽기 알림을 받습니다
+                        </p>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>
