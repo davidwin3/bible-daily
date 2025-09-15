@@ -32,6 +32,8 @@ api.interceptors.response.use(
 // Auth API
 export const authAPI = {
   login: (firebaseToken: string) => api.post("/auth/login", { firebaseToken }),
+  completeRegistration: (data: { realName: string; firebaseToken: string }) =>
+    api.post("/auth/complete-registration", data),
   getProfile: () => api.get("/auth/me"),
 };
 

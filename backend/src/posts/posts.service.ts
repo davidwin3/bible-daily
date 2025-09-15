@@ -50,7 +50,7 @@ export class PostsService {
     }
 
     if (author) {
-      queryBuilder.andWhere('author.name LIKE :author', {
+      queryBuilder.andWhere('author.realName LIKE :author', {
         author: `%${author}%`,
       });
     }

@@ -31,7 +31,7 @@ export const HomePage: React.FC = () => {
       <div className="text-center space-y-2">
         <h1 className="text-2xl font-bold">
           {user
-            ? `안녕하세요, ${user.name}님!`
+            ? `안녕하세요, ${user.realName}님!`
             : "Bible Daily에 오신 것을 환영합니다"}
         </h1>
         <p className="text-muted-foreground">

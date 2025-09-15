@@ -54,6 +54,23 @@ export class UsersService {
       email: firebaseUser.email || '',
       name:
         firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User',
+      realName:
+        firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'User', // 기존 사용자 호환성을 위해
+      profileImage: firebaseUser.photoURL || null,
+      firebaseUid: firebaseUser.uid,
+    });
+
+    return await this.usersRepository.save(user);
+  }
+
+  async createFromFirebaseWithRealName(
+    firebaseUser: admin.auth.UserRecord,
+    realName: string,
+  ): Promise<User> {
+    const user = this.usersRepository.create({
+      email: firebaseUser.email || '',
+      name: realName, // 실명을 표시명으로도 사용
+      realName: realName,
       profileImage: firebaseUser.photoURL || null,
       firebaseUid: firebaseUser.uid,
     });
@@ -208,6 +225,7 @@ export class UsersService {
         'id',
         'email',
         'name',
+        'realName',
         'profileImage',
         'role',
         'isActive',
@@ -233,6 +251,7 @@ export class UsersService {
           leader: {
             id: true,
             name: true,
+            realName: true,
           },
         },
       },

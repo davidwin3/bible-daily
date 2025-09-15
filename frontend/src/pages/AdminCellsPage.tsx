@@ -421,7 +421,7 @@ export const AdminCellsPage: React.FC = () => {
                                 className="flex justify-between items-center p-3 border rounded-lg"
                               >
                                 <div>
-                                  <p className="font-medium">{user.name}</p>
+                                  <p className="font-medium">{user.realName}</p>
                                   <p className="text-sm text-gray-500">
                                     {user.email}
                                   </p>
@@ -463,7 +463,7 @@ export const AdminCellsPage: React.FC = () => {
                           <div className="flex flex-col sm:flex-row sm:items-start gap-2 sm:gap-3">
                             <div className="flex-1">
                               <p className="font-medium text-sm sm:text-base">
-                                {member.user.name}
+                                {member.user.realName}
                               </p>
                               <p className="text-xs sm:text-sm text-gray-500 break-all">
                                 {member.user.email}

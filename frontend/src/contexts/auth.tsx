@@ -12,6 +12,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  realName: string;
   profileImage?: string;
   role: string;
   createdAt?: string;
@@ -21,8 +22,13 @@ interface AuthContextType {
   user: User | null;
   firebaseUser: FirebaseUser | null;
   loading: boolean;
+  pendingRegistration: { firebaseToken: string } | null;
   login: () => Promise<void>;
   logout: () => Promise<void>;
+  completeRegistration: (data: {
+    realName: string;
+    firebaseToken: string;
+  }) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -41,6 +47,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [loading, setLoading] = useState(true);
+  const [pendingRegistration, setPendingRegistration] = useState<{
+    firebaseToken: string;
+  } | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -54,9 +63,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           // Login with backend
           const response = await authAPI.login(token);
 
+          if (response.data.needsRegistration) {
+            // 회원가입이 필요한 경우
+            setPendingRegistration({ firebaseToken: token });
+            setUser(null);
+            return;
+          }
+
           // Store token and user info
           localStorage.setItem("authToken", response.data.accessToken);
           setUser(response.data.user);
+          setPendingRegistration(null);
 
           // 로그인 성공 후 FCM 토큰 자동 등록 시도
           // 약간의 지연을 두어 로그인 프로세스가 완료된 후 실행
@@ -79,10 +96,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
           console.error("Login failed:", error);
           await signOut(auth);
           setUser(null);
+          setPendingRegistration(null);
         }
       } else {
         localStorage.removeItem("authToken");
         setUser(null);
+        setPendingRegistration(null);
       }
 
       setLoading(false);
@@ -109,8 +128,40 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       localStorage.removeItem("authToken");
       setUser(null);
       setFirebaseUser(null);
+      setPendingRegistration(null);
+      setLoading(false);
     } catch (error) {
       console.error("Logout failed:", error);
+      throw error;
+    }
+  };
+
+  const completeRegistration = async (data: {
+    realName: string;
+    firebaseToken: string;
+  }) => {
+    try {
+      const response = await authAPI.completeRegistration(data);
+
+      // Store token and user info
+      localStorage.setItem("authToken", response.data.accessToken);
+      setUser(response.data.user);
+      setPendingRegistration(null);
+      setLoading(false);
+
+      // FCM 토큰 자동 등록
+      setTimeout(async () => {
+        try {
+          const fcmResult = await autoRegisterFCMToken();
+          if (fcmResult.success) {
+            console.log("FCM token auto-registered successfully");
+          }
+        } catch (error) {
+          console.error("FCM token auto-registration error:", error);
+        }
+      }, 1000);
+    } catch (error) {
+      console.error("Registration completion failed:", error);
       throw error;
     }
   };
@@ -119,8 +170,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     user,
     firebaseUser,
     loading,
+    pendingRegistration,
     login,
     logout,
+    completeRegistration,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

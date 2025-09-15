@@ -46,6 +46,7 @@ export class CellsService {
         leader: {
           id: true,
           name: true,
+          realName: true,
           email: true,
         },
       },
@@ -61,6 +62,7 @@ export class CellsService {
         leader: {
           id: true,
           name: true,
+          realName: true,
           email: true,
         },
         members: {
@@ -70,6 +72,7 @@ export class CellsService {
           user: {
             id: true,
             name: true,
+            realName: true,
             email: true,
             profileImage: true,
           },
@@ -225,6 +228,7 @@ export class CellsService {
           leader: {
             id: true,
             name: true,
+            realName: true,
             email: true,
           },
         },

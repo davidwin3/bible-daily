@@ -1,24 +1,32 @@
-import { useEffect } from 'react';
-import { useAuth } from '@/contexts/auth';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/auth";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { useNavigate } from "react-router-dom";
 
 export const LoginPage: React.FC = () => {
-  const { login, user, loading } = useAuth();
+  const { login, user, loading, pendingRegistration } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      navigate('/', { replace: true });
+      navigate("/", { replace: true });
+    } else if (pendingRegistration) {
+      navigate("/complete-registration", { replace: true });
     }
-  }, [user, navigate]);
+  }, [user, pendingRegistration, navigate]);
 
   const handleGoogleLogin = async () => {
     try {
       await login();
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error("Login failed:", error);
     }
   };
 
@@ -34,7 +42,9 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen flex items-center justify-center bg-background px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold text-primary">Bible Daily</CardTitle>
+          <CardTitle className="text-2xl font-bold text-primary">
+            Bible Daily
+          </CardTitle>
           <CardDescription>
             성경말씀을 나누고 소통하는 공간에 오신 것을 환영합니다
           </CardDescription>
@@ -45,9 +55,9 @@ export const LoginPage: React.FC = () => {
               구글 계정으로 간편하게 시작하세요
             </p>
           </div>
-          <Button 
-            onClick={handleGoogleLogin} 
-            className="w-full" 
+          <Button
+            onClick={handleGoogleLogin}
+            className="w-full"
             size="lg"
             disabled={loading}
           >
@@ -57,7 +67,7 @@ export const LoginPage: React.FC = () => {
                 로그인 중...
               </>
             ) : (
-              '구글로 로그인'
+              "구글로 로그인"
             )}
           </Button>
         </CardContent>

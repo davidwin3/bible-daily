@@ -11,6 +11,7 @@ import { useEffect } from "react";
 import { AuthProvider } from "@/contexts/auth";
 import { Layout } from "@/components/layout/Layout";
 import { LoginPage } from "@/pages/LoginPage";
+import { CompleteRegistrationPage } from "@/pages/CompleteRegistrationPage";
 import { HomePage } from "@/pages/HomePage";
 import { PostsPage } from "@/pages/PostsPage";
 import { PostDetailPage } from "@/pages/PostDetailPage";
@@ -82,6 +83,10 @@ function App() {
           <InAppBrowserAlert />
           <Routes>
             <Route path="/login" element={<LoginPage />} />
+            <Route
+              path="/complete-registration"
+              element={<CompleteRegistrationPage />}
+            />
             <Route path="/" element={<Layout />}>
               <Route index element={<HomePage />} />
               <Route path="posts" element={<PostsPage />} />

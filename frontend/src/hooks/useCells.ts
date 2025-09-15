@@ -10,6 +10,7 @@ export interface CellMember {
   user: {
     id: string;
     name: string;
+    realName: string;
     email: string;
     profileImage?: string;
   };

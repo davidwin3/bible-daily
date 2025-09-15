@@ -36,6 +36,9 @@ export class User {
   @Column()
   name: string;
 
+  @Column({ type: 'varchar', length: 100 })
+  realName: string;
+
   @Column({ type: 'varchar', length: 500, nullable: true })
   profileImage: string | null;
 

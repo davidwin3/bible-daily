@@ -53,7 +53,7 @@ export const AdminUsersPage: React.FC = () => {
   const filteredUsers =
     users?.filter((user) => {
       const matchesSearch =
-        user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.realName.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = !roleFilter || user.role === roleFilter;
       const matchesStatus =
@@ -283,13 +283,13 @@ export const AdminUsersPage: React.FC = () => {
                       {user.profileImage && (
                         <img
                           src={user.profileImage}
-                          alt={user.name}
+                          alt={user.realName}
                           className="w-8 h-8 sm:w-10 sm:h-10 rounded-full flex-shrink-0"
                         />
                       )}
                       <div className="min-w-0 flex-1">
                         <h3 className="text-base sm:text-lg font-semibold truncate">
-                          {user.name}
+                          {user.realName}
                         </h3>
                         <p className="text-sm text-gray-600 truncate">
                           {user.email}

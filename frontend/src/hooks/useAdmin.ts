@@ -107,6 +107,7 @@ interface User {
   id: string;
   email: string;
   name: string;
+  realName: string;
   profileImage?: string;
   role: string;
   isActive: boolean;

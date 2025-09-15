@@ -284,11 +284,11 @@ export const CellDetailPage: React.FC = () => {
                     <Avatar>
                       <AvatarImage src={member.user.profileImage} />
                       <AvatarFallback>
-                        {member.user.name.charAt(0)}
+                        {member.user.realName.charAt(0)}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <p className="font-medium">{member.user.name}</p>
+                      <p className="font-medium">{member.user.realName}</p>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <CalendarIcon className="h-3 w-3" />
                         {formatDate(member.joinedAt)} 참여

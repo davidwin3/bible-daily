@@ -103,7 +103,7 @@ export class PostsServiceCached {
     }
 
     if (author) {
-      countQuery.andWhere('author.name LIKE :author', {
+      countQuery.andWhere('author.realName LIKE :author', {
         author: `%${author}%`,
       });
     }
@@ -356,4 +356,3 @@ export class PostsServiceCached {
     return response;
   }
 }
-

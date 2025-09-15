@@ -10,6 +10,7 @@ import {
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { CompleteRegistrationDto } from './dto/complete-registration.dto';
 import { Public } from './public.decorator';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { User } from '../entities/user.entity';
@@ -22,6 +23,14 @@ export class AuthController {
   @Post('login')
   async login(@Body() loginDto: LoginDto) {
     return await this.authService.login(loginDto);
+  }
+
+  @Public()
+  @Post('complete-registration')
+  async completeRegistration(
+    @Body() completeRegistrationDto: CompleteRegistrationDto,
+  ) {
+    return await this.authService.completeRegistration(completeRegistrationDto);
   }
 
   @Public()
@@ -48,6 +57,7 @@ export class AuthController {
         id: user.id,
         email: user.email,
         name: user.name,
+        realName: user.realName,
         profileImage: user.profileImage,
         role: user.role,
       },

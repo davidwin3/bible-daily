@@ -30,7 +30,7 @@ export const Header: React.FC = () => {
               )}
               <Link to="/profile">
                 <Avatar className="h-8 w-8">
-                  <AvatarImage src={user.profileImage} alt={user.name} />
+                  <AvatarImage src={user.profileImage} alt={user.realName} />
                   <AvatarFallback>
                     <User className="h-4 w-4" />
                   </AvatarFallback>

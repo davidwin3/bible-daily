@@ -53,16 +53,6 @@ export const ProfilePage: React.FC = () => {
 
   return (
     <div className="space-y-6 pb-20">
-      {/* 페이지 헤더 */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-2xl">프로필</CardTitle>
-          <CardDescription>
-            내 정보를 확인하고 설정을 변경할 수 있습니다
-          </CardDescription>
-        </CardHeader>
-      </Card>
-
       {/* 사용자 정보 */}
       <Card>
         <CardHeader>
@@ -71,13 +61,13 @@ export const ProfilePage: React.FC = () => {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              <AvatarImage src={user.profileImage} alt={user.name} />
+              <AvatarImage src={user.profileImage} alt={user.realName} />
               <AvatarFallback className="text-xl">
-                {user.name.charAt(0)}
+                {user.realName.charAt(0)}
               </AvatarFallback>
             </Avatar>
             <div>
-              <h3 className="text-xl font-semibold">{user.name}</h3>
+              <h3 className="text-xl font-semibold">{user.realName}</h3>
               <div className="flex items-center gap-2 text-muted-foreground">
                 <MailIcon className="h-4 w-4" />
                 <span>{user.email}</span>

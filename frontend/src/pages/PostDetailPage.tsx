@@ -172,10 +172,12 @@ export const PostDetailPage: React.FC = () => {
             <div className="flex items-center gap-3">
               <Avatar className="h-8 w-8">
                 <AvatarImage src={post.author.profileImage} />
-                <AvatarFallback>{post.author.name.charAt(0)}</AvatarFallback>
+                <AvatarFallback>
+                  {post.author.realName.charAt(0)}
+                </AvatarFallback>
               </Avatar>
               <div>
-                <p className="font-medium text-sm">{post.author.name}</p>
+                <p className="font-medium text-sm">{post.author.realName}</p>
                 <p className="text-xs text-muted-foreground">
                   {formatDate(post.createdAt)}
                   {post.createdAt !== post.updatedAt && " (수정됨)"}

@@ -10,6 +10,7 @@ export interface Post {
   author: {
     id: string;
     name: string;
+    realName: string;
     profileImage?: string;
   };
   likeCount: number;

@@ -6,6 +6,7 @@ import { Repository } from 'typeorm';
 import { FirebaseService } from './firebase.service';
 import { UsersService } from '../users/users.service';
 import { LoginDto } from './dto/login.dto';
+import { CompleteRegistrationDto } from './dto/complete-registration.dto';
 import { User } from '../entities/user.entity';
 import { RefreshToken } from '../entities/refresh-token.entity';
 import * as crypto from 'crypto';
@@ -33,15 +34,15 @@ export class AuthService {
         loginDto.firebaseToken,
       );
 
-      // 사용자 정보 가져오기 또는 생성
-      let user = await this.usersService.findByFirebaseUid(decodedToken.uid);
+      // 사용자 정보 가져오기
+      const user = await this.usersService.findByFirebaseUid(decodedToken.uid);
 
       if (!user) {
-        // 새 사용자 생성
-        const firebaseUser = await this.firebaseService.getUserByUid(
-          decodedToken.uid,
-        );
-        user = await this.usersService.createFromFirebase(firebaseUser);
+        // 새 사용자인 경우, 회원가입 완료가 필요함을 알림
+        return {
+          needsRegistration: true,
+          message: '회원가입을 완료해주세요.',
+        };
       }
 
       // 마지막 로그인 시간 업데이트
@@ -56,6 +57,7 @@ export class AuthService {
           id: user.id,
           email: user.email,
           name: user.name,
+          realName: user.realName,
           profileImage: user.profileImage,
           role: user.role,
           createdAt: user.createdAt,
@@ -63,6 +65,52 @@ export class AuthService {
       };
     } catch (error) {
       throw new UnauthorizedException('Login failed');
+    }
+  }
+
+  async completeRegistration(completeRegistrationDto: CompleteRegistrationDto) {
+    try {
+      // Firebase 토큰 검증
+      const decodedToken = await this.firebaseService.verifyToken(
+        completeRegistrationDto.firebaseToken,
+      );
+
+      // 이미 등록된 사용자인지 확인
+      const existingUser = await this.usersService.findByFirebaseUid(
+        decodedToken.uid,
+      );
+      if (existingUser) {
+        throw new UnauthorizedException('User already registered');
+      }
+
+      // Firebase에서 사용자 정보 가져오기
+      const firebaseUser = await this.firebaseService.getUserByUid(
+        decodedToken.uid,
+      );
+
+      // 새 사용자 생성 (실명 포함)
+      const user = await this.usersService.createFromFirebaseWithRealName(
+        firebaseUser,
+        completeRegistrationDto.realName,
+      );
+
+      // JWT 토큰 생성
+      const tokens = await this.generateTokens(user);
+
+      return {
+        ...tokens,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          realName: user.realName,
+          profileImage: user.profileImage,
+          role: user.role,
+          createdAt: user.createdAt,
+        },
+      };
+    } catch (error) {
+      throw new UnauthorizedException('Registration failed');
     }
   }
 
