@@ -133,12 +133,10 @@ export const useToggleCompletion = () => {
         }
       );
 
-      // 사용자 진행률 캐시 무효화
+      // 사용자 진행률 캐시 무효화 (모든 월의 진행률 데이터)
       queryClient.invalidateQueries({
-        queryKey: missionKeys.all,
-        predicate: (query) =>
-          query.queryKey[0] === "missions" &&
-          query.queryKey[1] === "user-progress",
+        queryKey: missionKeys.userProgress(),
+        exact: false,
       });
     },
   });

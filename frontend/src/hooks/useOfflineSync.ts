@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { api } from "../lib/api";
 import { dayjsUtils } from "../lib/dayjs";
+import { useQueryClient } from "@tanstack/react-query";
+import { missionKeys } from "@/queries";
 
 interface OfflineAction {
   id: string;
@@ -29,6 +31,7 @@ interface SyncResult {
 }
 
 export function useOfflineSync() {
+  const queryClient = useQueryClient();
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [pendingActions, setPendingActions] = useState<OfflineAction[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -136,6 +139,32 @@ export function useOfflineSync() {
       console.log(
         `✅ 동기화 완료: ${result.successful.length}개 성공, ${result.failed.length}개 실패`
       );
+
+      // 미션 완료 동기화가 성공한 경우 관련 캐시 무효화
+      const hasMissionSync = result.successful.some(
+        (action) => action.type === "COMPLETE_MISSION"
+      );
+
+      if (hasMissionSync) {
+        // 사용자 진행률 캐시 무효화
+        queryClient.invalidateQueries({
+          queryKey: missionKeys.userProgress(),
+          exact: false,
+        });
+
+        // 오늘 미션 캐시 무효화
+        queryClient.invalidateQueries({
+          queryKey: missionKeys.today(),
+        });
+
+        // 미션 목록 캐시 무효화
+        queryClient.invalidateQueries({
+          queryKey: missionKeys.lists(),
+          exact: false,
+        });
+
+        console.log("🔄 미션 관련 캐시 무효화 완료");
+      }
 
       if (result.failed.length > 0) {
         console.warn("실패한 액션들:", result.failed);

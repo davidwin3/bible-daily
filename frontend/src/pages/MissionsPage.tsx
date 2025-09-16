@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -28,9 +28,13 @@ import {
 } from "lucide-react";
 import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
 import dayjs, { dayjsUtils } from "@/lib/dayjs";
+import { useQueryClient } from "@tanstack/react-query";
+import { missionKeys } from "@/queries";
+import { missionsAPI } from "@/lib/api";
 
 export const MissionsPage: React.FC = () => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(
     dayjsUtils.toDate(dayjsUtils.now()) || new Date()
   );
@@ -56,8 +60,13 @@ export const MissionsPage: React.FC = () => {
     if (missionId === todayMission?.id) {
       return todayCompletionStatus?.completed || false;
     }
-    // 다른 미션들의 완료 상태는 별도로 관리할 수 있음
-    return false;
+
+    // 다른 미션들의 완료 상태를 캐시에서 확인
+    const completionData = queryClient.getQueryData(
+      missionKeys.completionStatus(missionId)
+    ) as { completed: boolean } | undefined;
+
+    return completionData?.completed || false;
   };
 
   const handleToggleCompletion = (missionId: string) => {
@@ -74,6 +83,44 @@ export const MissionsPage: React.FC = () => {
       return dayjsUtils.isSameDay(mission.date, date);
     });
   };
+
+  // 선택된 미션의 완료 상태를 미리 로드
+  const selectedMission = useMemo(() => {
+    return getMissionForDate(selectedDate);
+  }, [selectedDate, missions]);
+
+  // 선택된 미션의 완료 상태 조회 (캐시에 저장하기 위함)
+  useCompletionStatus(
+    selectedMission?.id || "",
+    !!user && !!selectedMission && selectedMission.id !== todayMission?.id
+  );
+
+  // 미션 클릭 시 완료 상태 로드
+  const loadMissionCompletion = (missionId: string) => {
+    if (!user || missionId === todayMission?.id) return;
+
+    // 이미 캐시에 있는지 확인
+    const cached = queryClient.getQueryData(
+      missionKeys.completionStatus(missionId)
+    );
+    if (!cached) {
+      // 캐시에 없으면 수동으로 로드
+      queryClient.prefetchQuery({
+        queryKey: missionKeys.completionStatus(missionId),
+        queryFn: async () => {
+          const response = await missionsAPI.getCompletionStatus(missionId);
+          return response.data as { completed: boolean };
+        },
+      });
+    }
+  };
+
+  // 페이지 로드 시 선택된 날짜의 미션 완료 상태 로드
+  useEffect(() => {
+    if (selectedMission && user && selectedMission.id !== todayMission?.id) {
+      loadMissionCompletion(selectedMission.id);
+    }
+  }, [selectedMission?.id, user, todayMission?.id]);
 
   if (isLoading) {
     return (
@@ -217,7 +264,15 @@ export const MissionsPage: React.FC = () => {
           <Calendar
             mode="single"
             selected={selectedDate}
-            onSelect={(date) => date && setSelectedDate(date)}
+            onSelect={(date) => {
+              if (date) {
+                setSelectedDate(date);
+                const mission = getMissionForDate(date);
+                if (mission) {
+                  loadMissionCompletion(mission.id);
+                }
+              }
+            }}
             month={currentMonth}
             onMonthChange={setCurrentMonth}
             className="w-full h-fit"
