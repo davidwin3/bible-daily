@@ -1,6 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
 import { getMessaging, getToken, onMessage } from "firebase/messaging";
+import { api } from "@/lib/api";
 
 // Firebase 설정
 const firebaseConfig = {
@@ -155,20 +156,15 @@ export async function autoRegisterFCMToken(): Promise<{
     }
 
     // 서버에 토큰 등록
-    const response = await fetch("/notifications/subscribe", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${authToken}`,
-      },
-      body: JSON.stringify({ fcmToken: token }),
+    const response = await api.post("/notifications/subscribe", {
+      fcmToken: token,
     });
 
-    if (response.ok) {
+    if (response.status === 200) {
       console.log("FCM token registered successfully:", token);
       return { success: true, token };
     } else {
-      const error = await response.text();
+      const error = await response.data;
       console.error("Failed to register FCM token:", error);
       return { success: false, error };
     }
