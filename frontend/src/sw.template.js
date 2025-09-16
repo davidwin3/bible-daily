@@ -370,7 +370,7 @@ function doBackgroundSync() {
   // 오프라인 상태에서 저장된 데이터 동기화
   const API_BASE = self.location.origin.includes("localhost")
     ? "http://localhost:3000"
-    : "__VITE_API_BASE_URL__"; // 환경변수로 대체됨
+    : process.env.VITE_API_BASE_URL; // 환경변수로 대체됨
 
   return fetch(`${API_BASE}/sync/background`, {
     method: "POST",
