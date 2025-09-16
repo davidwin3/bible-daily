@@ -130,7 +130,7 @@ export const HomePage: React.FC = () => {
               ))}
             </div>
           ) : recentPosts?.posts?.length ? (
-            <div className="space-y-4">
+            <div className="space-y-4 flex flex-col">
               {recentPosts.posts.map((post: Post) => (
                 <Link key={post.id} to={`/posts/${post.id}`}>
                   <div className="p-3 rounded-lg border border-border hover:bg-muted/50 transition-colors">
