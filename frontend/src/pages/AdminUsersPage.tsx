@@ -53,8 +53,8 @@ export const AdminUsersPage: React.FC = () => {
   const filteredUsers =
     users?.filter((user) => {
       const matchesSearch =
-        user.realName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.email.toLowerCase().includes(searchTerm.toLowerCase());
+        user.realName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email?.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesRole = !roleFilter || user.role === roleFilter;
       const matchesStatus =
         !statusFilter ||
