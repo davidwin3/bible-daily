@@ -139,7 +139,7 @@ export const HomePage: React.FC = () => {
                       {post.content}
                     </p>
                     <div className="flex items-center justify-between mt-2 text-xs text-muted-foreground">
-                      <span>{post.author.name}</span>
+                      <span>{post.author.realName}</span>
                       <span>{dayjsUtils.formatSimple(post.createdAt)}</span>
                     </div>
                   </div>

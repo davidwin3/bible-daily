@@ -12,6 +12,7 @@ import { User } from '../entities/user.entity';
 import { GetMissionsDto } from './dto/get-missions.dto';
 import { CreateMissionDto } from './dto/create-mission.dto';
 import { UpdateMissionDto } from './dto/update-mission.dto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class MissionsService {
@@ -24,6 +25,7 @@ export class MissionsService {
     private userMissionsRepository: Repository<UserMission>,
     @InjectRepository(User)
     private usersRepository: Repository<User>,
+    private notificationsService: NotificationsService,
   ) {}
 
   async getTodayMission(date?: string): Promise<Mission | null> {
@@ -299,7 +301,78 @@ export class MissionsService {
       await this.missionScripturesRepository.save(missionScriptures);
     }
 
+    // 새 미션 등록 알림 전송
+    await this.sendNewMissionNotification(savedMission, scriptures);
+
     return savedMission;
+  }
+
+  /**
+   * 새 미션 등록 알림을 모든 사용자에게 전송
+   */
+  private async sendNewMissionNotification(
+    mission: Mission,
+    scriptures?: any[],
+  ): Promise<void> {
+    try {
+      // 모든 활성 사용자 조회
+      const activeUsers = await this.usersRepository.find({
+        where: { isActive: true },
+        select: ['id'],
+      });
+
+      if (activeUsers.length === 0) {
+        console.log('No active users found for mission notification');
+        return;
+      }
+
+      // 성경구절 정보 생성
+      let scriptureText = '';
+      if (scriptures && scriptures.length > 0) {
+        const firstScripture = scriptures[0];
+        scriptureText = `${firstScripture.book} ${firstScripture.chapter}`;
+        if (firstScripture.startVerse) {
+          scriptureText += `:${firstScripture.startVerse}`;
+          if (
+            firstScripture.endVerse &&
+            firstScripture.endVerse !== firstScripture.startVerse
+          ) {
+            scriptureText += `-${firstScripture.endVerse}`;
+          }
+        }
+      }
+
+      // 알림 제목과 내용 생성
+      const notificationTitle = '📖 새로운 성경 읽기 미션이 등록되었습니다!';
+      const notificationBody = mission.title
+        ? `${mission.title}${scriptureText ? ` (${scriptureText})` : ''}`
+        : scriptureText || '오늘의 성경 읽기를 확인해보세요';
+
+      // 모든 사용자에게 알림 전송
+      const userIds = activeUsers.map((user) => user.id);
+      const result = await this.notificationsService.sendNotificationToUsers(
+        userIds,
+        {
+          title: notificationTitle,
+          body: notificationBody,
+          data: {
+            type: 'new-mission',
+            missionId: mission.id.toString(),
+            date: mission.date,
+          },
+          icon: '/vite.svg',
+          badge: '/vite.svg',
+          clickAction: '/',
+        },
+      );
+
+      console.log(
+        `New mission notification sent: ${result.successCount} success, ${result.failureCount} failed`,
+      );
+    } catch (error) {
+      console.error('Failed to send new mission notification:', error);
+      // 알림 전송 실패는 미션 생성을 방해하지 않음
+    }
   }
 
   async updateMission(

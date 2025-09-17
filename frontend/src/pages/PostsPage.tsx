@@ -176,7 +176,7 @@ export const PostsPage: React.FC = () => {
                 <div className="flex justify-between items-center text-sm text-muted-foreground cursor-pointer">
                   <div className="flex items-center gap-2">
                     <UserIcon className="h-4 w-4" />
-                    {post.author.name}
+                    {post.author.realName}
                   </div>
                   <div className="flex items-center gap-1">
                     <CalendarIcon className="h-4 w-4" />

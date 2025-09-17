@@ -189,6 +189,31 @@ export class NotificationsService {
   }
 
   /**
+   * 특정 FCM 토큰으로 직접 알림 전송
+   */
+  async sendNotificationToToken(
+    fcmToken: string,
+    payload: NotificationPayload,
+  ): Promise<{ success: boolean; error?: string }> {
+    try {
+      await this.firebaseService.sendPushNotification(
+        fcmToken,
+        payload.title,
+        payload.body,
+        payload.data,
+      );
+
+      return { success: true };
+    } catch (error) {
+      console.error('Failed to send notification to token:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error',
+      };
+    }
+  }
+
+  /**
    * 특정 토큰 제거
    */
   async removeFcmToken(userId: string, token: string): Promise<boolean> {

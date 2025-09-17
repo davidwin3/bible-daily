@@ -150,6 +150,56 @@ export class NotificationsController {
   }
 
   /**
+   * 관리자 전용: 특정 사용자에게 알림 전송 (FCM 토큰으로)
+   */
+  @Post('send-to-token')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  async sendToToken(
+    @Body() body: { fcmToken: string; payload: NotificationPayload },
+  ) {
+    const { fcmToken, payload } = body;
+
+    const result = await this.notificationsService.sendNotificationToToken(
+      fcmToken,
+      payload,
+    );
+
+    return {
+      success: result.success,
+      message: result.success
+        ? 'Notification sent to token successfully'
+        : 'Failed to send notification to token',
+      error: result.error,
+    };
+  }
+
+  /**
+   * 관리자 전용: 특정 사용자에게 알림 전송 (사용자 ID로)
+   */
+  @Post('send-to-user')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  async sendToUser(
+    @Body() body: { userId: string; payload: NotificationPayload },
+  ) {
+    const { userId, payload } = body;
+
+    const result = await this.notificationsService.sendNotificationToUser(
+      userId,
+      payload,
+    );
+
+    return {
+      success: result.success,
+      message: result.success
+        ? 'Notification sent to user successfully'
+        : 'Failed to send notification to user',
+      error: result.error,
+    };
+  }
+
+  /**
    * 관리자 전용: 비활성 토큰 정리
    */
   @Delete('cleanup')
