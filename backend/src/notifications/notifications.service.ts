@@ -344,11 +344,19 @@ export class NotificationsService {
     payload: NotificationPayload,
   ): Promise<{ success: boolean; messageId?: string; error?: string }> {
     try {
+      // 토픽 정보를 data에 포함
+      const enrichedData = {
+        ...payload.data,
+        topic, // 토픽 정보 추가
+        notificationType: 'topic',
+        timestamp: Date.now().toString(),
+      };
+
       const messageId = await this.firebaseService.sendNotificationToTopic(
         topic,
         payload.title,
         payload.body,
-        payload.data,
+        enrichedData,
       );
 
       return { success: true, messageId };

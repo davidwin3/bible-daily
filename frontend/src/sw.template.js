@@ -2,6 +2,186 @@ const CACHE_NAME = "bible-daily-v2";
 const STATIC_CACHE = "bible-daily-static-v2";
 const DYNAMIC_CACHE = "bible-daily-dynamic-v2";
 
+// 토픽별 알림 처리를 위한 상수와 함수들
+const NOTIFICATION_TOPICS = {
+  NEW_MISSIONS: "new-missions",
+  MISSION_REMINDERS: "mission-reminders",
+  COMMUNITY_UPDATES: "community-updates",
+  ANNOUNCEMENTS: "announcements",
+};
+
+const TOPIC_CONFIGS = {
+  [NOTIFICATION_TOPICS.NEW_MISSIONS]: {
+    routing: { url: "/missions", requiresAuth: false },
+    icon: "/vite.svg",
+    badge: "/vite.svg",
+    tag: "new-missions",
+    actions: [
+      { action: "view-missions", title: "미션 보기", icon: "/vite.svg" },
+      { action: "close", title: "닫기", icon: "/vite.svg" },
+    ],
+    requireInteraction: true,
+  },
+  [NOTIFICATION_TOPICS.MISSION_REMINDERS]: {
+    routing: { url: "/missions", requiresAuth: false },
+    icon: "/vite.svg",
+    badge: "/vite.svg",
+    tag: "mission-reminders",
+    actions: [
+      { action: "complete-mission", title: "미션 완료하기", icon: "/vite.svg" },
+      { action: "remind-later", title: "1시간 후 알림", icon: "/vite.svg" },
+      { action: "close", title: "닫기", icon: "/vite.svg" },
+    ],
+    requireInteraction: false,
+  },
+  [NOTIFICATION_TOPICS.COMMUNITY_UPDATES]: {
+    routing: { url: "/posts", requiresAuth: false },
+    icon: "/vite.svg",
+    badge: "/vite.svg",
+    tag: "community-updates",
+    actions: [
+      { action: "view-community", title: "커뮤니티 보기", icon: "/vite.svg" },
+      { action: "close", title: "닫기", icon: "/vite.svg" },
+    ],
+    requireInteraction: false,
+  },
+  [NOTIFICATION_TOPICS.ANNOUNCEMENTS]: {
+    routing: { url: "/", requiresAuth: false },
+    icon: "/vite.svg",
+    badge: "/vite.svg",
+    tag: "announcements",
+    actions: [
+      {
+        action: "view-announcement",
+        title: "공지사항 보기",
+        icon: "/vite.svg",
+      },
+      { action: "close", title: "닫기", icon: "/vite.svg" },
+    ],
+    requireInteraction: true,
+  },
+};
+
+// 유틸리티 함수들
+function isValidNotificationTopic(topic) {
+  return Object.values(NOTIFICATION_TOPICS).includes(topic);
+}
+
+function createAdminTestNotificationOptions(
+  notificationBody,
+  notificationData
+) {
+  return {
+    body: notificationBody,
+    icon: "/vite.svg",
+    badge: "/vite.svg",
+    tag: "admin-test-notification",
+    data: {
+      ...notificationData,
+      dateOfArrival: Date.now(),
+      primaryKey: "bible-daily",
+    },
+    actions: [
+      {
+        action: "explore",
+        title: "확인하기",
+        icon: "/vite.svg",
+      },
+      {
+        action: "close",
+        title: "닫기",
+        icon: "/vite.svg",
+      },
+    ],
+    requireInteraction: true,
+    silent: false,
+  };
+}
+
+function createTopicNotificationOptions(topic, title, body, data = {}) {
+  const config = TOPIC_CONFIGS[topic];
+  if (!config) {
+    return createDefaultNotificationOptions(title, body, data);
+  }
+
+  return {
+    body,
+    icon: config.icon,
+    badge: config.badge,
+    tag: config.tag,
+    vibrate: [100, 50, 100],
+    data: {
+      ...data,
+      topic,
+      dateOfArrival: Date.now(),
+      primaryKey: "bible-daily",
+    },
+    actions: config.actions,
+    requireInteraction: config.requireInteraction,
+    silent: false,
+  };
+}
+
+function createDefaultNotificationOptions(title, body, data = {}) {
+  return {
+    body,
+    icon: "/vite.svg",
+    badge: "/vite.svg",
+    tag: "bible-daily-notification",
+    vibrate: [100, 50, 100],
+    data: {
+      ...data,
+      dateOfArrival: Date.now(),
+      primaryKey: "bible-daily",
+    },
+    actions: [
+      { action: "explore", title: "확인하기", icon: "/vite.svg" },
+      { action: "close", title: "닫기", icon: "/vite.svg" },
+    ],
+    requireInteraction: false,
+    silent: false,
+  };
+}
+
+function getTopicRoutingUrl(topic, action, data = {}) {
+  const config = TOPIC_CONFIGS[topic];
+  if (!config) return "/";
+
+  // 액션별 특별한 라우팅
+  switch (action) {
+    case "view-missions":
+    case "complete-mission":
+      return "/missions";
+    case "view-community":
+      return "/posts";
+    case "view-announcement":
+      return "/";
+    default:
+      return config.routing.url;
+  }
+}
+
+function handleNotificationAction(action, topic, data = {}) {
+  // 공통 액션 처리
+  if (action === "close") {
+    return "";
+  }
+
+  // 토픽별 액션 처리
+  if (topic) {
+    if (
+      action === "remind-later" &&
+      topic === NOTIFICATION_TOPICS.MISSION_REMINDERS
+    ) {
+      return "remind-later";
+    }
+
+    return getTopicRoutingUrl(topic, action, data);
+  }
+
+  return "/";
+}
+
 // 정적 파일들 (런타임에 동적으로 추가됨)
 const urlsToCache = ["/", "/manifest.json", "/vite.svg"];
 
@@ -234,57 +414,54 @@ async function handleStaticRequest(request) {
 
 // 푸시 알림 수신
 self.addEventListener("push", (event) => {
-  let notificationData = {
-    title: "Bible Daily",
-    body: "새로운 알림이 있습니다.",
-    icon: "/vite.svg",
-    badge: "/vite.svg",
-    tag: "bible-daily-notification",
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: "bible-daily",
-    },
-  };
+  let pushData = null;
+  let notificationTitle = "Bible Daily";
+  let notificationBody = "새로운 알림이 있습니다.";
 
   if (event.data) {
     try {
-      const pushData = event.data.json();
-      notificationData = {
-        ...notificationData,
-        ...pushData,
-        title: pushData.title || notificationData.title,
-        body: pushData.body || notificationData.body,
-      };
+      pushData = event.data.json();
+      notificationTitle =
+        pushData.notification?.title || pushData.title || notificationTitle;
+      notificationBody =
+        pushData.notification?.body || pushData.body || notificationBody;
     } catch (error) {
-      notificationData.body = event.data.text() || notificationData.body;
+      notificationBody = event.data.text() || notificationBody;
     }
   }
 
-  const options = {
-    body: notificationData.body,
-    icon: notificationData.icon,
-    badge: notificationData.badge,
-    tag: notificationData.tag,
-    vibrate: [100, 50, 100],
-    data: notificationData.data,
-    actions: [
-      {
-        action: "explore",
-        title: "확인하기",
-        icon: "/vite.svg",
-      },
-      {
-        action: "close",
-        title: "닫기",
-        icon: "/vite.svg",
-      },
-    ],
-    requireInteraction: false,
-    silent: false,
-  };
+  const notificationData = pushData?.data || {};
+  const topic = notificationData.topic;
+  const notificationType = notificationData.type;
+
+  let options;
+
+  // 관리자 테스트 알림 처리
+  if (notificationType === "admin-test") {
+    options = createAdminTestNotificationOptions(
+      notificationBody,
+      notificationData
+    );
+  }
+  // 토픽별 알림 처리
+  else if (topic && isValidNotificationTopic(topic)) {
+    options = createTopicNotificationOptions(
+      topic,
+      notificationTitle,
+      notificationBody,
+      notificationData
+    );
+  } else {
+    // 기본 알림 처리
+    options = createDefaultNotificationOptions(
+      notificationTitle,
+      notificationBody,
+      notificationData
+    );
+  }
 
   event.waitUntil(
-    self.registration.showNotification(notificationData.title, options)
+    self.registration.showNotification(notificationTitle, options)
   );
 });
 
@@ -292,15 +469,60 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  if (event.action === "close") {
-    // 알림만 닫기
+  const notificationData = event.notification.data || {};
+  const topic = notificationData.topic;
+  const notificationType = notificationData.type;
+  const action = event.action;
+
+  // 관리자 테스트 알림 처리
+  if (notificationType === "admin-test") {
+    if (action === "close") {
+      return;
+    }
+    // 기본적으로 홈페이지로 이동
+    navigateToUrl("/");
     return;
   }
 
-  // 매일 성경 읽기 알림 특별 처리
+  // 토픽별 액션 처리
+  if (topic && isValidNotificationTopic(topic)) {
+    const actionResult = handleNotificationAction(
+      action,
+      topic,
+      notificationData
+    );
+
+    // remind-later 특별 처리
+    if (actionResult === "remind-later") {
+      setTimeout(() => {
+        const reminderOptions = createTopicNotificationOptions(
+          topic,
+          "📖 미션 리마인더",
+          "성경 읽기 시간입니다. 오늘의 말씀을 확인해보세요.",
+          {
+            ...notificationData,
+            isReminder: "true",
+          }
+        );
+
+        self.registration.showNotification("📖 미션 리마인더", reminderOptions);
+      }, 60 * 60 * 1000); // 1시간 후
+      return;
+    }
+
+    // close 액션이면 아무것도 하지 않음
+    if (actionResult === "") {
+      return;
+    }
+
+    // URL 네비게이션
+    navigateToUrl(actionResult);
+    return;
+  }
+
+  // 레거시 처리 (기존 daily-bible-reminder)
   if (event.notification.tag === "daily-bible-reminder") {
     if (event.action === "remind-later") {
-      // 1시간 후 다시 알림
       setTimeout(() => {
         self.registration.showNotification("📖 성경 읽기 리마인더", {
           body: "성경 읽기 시간입니다. 오늘의 말씀을 확인해보세요.",
@@ -315,49 +537,47 @@ self.addEventListener("notificationclick", (event) => {
             },
           ],
         });
-      }, 60 * 60 * 1000); // 1시간 후
+      }, 60 * 60 * 1000);
       return;
     }
+    navigateToUrl("/missions");
+    return;
   }
 
-  // 앱이 이미 열려있는지 확인하고 포커스
-  event.waitUntil(
-    clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clientList) => {
-        let targetUrl = "/";
+  // 기본 처리
+  if (action === "close") {
+    return;
+  }
 
-        // 알림 타입에 따른 URL 결정
-        if (
-          event.notification.tag === "daily-bible-reminder" ||
-          event.notification.tag === "daily-bible-reminder-snooze"
-        ) {
-          targetUrl = "/missions"; // 미션 페이지로 이동
-        } else if (event.action === "explore") {
-          targetUrl = "/";
-        }
-
-        // 이미 열린 탭이 있으면 포커스하고 해당 페이지로 이동
-        for (const client of clientList) {
-          if (client.url.includes(self.location.origin) && "focus" in client) {
-            client.focus();
-            // 클라이언트에게 페이지 이동 메시지 전송
-            client.postMessage({
-              type: "NAVIGATE_TO",
-              url: targetUrl,
-              source: "notification-click",
-            });
-            return;
-          }
-        }
-
-        // 열린 탭이 없으면 새로 열기
-        if (clients.openWindow) {
-          return clients.openWindow(targetUrl);
-        }
-      })
-  );
+  navigateToUrl("/");
 });
+
+// URL 네비게이션 헬퍼 함수
+function navigateToUrl(targetUrl) {
+  // 앱이 이미 열려있는지 확인하고 포커스
+  clients
+    .matchAll({ type: "window", includeUncontrolled: true })
+    .then((clientList) => {
+      // 이미 열린 탭이 있으면 포커스하고 해당 페이지로 이동
+      for (const client of clientList) {
+        if (client.url.includes(self.location.origin) && "focus" in client) {
+          client.focus();
+          // 클라이언트에게 페이지 이동 메시지 전송
+          client.postMessage({
+            type: "NAVIGATE_TO",
+            url: targetUrl,
+            source: "notification-click",
+          });
+          return;
+        }
+      }
+
+      // 열린 탭이 없으면 새로 열기
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    });
+}
 
 // 백그라운드 동기화
 self.addEventListener("sync", (event) => {

@@ -1,5 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { api, missionsAPI } from "@/lib/api";
+import type { NotificationTopic } from "@/lib/notification-topics";
 
 // Types
 interface AdminDashboard {
@@ -146,6 +147,7 @@ export const adminKeys = {
   usersList: () => [...adminKeys.users(), "list"] as const,
   userStatistics: () => [...adminKeys.users(), "statistics"] as const,
   userDetail: (id: string) => [...adminKeys.users(), "detail", id] as const,
+  notifications: () => [...adminKeys.all, "notifications"] as const,
 };
 
 // Dashboard
@@ -457,6 +459,50 @@ export function useReactivateUser() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: adminKeys.users() });
       queryClient.invalidateQueries({ queryKey: adminKeys.dashboard() });
+    },
+  });
+}
+
+// Notifications
+export interface TopicNotificationPayload {
+  topic: NotificationTopic;
+  title: string;
+  body: string;
+  data?: Record<string, string>;
+}
+
+export function useSendTopicNotification() {
+  return useMutation({
+    mutationFn: async (payload: TopicNotificationPayload) => {
+      const response = await api.post("/notifications/send-to-topic", {
+        topic: payload.topic,
+        payload: {
+          title: payload.title,
+          body: payload.body,
+          data: payload.data,
+        },
+      });
+      return response.data;
+    },
+  });
+}
+
+export function useSendTestNotification() {
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.post("/notifications/test");
+      return response.data;
+    },
+  });
+}
+
+export function useSubscribeAllToTopic() {
+  return useMutation({
+    mutationFn: async (topic: NotificationTopic) => {
+      const response = await api.post("/notifications/subscribe-all-to-topic", {
+        topic,
+      });
+      return response.data;
     },
   });
 }

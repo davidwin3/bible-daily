@@ -2,6 +2,7 @@ import React from "react";
 import { AdminNav } from "@/components/layout/AdminNav";
 import { TopicSubscriptionSettings } from "@/components/notifications/TopicSubscriptionSettings";
 import { AdminNotificationTest } from "@/components/notifications/AdminNotificationTest";
+import { TopicNotificationTester } from "@/components/admin/TopicNotificationTester";
 import {
   sendNotificationToToken,
   sendNotificationToUser,
@@ -20,6 +21,9 @@ export const NotificationManagementPage: React.FC = () => {
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">
+          {/* 토픽별 알림 테스트 */}
+          <TopicNotificationTester />
+
           {/* 토픽 구독 관리 */}
           <TopicSubscriptionSettings
             onSendToTopic={

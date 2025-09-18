@@ -171,8 +171,11 @@ export class FirebaseService {
             body,
             icon: '/vite.svg',
             badge: '/vite.svg',
-            tag: 'bible-daily-notification',
-            requireInteraction: false,
+            tag:
+              data?.type === 'admin-test'
+                ? 'admin-test-notification'
+                : 'bible-daily-notification',
+            requireInteraction: data?.type === 'admin-test' ? true : false,
           },
           fcmOptions: {
             link: '/',
@@ -230,8 +233,11 @@ export class FirebaseService {
             body,
             icon: '/vite.svg',
             badge: '/vite.svg',
-            tag: 'bible-daily-notification',
-            requireInteraction: false,
+            tag:
+              data?.type === 'admin-test'
+                ? 'admin-test-notification'
+                : 'bible-daily-notification',
+            requireInteraction: data?.type === 'admin-test' ? true : false,
           },
           fcmOptions: {
             link: '/',
@@ -375,8 +381,11 @@ export class FirebaseService {
             body,
             icon: '/vite.svg',
             badge: '/vite.svg',
-            tag: 'bible-daily-notification',
-            requireInteraction: false,
+            tag:
+              data?.type === 'admin-test'
+                ? 'admin-test-notification'
+                : `${topic}-notification`,
+            requireInteraction: data?.type === 'admin-test' ? true : false,
           },
           fcmOptions: {
             link: '/',

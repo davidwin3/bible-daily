@@ -73,7 +73,7 @@ export const getAllTopics = (): NotificationTopic[] => {
 
 // 토픽 정보를 배열로 반환 (UI에서 사용)
 export const getTopicInfoList = (
-  subscriptionStatus: Record<NotificationTopic, boolean> = {}
+  subscriptionStatus: Partial<Record<NotificationTopic, boolean>> = {}
 ): TopicInfo[] => {
   return getAllTopics().map((topic) => ({
     ...TOPIC_DESCRIPTIONS[topic],

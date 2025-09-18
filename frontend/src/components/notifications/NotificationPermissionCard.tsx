@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { BellIcon, BellOffIcon, ShieldIcon } from "lucide-react";
+import { BellOffIcon, ShieldIcon } from "lucide-react";
 
 interface NotificationPermissionCardProps {
   isSupported: boolean;
