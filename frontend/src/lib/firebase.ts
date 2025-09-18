@@ -80,16 +80,43 @@ export function setupForegroundMessageListener() {
     // Service Worker를 통해 알림 표시
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
-        registration.showNotification(
-          payload.notification?.title || "Bible Daily",
-          {
-            body: payload.notification?.body || "새로운 알림이 있습니다.",
-            icon: "/vite.svg",
-            badge: "/vite.svg",
-            tag: "bible-daily-notification",
-            data: payload.data,
-          }
-        );
+        const notificationTitle = payload.notification?.title || "Bible Daily";
+        const notificationBody =
+          payload.notification?.body || "새로운 알림이 있습니다.";
+        const notificationData = payload.data || {};
+
+        // 토픽 정보를 포함한 알림 옵션 생성
+        const options = {
+          body: notificationBody,
+          icon: "/vite.svg",
+          badge: "/vite.svg",
+          tag: notificationData.topic
+            ? `${notificationData.topic}-foreground`
+            : "bible-daily-notification",
+          vibrate: [100, 50, 100],
+          data: {
+            ...notificationData,
+            dateOfArrival: Date.now(),
+            primaryKey: "bible-daily",
+            source: "foreground",
+          },
+          actions: [
+            {
+              action: "explore",
+              title: "확인하기",
+              icon: "/vite.svg",
+            },
+            {
+              action: "close",
+              title: "닫기",
+              icon: "/vite.svg",
+            },
+          ],
+          requireInteraction: false,
+          silent: false,
+        };
+
+        registration.showNotification(notificationTitle, options);
       });
     }
   });

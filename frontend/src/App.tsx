@@ -26,6 +26,7 @@ import { AdminDashboardPage } from "@/pages/AdminDashboardPage";
 import { AdminMissionsPage } from "@/pages/AdminMissionsPage";
 import { AdminCellsPage } from "@/pages/AdminCellsPage";
 import { AdminUsersPage } from "@/pages/AdminUsersPage";
+import { NotificationManagementPage } from "@/pages/NotificationManagementPage";
 import { InAppTestPage } from "@/pages/InAppTestPage";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
@@ -156,6 +157,14 @@ function App() {
                 element={
                   <AdminRoute>
                     <AdminUsersPage />
+                  </AdminRoute>
+                }
+              />
+              <Route
+                path="admin/notifications"
+                element={
+                  <AdminRoute>
+                    <NotificationManagementPage />
                   </AdminRoute>
                 }
               />

@@ -19,17 +19,21 @@ const app = initializeApp(firebaseConfig);
 // Messaging 인스턴스 가져오기
 const messaging = getMessaging(app);
 
-// 백그라운드 메시지 처리
-onBackgroundMessage(messaging, (payload) => {
-  console.log("Received background message:", payload);
-
-  const notificationTitle = payload.notification?.title || "Bible Daily";
-  const notificationOptions = {
-    body: payload.notification?.body || "새로운 알림이 있습니다.",
+// 관리자 테스트 알림 옵션 생성 함수
+function createAdminTestNotificationOptions(
+  notificationBody,
+  notificationData
+) {
+  return {
+    body: notificationBody,
     icon: "/vite.svg",
     badge: "/vite.svg",
-    tag: "bible-daily-notification",
-    data: payload.data || {},
+    tag: "admin-test-notification",
+    data: {
+      ...notificationData,
+      dateOfArrival: Date.now(),
+      primaryKey: "bible-daily",
+    },
     actions: [
       {
         action: "explore",
@@ -42,9 +46,128 @@ onBackgroundMessage(messaging, (payload) => {
         icon: "/vite.svg",
       },
     ],
-    requireInteraction: false,
+    requireInteraction: true,
     silent: false,
   };
+}
+
+// 백그라운드 메시지 처리
+onBackgroundMessage(messaging, (payload) => {
+  console.log("Received background message:", payload);
+
+  const notificationTitle = payload.notification?.title || "Bible Daily";
+  const notificationBody =
+    payload.notification?.body || "새로운 알림이 있습니다.";
+  const notificationData = payload.data || {};
+  const topic = notificationData.topic;
+  const notificationType = notificationData.type;
+
+  let notificationOptions;
+
+  // 관리자 테스트 알림 처리
+  if (notificationType === "admin-test") {
+    notificationOptions = createAdminTestNotificationOptions(
+      notificationBody,
+      notificationData
+    );
+  }
+  // 토픽별 알림 처리
+  else if (topic) {
+    const topicConfigs = {
+      "new-missions": {
+        tag: "new-missions",
+        actions: [
+          { action: "view-missions", title: "미션 보기", icon: "/vite.svg" },
+          { action: "close", title: "닫기", icon: "/vite.svg" },
+        ],
+        requireInteraction: true,
+      },
+      "mission-reminders": {
+        tag: "mission-reminders",
+        actions: [
+          {
+            action: "complete-mission",
+            title: "미션 완료하기",
+            icon: "/vite.svg",
+          },
+          { action: "remind-later", title: "1시간 후 알림", icon: "/vite.svg" },
+          { action: "close", title: "닫기", icon: "/vite.svg" },
+        ],
+        requireInteraction: false,
+      },
+      "community-updates": {
+        tag: "community-updates",
+        actions: [
+          {
+            action: "view-community",
+            title: "커뮤니티 보기",
+            icon: "/vite.svg",
+          },
+          { action: "close", title: "닫기", icon: "/vite.svg" },
+        ],
+        requireInteraction: false,
+      },
+      announcements: {
+        tag: "announcements",
+        actions: [
+          {
+            action: "view-announcement",
+            title: "공지사항 보기",
+            icon: "/vite.svg",
+          },
+          { action: "close", title: "닫기", icon: "/vite.svg" },
+        ],
+        requireInteraction: true,
+      },
+    };
+
+    const config = topicConfigs[topic];
+    if (config) {
+      notificationOptions = {
+        body: notificationBody,
+        icon: "/vite.svg",
+        badge: "/vite.svg",
+        tag: config.tag,
+        data: {
+          ...notificationData,
+          dateOfArrival: Date.now(),
+          primaryKey: "bible-daily",
+        },
+        actions: config.actions,
+        requireInteraction: config.requireInteraction,
+        silent: false,
+      };
+    }
+  }
+
+  // 기본 알림 설정 (토픽이 없거나 인식되지 않는 경우)
+  if (!notificationOptions) {
+    notificationOptions = {
+      body: notificationBody,
+      icon: "/vite.svg",
+      badge: "/vite.svg",
+      tag: "bible-daily-notification",
+      data: {
+        ...notificationData,
+        dateOfArrival: Date.now(),
+        primaryKey: "bible-daily",
+      },
+      actions: [
+        {
+          action: "explore",
+          title: "확인하기",
+          icon: "/vite.svg",
+        },
+        {
+          action: "close",
+          title: "닫기",
+          icon: "/vite.svg",
+        },
+      ],
+      requireInteraction: false,
+      silent: false,
+    };
+  }
 
   self.registration.showNotification(notificationTitle, notificationOptions);
 });
