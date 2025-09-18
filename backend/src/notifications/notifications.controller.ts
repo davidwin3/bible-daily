@@ -13,6 +13,10 @@ import { AdminGuard } from '../auth/admin.guard';
 import { NotificationsService } from './notifications.service';
 import type { NotificationPayload } from './notifications.service';
 import { UserRole } from '../entities/user.entity';
+import {
+  NotificationTopic,
+  isValidTopic,
+} from '../common/constants/notification-topics';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -196,6 +200,113 @@ export class NotificationsController {
         ? 'Notification sent to user successfully'
         : 'Failed to send notification to user',
       error: result.error,
+    };
+  }
+
+  /**
+   * 토픽 구독
+   */
+  @Post('subscribe-topic')
+  @HttpCode(HttpStatus.OK)
+  async subscribeToTopic(
+    @Body() body: { topic: NotificationTopic },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { topic } = body;
+    const userId = req.user.id;
+
+    const result = await this.notificationsService.subscribeUserToTopic(
+      userId,
+      topic,
+    );
+
+    return {
+      success: result.success,
+      message: result.success
+        ? `Successfully subscribed to topic: ${topic}`
+        : 'Failed to subscribe to topic',
+      error: result.error,
+    };
+  }
+
+  /**
+   * 토픽 구독 해제
+   */
+  @Post('unsubscribe-topic')
+  @HttpCode(HttpStatus.OK)
+  async unsubscribeFromTopic(
+    @Body() body: { topic: NotificationTopic },
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { topic } = body;
+    const userId = req.user.id;
+
+    const result = await this.notificationsService.unsubscribeUserFromTopic(
+      userId,
+      topic,
+    );
+
+    return {
+      success: result.success,
+      message: result.success
+        ? `Successfully unsubscribed from topic: ${topic}`
+        : 'Failed to unsubscribe from topic',
+      error: result.error,
+    };
+  }
+
+  /**
+   * 관리자 전용: 토픽에 알림 전송
+   */
+  @Post('send-to-topic')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  async sendToTopic(
+    @Body() body: { topic: NotificationTopic; payload: NotificationPayload },
+  ) {
+    const { topic, payload } = body;
+
+    // 토픽 유효성 검사
+    if (!isValidTopic(topic)) {
+      return {
+        success: false,
+        message: `Invalid topic: ${topic as string}`,
+        error: 'Invalid topic provided',
+      };
+    }
+
+    const result = await this.notificationsService.sendNotificationToTopic(
+      topic,
+      payload,
+    );
+
+    return {
+      success: result.success,
+      message: result.success
+        ? `Notification sent to topic: ${topic}`
+        : 'Failed to send notification to topic',
+      messageId: result.messageId,
+      error: result.error,
+    };
+  }
+
+  /**
+   * 관리자 전용: 모든 활성 사용자를 토픽에 구독
+   */
+  @Post('subscribe-all-to-topic')
+  @UseGuards(AdminGuard)
+  @HttpCode(HttpStatus.OK)
+  async subscribeAllToTopic(@Body() body: { topic: NotificationTopic }) {
+    const { topic } = body;
+
+    const result =
+      await this.notificationsService.subscribeAllActiveUsersToTopic(topic);
+
+    return {
+      success: true,
+      message: `Subscribed users to topic: ${topic}`,
+      successCount: result.successCount,
+      failureCount: result.failureCount,
     };
   }
 

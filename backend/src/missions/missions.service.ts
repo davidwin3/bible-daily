@@ -13,6 +13,7 @@ import { GetMissionsDto } from './dto/get-missions.dto';
 import { CreateMissionDto } from './dto/create-mission.dto';
 import { UpdateMissionDto } from './dto/update-mission.dto';
 import { NotificationsService } from '../notifications/notifications.service';
+import { NOTIFICATION_TOPICS } from '../common/constants/notification-topics';
 
 @Injectable()
 export class MissionsService {
@@ -302,7 +303,7 @@ export class MissionsService {
     }
 
     // 새 미션 등록 알림 전송
-    await this.sendNewMissionNotification(savedMission, scriptures);
+    // await this.sendNewMissionNotification(savedMission, scriptures);
 
     return savedMission;
   }
@@ -330,14 +331,16 @@ export class MissionsService {
       let scriptureText = '';
       if (scriptures && scriptures.length > 0) {
         const firstScripture = scriptures[0];
-        scriptureText = `${firstScripture.book} ${firstScripture.chapter}`;
-        if (firstScripture.startVerse) {
-          scriptureText += `:${firstScripture.startVerse}`;
-          if (
-            firstScripture.endVerse &&
-            firstScripture.endVerse !== firstScripture.startVerse
-          ) {
-            scriptureText += `-${firstScripture.endVerse}`;
+        if (firstScripture?.book && firstScripture?.chapter) {
+          scriptureText = `${firstScripture.book} ${firstScripture.chapter}`;
+          if (firstScripture.startVerse) {
+            scriptureText += `:${firstScripture.startVerse}`;
+            if (
+              firstScripture.endVerse &&
+              firstScripture.endVerse !== firstScripture.startVerse
+            ) {
+              scriptureText += `-${firstScripture.endVerse}`;
+            }
           }
         }
       }
@@ -348,10 +351,9 @@ export class MissionsService {
         ? `${mission.title}${scriptureText ? ` (${scriptureText})` : ''}`
         : scriptureText || '오늘의 성경 읽기를 확인해보세요';
 
-      // 모든 사용자에게 알림 전송
-      const userIds = activeUsers.map((user) => user.id);
-      const result = await this.notificationsService.sendNotificationToUsers(
-        userIds,
+      // 미션 토픽에 알림 전송 (모든 구독자에게 한 번에 전송)
+      const result = await this.notificationsService.sendNotificationToTopic(
+        NOTIFICATION_TOPICS.NEW_MISSIONS,
         {
           title: notificationTitle,
           body: notificationBody,
@@ -366,9 +368,15 @@ export class MissionsService {
         },
       );
 
-      console.log(
-        `New mission notification sent: ${result.successCount} success, ${result.failureCount} failed`,
-      );
+      if (result.success) {
+        console.log(
+          `New mission notification sent to topic 'new-missions': ${result.messageId}`,
+        );
+      } else {
+        console.error(
+          `Failed to send new mission notification to topic: ${result.error}`,
+        );
+      }
     } catch (error) {
       console.error('Failed to send new mission notification:', error);
       // 알림 전송 실패는 미션 생성을 방해하지 않음

@@ -1,7 +1,15 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, BookOpen, Users, User, Menu, X } from "lucide-react";
+import {
+  LayoutDashboard,
+  BookOpen,
+  Users,
+  User,
+  Bell,
+  Menu,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const navItems = [
@@ -24,6 +32,11 @@ const navItems = [
     title: "사용자 관리",
     href: "/admin/users",
     icon: User,
+  },
+  {
+    title: "알림 관리",
+    href: "/admin/notifications",
+    icon: Bell,
   },
 ];
 

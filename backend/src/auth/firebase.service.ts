@@ -254,4 +254,144 @@ export class FirebaseService {
       throw error;
     }
   }
+
+  /**
+   * 토픽에 토큰 구독
+   * @param tokens FCM 토큰 배열
+   * @param topic 토픽 이름
+   */
+  async subscribeToTopic(
+    tokens: string[],
+    topic: string,
+  ): Promise<{ successCount: number; failureCount: number }> {
+    try {
+      if (!this.firebaseApp) {
+        if (this.configService.get('NODE_ENV') === 'development') {
+          console.log(
+            'Development mode: Topic subscription would be processed:',
+            {
+              tokenCount: tokens.length,
+              topic,
+            },
+          );
+          return { successCount: tokens.length, failureCount: 0 };
+        }
+        throw new Error('Firebase not initialized');
+      }
+
+      const response = await admin.messaging().subscribeToTopic(tokens, topic);
+      console.log(
+        `Topic subscription: ${response.successCount} success, ${response.failureCount} failure for topic ${topic}`,
+      );
+
+      return {
+        successCount: response.successCount,
+        failureCount: response.failureCount,
+      };
+    } catch (error) {
+      console.error('Failed to subscribe to topic:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 토픽에서 토큰 구독 해제
+   * @param tokens FCM 토큰 배열
+   * @param topic 토픽 이름
+   */
+  async unsubscribeFromTopic(
+    tokens: string[],
+    topic: string,
+  ): Promise<{ successCount: number; failureCount: number }> {
+    try {
+      if (!this.firebaseApp) {
+        if (this.configService.get('NODE_ENV') === 'development') {
+          console.log(
+            'Development mode: Topic unsubscription would be processed:',
+            {
+              tokenCount: tokens.length,
+              topic,
+            },
+          );
+          return { successCount: tokens.length, failureCount: 0 };
+        }
+        throw new Error('Firebase not initialized');
+      }
+
+      const response = await admin
+        .messaging()
+        .unsubscribeFromTopic(tokens, topic);
+      console.log(
+        `Topic unsubscription: ${response.successCount} success, ${response.failureCount} failure for topic ${topic}`,
+      );
+
+      return {
+        successCount: response.successCount,
+        failureCount: response.failureCount,
+      };
+    } catch (error) {
+      console.error('Failed to unsubscribe from topic:', error);
+      throw error;
+    }
+  }
+
+  /**
+   * 토픽에 알림 전송
+   * @param topic 토픽 이름
+   * @param title 알림 제목
+   * @param body 알림 내용
+   * @param data 추가 데이터
+   */
+  async sendNotificationToTopic(
+    topic: string,
+    title: string,
+    body: string,
+    data?: Record<string, string>,
+  ): Promise<string> {
+    try {
+      if (!this.firebaseApp) {
+        if (this.configService.get('NODE_ENV') === 'development') {
+          console.log('Development mode: Topic notification would be sent:', {
+            topic,
+            title,
+            body,
+            data,
+          });
+          return 'dev-message-id';
+        }
+        throw new Error('Firebase not initialized');
+      }
+
+      const message = {
+        topic,
+        notification: {
+          title,
+          body,
+        },
+        data: data || {},
+        webpush: {
+          notification: {
+            title,
+            body,
+            icon: '/vite.svg',
+            badge: '/vite.svg',
+            tag: 'bible-daily-notification',
+            requireInteraction: false,
+          },
+          fcmOptions: {
+            link: '/',
+          },
+        },
+      };
+
+      const messageId = await admin.messaging().send(message);
+      console.log(
+        `Topic notification sent successfully to ${topic}: ${messageId}`,
+      );
+      return messageId;
+    } catch (error) {
+      console.error('Failed to send topic notification:', error);
+      throw error;
+    }
+  }
 }

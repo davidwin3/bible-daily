@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { ClockIcon, TargetIcon, MoonIcon } from "lucide-react";
 
-interface NotificationSettings {
+interface LocalNotificationPreferences {
   dailyReminder: boolean;
   dailyReminderTime: string;
   missionDeadline: boolean;
@@ -21,10 +21,10 @@ interface NotificationSettings {
 }
 
 interface LocalNotificationSettingsProps {
-  settings: NotificationSettings;
-  onUpdateSetting: <K extends keyof NotificationSettings>(
+  settings: LocalNotificationPreferences;
+  onUpdateSetting: <K extends keyof LocalNotificationPreferences>(
     key: K,
-    value: NotificationSettings[K]
+    value: LocalNotificationPreferences[K]
   ) => void;
   getNextReminderDisplay: () => string | null;
 }

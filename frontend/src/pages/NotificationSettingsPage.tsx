@@ -9,11 +9,6 @@ import { useNavigate } from "react-router-dom";
 import { NotificationPermissionCard } from "@/components/notifications/NotificationPermissionCard";
 import { LocalNotificationSettings } from "@/components/notifications/LocalNotificationSettings";
 import { ServerNotificationSettings } from "@/components/notifications/ServerNotificationSettings";
-import { AdminNotificationTest } from "@/components/notifications/AdminNotificationTest";
-import {
-  sendNotificationToToken,
-  sendNotificationToUser,
-} from "@/lib/notifications";
 
 interface NotificationSettings {
   dailyReminder: boolean;
@@ -220,7 +215,7 @@ export const NotificationSettingsPage: React.FC = () => {
       </div>
 
       <div
-        className="max-w-md mx-auto px-3 py-4 space-y-4 pb-24"
+        className="mx-auto px-3 py-4 space-y-4 pb-24"
         style={{ marginTop: "0px" }}
       >
         {" "}
@@ -239,23 +234,27 @@ export const NotificationSettingsPage: React.FC = () => {
         {/* 로컬 알림 설정 */}
         {permission === "granted" && (
           <LocalNotificationSettings
-            settings={settings}
-            onUpdateSetting={updateSetting}
+            settings={{
+              dailyReminder: settings.dailyReminder,
+              dailyReminderTime: settings.dailyReminderTime,
+              missionDeadline: settings.missionDeadline,
+              quietHours: settings.quietHours,
+              quietStart: settings.quietStart,
+              quietEnd: settings.quietEnd,
+            }}
+            onUpdateSetting={updateSetting as any}
             getNextReminderDisplay={getNextReminderDisplay}
           />
         )}
         {/* 푸시 알림 설정 */}
         {permission === "granted" && (
           <ServerNotificationSettings
-            settings={settings}
-            onUpdateSetting={updateSetting}
-          />
-        )}
-        {/* 관리자 테스트 기능 */}
-        {permission === "granted" && (
-          <AdminNotificationTest
-            onSendToToken={sendNotificationToToken}
-            onSendToUser={sendNotificationToUser}
+            settings={{
+              newMission: settings.newMission,
+              newLike: settings.newLike,
+              cellMessages: settings.cellMessages,
+            }}
+            onUpdateSetting={updateSetting as any}
           />
         )}
       </div>

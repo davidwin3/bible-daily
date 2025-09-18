@@ -15,17 +15,17 @@ import {
   TargetIcon,
 } from "lucide-react";
 
-interface NotificationSettings {
+interface ServerNotificationPreferences {
   newMission: boolean;
   newLike: boolean;
   cellMessages: boolean;
 }
 
 interface ServerNotificationSettingsProps {
-  settings: NotificationSettings;
-  onUpdateSetting: <K extends keyof NotificationSettings>(
+  settings: ServerNotificationPreferences;
+  onUpdateSetting: <K extends keyof ServerNotificationPreferences>(
     key: K,
-    value: NotificationSettings[K]
+    value: ServerNotificationPreferences[K]
   ) => void;
 }
 
