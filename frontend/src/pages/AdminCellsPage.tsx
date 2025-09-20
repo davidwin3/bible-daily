@@ -13,10 +13,12 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import {
   Plus,
@@ -26,7 +28,6 @@ import {
   UserPlus,
   UserMinus,
   Eye,
-  ChevronDown,
   UserCog,
   ShieldCheck,
 } from "lucide-react";
@@ -259,7 +260,9 @@ export const AdminCellsPage: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        <span>리더: {cell.leader.realName || cell.leader.name}</span>
+                        <span>
+                          리더: {cell.leader.realName || cell.leader.name}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
@@ -564,10 +567,6 @@ const CellForm: React.FC<CellFormProps> = ({
   submitText,
   leaders,
 }) => {
-  const selectedLeader = leaders.find(
-    (leader) => leader.id === formData.leaderId
-  );
-
   const getRoleIcon = (role: string) => {
     return role === "admin" ? ShieldCheck : UserCog;
   };
@@ -591,70 +590,33 @@ const CellForm: React.FC<CellFormProps> = ({
 
       <div>
         <Label>셀 리더</Label>
-        <Popover>
-          <PopoverTrigger asChild>
-            <Button
-              variant="outline"
-              className="w-full justify-between"
-              disabled={isLoading}
-            >
-              {selectedLeader ? (
-                <div className="flex items-center gap-2">
-                  {(() => {
-                    const Icon = getRoleIcon(selectedLeader.role);
-                    return <Icon className="h-4 w-4" />;
-                  })()}
-                  <span className="text-sm">
-                    {selectedLeader.realName || selectedLeader.name} ({getRoleLabel(selectedLeader.role)})
-                  </span>
-                </div>
-              ) : (
-                <span className="text-gray-500">리더를 선택하세요</span>
-              )}
-              <ChevronDown className="h-4 w-4 opacity-50" />
-            </Button>
-          </PopoverTrigger>
-          <PopoverContent className="w-80 p-2">
-            <div className="space-y-1 max-h-48 overflow-y-auto">
-              {leaders.map((leader) => {
-                const Icon = getRoleIcon(leader.role);
-                return (
-                  <Button
-                    key={leader.id}
-                    variant={
-                      formData.leaderId === leader.id ? "secondary" : "ghost"
-                    }
-                    className="w-full justify-start gap-2 h-auto p-3"
-                    onClick={() =>
-                      setFormData({ ...formData, leaderId: leader.id })
-                    }
-                  >
-                    <Icon className="h-4 w-4 flex-shrink-0" />
-                    <div className="flex-1 text-left min-w-0">
-                      <p className="text-sm font-medium truncate">
-                        {leader.realName || leader.name}
-                      </p>
-                      <p className="text-xs text-gray-500 truncate">
-                        {leader.email}
-                      </p>
-                      <Badge variant="outline" className="text-xs mt-1">
-                        {getRoleLabel(leader.role)}
-                      </Badge>
-                    </div>
-                    {formData.leaderId === leader.id && (
-                      <div className="h-2 w-2 rounded-full bg-primary flex-shrink-0" />
-                    )}
-                  </Button>
-                );
-              })}
-              {leaders.length === 0 && (
-                <div className="p-4 text-center text-gray-500">
-                  <p className="text-sm">선택 가능한 리더가 없습니다.</p>
-                </div>
-              )}
-            </div>
-          </PopoverContent>
-        </Popover>
+        <Select
+          value={formData.leaderId?.toString()}
+          onValueChange={(value) =>
+            setFormData({ ...formData, leaderId: value })
+          }
+          disabled={isLoading}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="리더를 선택하세요" />
+          </SelectTrigger>
+          <SelectContent>
+            {leaders.map((leader) => {
+              const Icon = getRoleIcon(leader.role);
+              return (
+                <SelectItem key={leader.id} value={leader.id.toString()}>
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-4 w-4" />
+                    <span>
+                      {leader.realName || leader.name} (
+                      {getRoleLabel(leader.role)})
+                    </span>
+                  </div>
+                </SelectItem>
+              );
+            })}
+          </SelectContent>
+        </Select>
       </div>
 
       <div>
