@@ -26,6 +26,7 @@ export interface Cell {
   leader: {
     id: string;
     name: string;
+    realName: string;
     email: string;
   };
   members: CellMember[];

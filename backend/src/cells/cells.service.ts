@@ -351,6 +351,7 @@ export class CellsService {
         leader: {
           id: true,
           name: true,
+          realName: true,
           email: true,
           role: true,
         },
@@ -390,6 +391,7 @@ export class CellsService {
         leader: {
           id: true,
           name: true,
+          realName: true,
         },
       },
     });
@@ -456,6 +458,7 @@ export class CellsService {
         leader: {
           id: true,
           name: true,
+          realName: true,
           email: true,
           role: true,
         },

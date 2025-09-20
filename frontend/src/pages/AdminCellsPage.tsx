@@ -259,7 +259,7 @@ export const AdminCellsPage: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-500">
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
-                        <span>리더: {cell.leader.name}</span>
+                        <span>리더: {cell.leader.realName || cell.leader.name}</span>
                       </div>
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
@@ -357,7 +357,7 @@ export const AdminCellsPage: React.FC = () => {
                         리더:
                       </span>
                       <span className="font-medium mt-1 sm:ml-2 sm:mt-0">
-                        {cellDetail.leader.name}
+                        {cellDetail.leader.realName || cellDetail.leader.name}
                       </span>
                     </div>
                     <div className="flex flex-col sm:block">
@@ -605,7 +605,7 @@ const CellForm: React.FC<CellFormProps> = ({
                     return <Icon className="h-4 w-4" />;
                   })()}
                   <span className="text-sm">
-                    {selectedLeader.name} ({getRoleLabel(selectedLeader.role)})
+                    {selectedLeader.realName || selectedLeader.name} ({getRoleLabel(selectedLeader.role)})
                   </span>
                 </div>
               ) : (
@@ -632,7 +632,7 @@ const CellForm: React.FC<CellFormProps> = ({
                     <Icon className="h-4 w-4 flex-shrink-0" />
                     <div className="flex-1 text-left min-w-0">
                       <p className="text-sm font-medium truncate">
-                        {leader.name}
+                        {leader.realName || leader.name}
                       </p>
                       <p className="text-xs text-gray-500 truncate">
                         {leader.email}
