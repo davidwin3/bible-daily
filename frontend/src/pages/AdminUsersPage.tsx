@@ -42,6 +42,7 @@ export const AdminUsersPage: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedUserId, setSelectedUserId] = useState<string>("");
   const [isDetailDialogOpen, setIsDetailDialogOpen] = useState(false);
+  const [openPopoverId, setOpenPopoverId] = useState<string | null>(null);
 
   const { data: users, isLoading, error } = useAdminUsers();
   const { data: userDetail } = useAdminUserDetail(selectedUserId);
@@ -75,6 +76,7 @@ export const AdminUsersPage: React.FC = () => {
 
     try {
       await updateUserRole.mutateAsync({ id: userId, role: newRole });
+      setOpenPopoverId(null); // 역할 변경 후 Popover 닫기
     } catch (error) {
       console.error("역할 변경 실패:", error);
     }
@@ -336,7 +338,10 @@ export const AdminUsersPage: React.FC = () => {
 
                     {/* 역할 변경 */}
                     <div className="flex-1 sm:flex-none">
-                      <Popover>
+                      <Popover 
+                        open={openPopoverId === user.id} 
+                        onOpenChange={(open) => setOpenPopoverId(open ? user.id : null)}
+                      >
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
