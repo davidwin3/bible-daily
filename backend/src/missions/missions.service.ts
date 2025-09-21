@@ -68,6 +68,10 @@ export class MissionsService {
       .orderBy('mission.date', 'DESC')
       .addOrderBy('scriptures.order', 'ASC');
 
+    // 오늘 이전의 미션만 조회하도록 필터링 추가
+    const today = new Date().toISOString().split('T')[0];
+    queryBuilder.andWhere('mission.date <= :today', { today });
+
     if (month) {
       // YYYY-MM 형식으로 월별 조회
       const startOfMonth = new Date(`${month}-01`);
@@ -81,11 +85,14 @@ export class MissionsService {
       const startDateStr = startOfMonth.toISOString().split('T')[0];
       const endDateStr = endOfMonth.toISOString().split('T')[0];
 
+      // 오늘 날짜와 월 마지막 날 중 더 이른 날짜를 사용
+      const actualEndDate = endDateStr < today ? endDateStr : today;
+
       queryBuilder.andWhere(
         'mission.date BETWEEN :startOfMonth AND :endOfMonth',
         {
           startOfMonth: startDateStr,
-          endOfMonth: endDateStr,
+          endOfMonth: actualEndDate,
         },
       );
     } else {
@@ -95,8 +102,10 @@ export class MissionsService {
         });
       }
       if (endDate) {
+        // 오늘 날짜와 endDate 중 더 이른 날짜를 사용
+        const actualEndDate = endDate < today ? endDate : today;
         queryBuilder.andWhere('mission.date <= :endDate', {
-          endDate,
+          endDate: actualEndDate,
         });
       }
     }

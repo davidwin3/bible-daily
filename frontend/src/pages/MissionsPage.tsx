@@ -265,6 +265,11 @@ export const MissionsPage: React.FC = () => {
             selected={selectedDate}
             onSelect={(date) => {
               if (date) {
+                // 오늘 이후 날짜는 선택할 수 없도록 제한
+                const today = dayjs();
+                if (dayjs(date).isAfter(today, "day")) {
+                  return;
+                }
                 setSelectedDate(date);
                 const mission = getMissionForDate(date);
                 if (mission) {
@@ -275,6 +280,11 @@ export const MissionsPage: React.FC = () => {
             month={currentMonth}
             onMonthChange={setCurrentMonth}
             className="w-full h-fit"
+            disabled={(date) => {
+              // 오늘 이후 날짜는 비활성화
+              const today = dayjs();
+              return dayjs(date).isAfter(today, "day");
+            }}
             modifiers={{
               mission: (date: Date) => !!getMissionForDate(date),
               completed: (date: Date) => {
@@ -293,6 +303,12 @@ export const MissionsPage: React.FC = () => {
       {/* Selected Date Mission */}
       {selectedDate &&
         (() => {
+          // 오늘 이후 날짜는 미션을 표시하지 않음
+          const today = dayjs();
+          if (dayjs(selectedDate).isAfter(today, "day")) {
+            return null;
+          }
+
           const selectedMission = getMissionForDate(selectedDate);
           if (!selectedMission) return null;
 
