@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Home, MessageSquare, Target, Users, Plus } from "lucide-react";
+import { Home, MessageSquare, Target, Users, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -7,7 +7,7 @@ const navItems = [
   { href: "/posts", label: "소감", icon: MessageSquare },
   { href: "/missions", label: "미션", icon: Target },
   { href: "/cells", label: "셀", icon: Users },
-  { href: "/posts/new", label: "작성", icon: Plus },
+  { href: "/learning", label: "퀴즈", icon: BookOpen },
 ];
 
 export const Navigation: React.FC = () => {

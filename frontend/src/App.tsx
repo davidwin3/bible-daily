@@ -28,6 +28,7 @@ import { AdminCellsPage } from "@/pages/AdminCellsPage";
 import { AdminUsersPage } from "@/pages/AdminUsersPage";
 import { NotificationManagementPage } from "@/pages/NotificationManagementPage";
 import { InAppTestPage } from "@/pages/InAppTestPage";
+import { LearningPage } from "@/pages/LearningPage";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { InAppBrowserAlert } from "@/components/common/InAppBrowserHandler";
@@ -111,6 +112,7 @@ function App() {
               <Route path="missions" element={<MissionsPage />} />
               <Route path="cells" element={<CellsPage />} />
               <Route path="cells/:id" element={<CellDetailPage />} />
+              <Route path="learning" element={<LearningPage />} />
               <Route
                 path="notifications"
                 element={
