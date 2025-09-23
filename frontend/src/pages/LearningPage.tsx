@@ -1,13 +1,10 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { Volume2, Loader2 } from "lucide-react";
+import { Volume2 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { missionsAPI } from "@/lib/api";
-import type { Mission } from "@/lib/types";
 
 // 임시 성경 구절 데이터 (나중에 API로 교체)
 const SAMPLE_VERSES = [
@@ -29,6 +26,53 @@ const SAMPLE_VERSES = [
       "우리가 알거니와 하나님을 사랑하는 자 곧 그의 뜻대로 부르심을 입은 자들에게는 모든 것이 합력하여 선을 이루느니라",
     english:
       "And we know that in all things God works for the good of those who love him, who have been called according to his purpose.",
+  },
+  {
+    reference: "시편 23:1",
+    korean: "여호와는 나의 목자시니 내게 부족함이 없으리로다",
+    english: "The Lord is my shepherd; I shall not want.",
+  },
+  {
+    reference: "잠언 3:5-6",
+    korean:
+      "너는 마음을 다하여 여호와를 신뢰하고 네 명철을 의지하지 말라 너는 범사에 그를 인정하라 그리하면 네 길을 지도하시리라",
+    english:
+      "Trust in the Lord with all your heart and lean not on your own understanding; in all your ways submit to him, and he will make your paths straight.",
+  },
+  {
+    reference: "이사야 40:31",
+    korean:
+      "오직 여호와를 앙망하는 자는 새 힘을 얻으리니 독수리가 날개치며 올라감 같을 것이요 달음박질하여도 곤비하지 아니하며 걸어가도 피곤하지 아니하리로다",
+    english:
+      "But those who hope in the Lord will renew their strength. They will soar on wings like eagles; they will run and not grow weary, they will walk and not be faint.",
+  },
+  {
+    reference: "마태복음 6:33",
+    korean:
+      "그런즉 너희는 먼저 그의 나라와 그의 의를 구하라 그리하면 이 모든 것을 너희에게 더하시리라",
+    english:
+      "But seek first his kingdom and his righteousness, and all these things will be given to you as well.",
+  },
+  {
+    reference: "고린도전서 13:4-5",
+    korean:
+      "사랑은 오래 참고 사랑은 온유하며 투기하지 아니하며 사랑은 자랑하지 아니하며 교만하지 아니하며 무례히 행하지 아니하며 자기의 유익을 구하지 아니하며 성내지 아니하며 악한 것을 생각하지 아니하며",
+    english:
+      "Love is patient, love is kind. It does not envy, it does not boast, it is not proud. It does not dishonor others, it is not self-seeking, it is not easily angered, it keeps no record of wrongs.",
+  },
+  {
+    reference: "요한복음 14:6",
+    korean:
+      "예수께서 이르시되 내가 곧 길이요 진리요 생명이니 나로 말미암지 않고는 아버지께로 올 자가 없느니라",
+    english:
+      "Jesus answered, I am the way and the truth and the life. No one comes to the Father except through me.",
+  },
+  {
+    reference: "골로새서 3:23",
+    korean:
+      "무엇을 하든지 마음을 다하여 주께 하듯 하고 사람에게 하듯 하지 말라",
+    english:
+      "Whatever you do, work at it with all your heart, as working for the Lord, not for human masters.",
   },
 ];
 
@@ -155,6 +199,34 @@ const FillBlanksStep: React.FC<LearningStepProps> = ({
       "love",
       "purpose",
       "called",
+      "lord",
+      "shepherd",
+      "want",
+      "trust",
+      "heart",
+      "understanding",
+      "ways",
+      "submit",
+      "paths",
+      "hope",
+      "strength",
+      "eagles",
+      "weary",
+      "seek",
+      "first",
+      "kingdom",
+      "righteousness",
+      "patient",
+      "kind",
+      "envy",
+      "boast",
+      "proud",
+      "way",
+      "truth",
+      "father",
+      "whatever",
+      "work",
+      "masters",
     ];
 
     const blanks: number[] = [];
@@ -203,6 +275,34 @@ const FillBlanksStep: React.FC<LearningStepProps> = ({
       "see",
       "great",
       "always",
+      "mighty",
+      "guide",
+      "leader",
+      "need",
+      "believe",
+      "mind",
+      "wisdom",
+      "paths",
+      "straight",
+      "wait",
+      "power",
+      "birds",
+      "tired",
+      "find",
+      "second",
+      "glory",
+      "justice",
+      "gentle",
+      "nice",
+      "jealous",
+      "humble",
+      "proud",
+      "road",
+      "fact",
+      "mother",
+      "however",
+      "labor",
+      "servants",
     ];
 
     const allOptions = [...correctWords];
@@ -469,33 +569,33 @@ export const LearningPage: React.FC = () => {
   const [completionTime, setCompletionTime] = useState(0);
 
   // 오늘의 미션에서 성경 구절 가져오기
-  const { data: todayMission, isLoading } = useQuery({
-    queryKey: ["missions", "today"],
-    queryFn: async () => {
-      const response = await missionsAPI.getTodayMission();
-      return response.data as Mission;
-    },
-    retry: 1,
-  });
+  // const { data: todayMission, isLoading } = useQuery({
+  //   queryKey: ["missions", "today"],
+  //   queryFn: async () => {
+  //     const response = await missionsAPI.getTodayMission();
+  //     return response.data as Mission;
+  //   },
+  //   retry: 1,
+  // });
 
   // 학습용 구절 생성 (API 데이터가 있으면 사용, 없으면 샘플 데이터)
   const currentVerse = React.useMemo(() => {
-    if (todayMission?.scriptures && todayMission.scriptures.length > 0) {
-      const scripture = todayMission.scriptures[0];
-      return {
-        reference: `${scripture.startBook} ${scripture.startChapter}:${
-          scripture.startVerse || ""
-        }`.trim(),
-        korean:
-          todayMission.title ||
-          "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 저를 믿는 자마다 멸망치 않고 영생을 얻게 하려 하심이니라",
-        english:
-          todayMission.description ||
-          "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
-      };
-    }
+    // if (todayMission?.scriptures && todayMission.scriptures.length > 0) {
+    //   const scripture = todayMission.scriptures[0];
+    //   return {
+    //     reference: `${scripture.startBook} ${scripture.startChapter}:${
+    //       scripture.startVerse || ""
+    //     }`.trim(),
+    //     korean:
+    //       todayMission.title ||
+    //       "하나님이 세상을 이처럼 사랑하사 독생자를 주셨으니 이는 저를 믿는 자마다 멸망치 않고 영생을 얻게 하려 하심이니라",
+    //     english:
+    //       todayMission.description ||
+    //       "For God so loved the world that he gave his one and only Son, that whoever believes in him shall not perish but have eternal life.",
+    //   };
+    // }
     return getRandomVerse();
-  }, [todayMission]);
+  }, []);
 
   const handleNext = () => {
     if (currentStep < 3) {
@@ -535,16 +635,16 @@ export const LearningPage: React.FC = () => {
   };
 
   // 로딩 상태 처리
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-          <p className="text-gray-600">성경 구절을 불러오는 중...</p>
-        </div>
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+  //       <div className="text-center space-y-4">
+  //         <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+  //         <p className="text-gray-600">성경 구절을 불러오는 중...</p>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="min-h-screen bg-gray-50">
