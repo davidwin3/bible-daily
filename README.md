@@ -2,8 +2,6 @@
 
 중고등학생을 위한 성경말씀 소감 공유 플랫폼
 
-[![CI/CD](https://github.com/davidwin3/bible-daily/actions/workflows/frontend-ci-cd.yml/badge.svg)](https://github.com/davidwin3/bible-daily/actions/workflows/frontend-ci-cd.yml)
-[![Backend CI/CD](https://github.com/davidwin3/bible-daily/actions/workflows/backend-ci-cd.yml/badge.svg)](https://github.com/davidwin3/bible-daily/actions/workflows/backend-ci-cd.yml)
 [![Security](https://github.com/davidwin3/bible-daily/actions/workflows/security-quality.yml/badge.svg)](https://github.com/davidwin3/bible-daily/actions/workflows/security-quality.yml)
 [![codecov](https://codecov.io/gh/davidwin3/bible-daily/branch/main/graph/badge.svg)](https://codecov.io/gh/davidwin3/bible-daily)
 
