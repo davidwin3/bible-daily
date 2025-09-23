@@ -13,50 +13,62 @@ const NOTIFICATION_TOPICS = {
 const TOPIC_CONFIGS = {
   [NOTIFICATION_TOPICS.NEW_MISSIONS]: {
     routing: { url: "/missions", requiresAuth: false },
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
     tag: "new-missions",
     actions: [
-      { action: "view-missions", title: "미션 보기", icon: "/vite.svg" },
-      { action: "close", title: "닫기", icon: "/vite.svg" },
+      { action: "view-missions", title: "미션 보기", icon: "/icons/192.png" },
+      { action: "close", title: "닫기", icon: "/icons/192.png" },
     ],
     requireInteraction: true,
   },
   [NOTIFICATION_TOPICS.MISSION_REMINDERS]: {
     routing: { url: "/missions", requiresAuth: false },
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
     tag: "mission-reminders",
     actions: [
-      { action: "complete-mission", title: "미션 완료하기", icon: "/vite.svg" },
-      { action: "remind-later", title: "1시간 후 알림", icon: "/vite.svg" },
-      { action: "close", title: "닫기", icon: "/vite.svg" },
+      {
+        action: "complete-mission",
+        title: "미션 완료하기",
+        icon: "/icons/192.png",
+      },
+      {
+        action: "remind-later",
+        title: "1시간 후 알림",
+        icon: "/icons/192.png",
+      },
+      { action: "close", title: "닫기", icon: "/icons/192.png" },
     ],
     requireInteraction: false,
   },
   [NOTIFICATION_TOPICS.COMMUNITY_UPDATES]: {
     routing: { url: "/posts", requiresAuth: false },
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
     tag: "community-updates",
     actions: [
-      { action: "view-community", title: "커뮤니티 보기", icon: "/vite.svg" },
-      { action: "close", title: "닫기", icon: "/vite.svg" },
+      {
+        action: "view-community",
+        title: "커뮤니티 보기",
+        icon: "/icons/192.png",
+      },
+      { action: "close", title: "닫기", icon: "/icons/192.png" },
     ],
     requireInteraction: false,
   },
   [NOTIFICATION_TOPICS.ANNOUNCEMENTS]: {
     routing: { url: "/", requiresAuth: false },
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
     tag: "announcements",
     actions: [
       {
         action: "view-announcement",
         title: "공지사항 보기",
-        icon: "/vite.svg",
+        icon: "/icons/192.png",
       },
-      { action: "close", title: "닫기", icon: "/vite.svg" },
+      { action: "close", title: "닫기", icon: "/icons/192.png" },
     ],
     requireInteraction: true,
   },
@@ -73,8 +85,8 @@ function createAdminTestNotificationOptions(
 ) {
   return {
     body: notificationBody,
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
     tag: "admin-test-notification",
     data: {
       ...notificationData,
@@ -85,12 +97,12 @@ function createAdminTestNotificationOptions(
       {
         action: "explore",
         title: "확인하기",
-        icon: "/vite.svg",
+        icon: "/icons/192.png",
       },
       {
         action: "close",
         title: "닫기",
-        icon: "/vite.svg",
+        icon: "/icons/192.png",
       },
     ],
     requireInteraction: true,
@@ -125,8 +137,8 @@ function createTopicNotificationOptions(topic, title, body, data = {}) {
 function createDefaultNotificationOptions(title, body, data = {}) {
   return {
     body,
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
     tag: "bible-daily-notification",
     vibrate: [100, 50, 100],
     data: {
@@ -135,8 +147,8 @@ function createDefaultNotificationOptions(title, body, data = {}) {
       primaryKey: "bible-daily",
     },
     actions: [
-      { action: "explore", title: "확인하기", icon: "/vite.svg" },
-      { action: "close", title: "닫기", icon: "/vite.svg" },
+      { action: "explore", title: "확인하기", icon: "/icons/192.png" },
+      { action: "close", title: "닫기", icon: "/icons/192.png" },
     ],
     requireInteraction: false,
     silent: false,
@@ -183,7 +195,7 @@ function handleNotificationAction(action, topic, data = {}) {
 }
 
 // 정적 파일들 (런타임에 동적으로 추가됨)
-const urlsToCache = ["/", "/manifest.json", "/vite.svg"];
+const urlsToCache = ["/", "/manifest.json", "/icons/192.png"];
 
 // 개발 환경 감지
 const isDev =
@@ -526,8 +538,8 @@ self.addEventListener("notificationclick", (event) => {
       setTimeout(() => {
         self.registration.showNotification("📖 성경 읽기 리마인더", {
           body: "성경 읽기 시간입니다. 오늘의 말씀을 확인해보세요.",
-          icon: "/vite.svg",
-          badge: "/vite.svg",
+          icon: "/icons/192.png",
+          badge: "/icons/192.png",
           tag: "daily-bible-reminder-snooze",
           requireInteraction: true,
           actions: [

@@ -88,8 +88,8 @@ export function setupForegroundMessageListener() {
         // 토픽 정보를 포함한 알림 옵션 생성
         const options = {
           body: notificationBody,
-          icon: "/vite.svg",
-          badge: "/vite.svg",
+          icon: "/icons/192.png",
+          badge: "/icons/192.png",
           tag: notificationData.topic
             ? `${notificationData.topic}-foreground`
             : "bible-daily-notification",
@@ -104,12 +104,12 @@ export function setupForegroundMessageListener() {
             {
               action: "explore",
               title: "확인하기",
-              icon: "/vite.svg",
+              icon: "/icons/192.png",
             },
             {
               action: "close",
               title: "닫기",
-              icon: "/vite.svg",
+              icon: "/icons/192.png",
             },
           ],
           requireInteraction: false,

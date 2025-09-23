@@ -169,8 +169,8 @@ export class FirebaseService {
           notification: {
             title,
             body,
-            icon: '/vite.svg',
-            badge: '/vite.svg',
+            icon: '/icons/192.png',
+            badge: '/icons/192.png',
             tag:
               data?.type === 'admin-test'
                 ? 'admin-test-notification'
@@ -231,8 +231,8 @@ export class FirebaseService {
           notification: {
             title,
             body,
-            icon: '/vite.svg',
-            badge: '/vite.svg',
+            icon: '/icons/192.png',
+            badge: '/icons/192.png',
             tag:
               data?.type === 'admin-test'
                 ? 'admin-test-notification'
@@ -379,8 +379,8 @@ export class FirebaseService {
           notification: {
             title,
             body,
-            icon: '/vite.svg',
-            badge: '/vite.svg',
+            icon: '/icons/192.png',
+            badge: '/icons/192.png',
             tag:
               data?.type === 'admin-test'
                 ? 'admin-test-notification'

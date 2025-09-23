@@ -371,8 +371,8 @@ export class MissionsService {
             missionId: mission.id.toString(),
             date: mission.date,
           },
-          icon: '/vite.svg',
-          badge: '/vite.svg',
+          icon: '/icons/192.png',
+          badge: '/icons/192.png',
           clickAction: '/',
         },
       );
