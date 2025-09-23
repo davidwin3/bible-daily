@@ -119,8 +119,8 @@ export const useDailyReminder = () => {
 
     await showNotification("📖 성경 읽기 시간입니다!", {
       body: "오늘의 성경 말씀을 읽어보세요. 하나님의 말씀으로 하루를 시작하세요.",
-      icon: "/vite.svg",
-      badge: "/vite.svg",
+      icon: "/icons/192.png",
+      badge: "/icons/192.png",
       tag: "daily-bible-reminder",
       requireInteraction: true,
       data: {

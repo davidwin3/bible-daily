@@ -27,8 +27,8 @@ export const sendNotificationToToken = async (
       timestamp: new Date().toISOString(),
       ...data,
     },
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
   };
 
   const response = await api.post("/notifications/send-to-token", {
@@ -58,8 +58,8 @@ export const sendNotificationToUser = async (
       timestamp: new Date().toISOString(),
       ...data,
     },
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
   };
 
   const response = await api.post("/notifications/send-to-user", {
@@ -156,8 +156,8 @@ export const sendNotificationToTopic = async (
       timestamp: new Date().toISOString(),
       ...data,
     },
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
   };
 
   const response = await api.post("/notifications/send-to-topic", {

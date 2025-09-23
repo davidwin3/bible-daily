@@ -26,8 +26,8 @@ function createAdminTestNotificationOptions(
 ) {
   return {
     body: notificationBody,
-    icon: "/vite.svg",
-    badge: "/vite.svg",
+    icon: "/icons/192.png",
+    badge: "/icons/192.png",
     tag: "admin-test-notification",
     data: {
       ...notificationData,
@@ -38,12 +38,12 @@ function createAdminTestNotificationOptions(
       {
         action: "explore",
         title: "확인하기",
-        icon: "/vite.svg",
+        icon: "/icons/192.png",
       },
       {
         action: "close",
         title: "닫기",
-        icon: "/vite.svg",
+        icon: "/icons/192.png",
       },
     ],
     requireInteraction: true,
@@ -77,8 +77,12 @@ onBackgroundMessage(messaging, (payload) => {
       "new-missions": {
         tag: "new-missions",
         actions: [
-          { action: "view-missions", title: "미션 보기", icon: "/vite.svg" },
-          { action: "close", title: "닫기", icon: "/vite.svg" },
+          {
+            action: "view-missions",
+            title: "미션 보기",
+            icon: "/icons/192.png",
+          },
+          { action: "close", title: "닫기", icon: "/icons/192.png" },
         ],
         requireInteraction: true,
       },
@@ -88,10 +92,14 @@ onBackgroundMessage(messaging, (payload) => {
           {
             action: "complete-mission",
             title: "미션 완료하기",
-            icon: "/vite.svg",
+            icon: "/icons/192.png",
           },
-          { action: "remind-later", title: "1시간 후 알림", icon: "/vite.svg" },
-          { action: "close", title: "닫기", icon: "/vite.svg" },
+          {
+            action: "remind-later",
+            title: "1시간 후 알림",
+            icon: "/icons/192.png",
+          },
+          { action: "close", title: "닫기", icon: "/icons/192.png" },
         ],
         requireInteraction: false,
       },
@@ -101,9 +109,9 @@ onBackgroundMessage(messaging, (payload) => {
           {
             action: "view-community",
             title: "커뮤니티 보기",
-            icon: "/vite.svg",
+            icon: "/icons/192.png",
           },
-          { action: "close", title: "닫기", icon: "/vite.svg" },
+          { action: "close", title: "닫기", icon: "/icons/192.png" },
         ],
         requireInteraction: false,
       },
@@ -113,9 +121,9 @@ onBackgroundMessage(messaging, (payload) => {
           {
             action: "view-announcement",
             title: "공지사항 보기",
-            icon: "/vite.svg",
+            icon: "/icons/192.png",
           },
-          { action: "close", title: "닫기", icon: "/vite.svg" },
+          { action: "close", title: "닫기", icon: "/icons/192.png" },
         ],
         requireInteraction: true,
       },
@@ -125,8 +133,8 @@ onBackgroundMessage(messaging, (payload) => {
     if (config) {
       notificationOptions = {
         body: notificationBody,
-        icon: "/vite.svg",
-        badge: "/vite.svg",
+        icon: "/icons/192.png",
+        badge: "/icons/192.png",
         tag: config.tag,
         data: {
           ...notificationData,
@@ -144,8 +152,8 @@ onBackgroundMessage(messaging, (payload) => {
   if (!notificationOptions) {
     notificationOptions = {
       body: notificationBody,
-      icon: "/vite.svg",
-      badge: "/vite.svg",
+      icon: "/icons/192.png",
+      badge: "/icons/192.png",
       tag: "bible-daily-notification",
       data: {
         ...notificationData,
@@ -156,12 +164,12 @@ onBackgroundMessage(messaging, (payload) => {
         {
           action: "explore",
           title: "확인하기",
-          icon: "/vite.svg",
+          icon: "/icons/192.png",
         },
         {
           action: "close",
           title: "닫기",
-          icon: "/vite.svg",
+          icon: "/icons/192.png",
         },
       ],
       requireInteraction: false,

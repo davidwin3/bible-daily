@@ -107,7 +107,7 @@ export const NotificationSettingsPage: React.FC = () => {
         // 테스트 알림 전송
         await showNotification("알림이 활성화되었습니다!", {
           body: "Bible Daily 알림을 받을 수 있습니다.",
-          icon: "/vite.svg",
+          icon: "/icons/192.png",
         });
       }
     } catch (error) {
@@ -131,7 +131,7 @@ export const NotificationSettingsPage: React.FC = () => {
   const handleTestNotification = () => {
     showNotification("테스트 알림", {
       body: "알림이 정상적으로 작동합니다!",
-      icon: "/vite.svg",
+      icon: "/icons/192.png",
     });
   };
 
@@ -146,8 +146,8 @@ export const NotificationSettingsPage: React.FC = () => {
   const handleDailyReminderTest = () => {
     showNotification("📖 성경 읽기 시간입니다! (테스트)", {
       body: "오늘의 성경 말씀을 읽어보세요. 하나님의 말씀으로 하루를 시작하세요.",
-      icon: "/vite.svg",
-      badge: "/vite.svg",
+      icon: "/icons/192.png",
+      badge: "/icons/192.png",
       tag: "daily-bible-reminder",
       requireInteraction: true,
       data: {
