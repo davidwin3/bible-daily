@@ -2,7 +2,20 @@ const CACHE_NAME = "bible-daily-v2";
 const STATIC_CACHE = "bible-daily-static-v2";
 const DYNAMIC_CACHE = "bible-daily-dynamic-v2";
 
-// 토픽별 알림 처리를 위한 상수와 함수들
+// 알림 관련 상수 import
+const NOTIFICATION_ICONS = {
+  DEFAULT: "/icons/192.png",
+  BADGE: "/icons/192.png",
+};
+
+const NOTIFICATION_TYPES = {
+  DAILY_REMINDER: "daily-reminder",
+  MISSION_DEADLINE: "mission-deadline",
+  MISSION_REMINDER: "mission-reminder",
+  ADMIN_TEST: "admin-test",
+  CUSTOM: "custom",
+};
+
 const NOTIFICATION_TOPICS = {
   NEW_MISSIONS: "new-missions",
   MISSION_REMINDERS: "mission-reminders",
@@ -10,65 +23,177 @@ const NOTIFICATION_TOPICS = {
   ANNOUNCEMENTS: "announcements",
 };
 
+const NOTIFICATION_TAGS = {
+  DAILY_BIBLE_REMINDER: "daily-bible-reminder",
+  DAILY_BIBLE_REMINDER_SNOOZE: "daily-bible-reminder-snooze",
+  MISSION_REMINDER_LATER: "mission-reminder-later",
+  ADMIN_TEST: "admin-test-notification",
+  SCHEDULED: "scheduled-notification",
+  DEFAULT: "bible-daily-notification",
+};
+
+const NOTIFICATION_ACTIONS = {
+  OPEN: "open",
+  CLOSE: "close",
+  EXPLORE: "explore",
+  VIEW_MISSIONS: "view-missions",
+  VIEW_COMMUNITY: "view-community",
+  VIEW_ANNOUNCEMENT: "view-announcement",
+  COMPLETE_MISSION: "complete-mission",
+  REMIND_LATER: "remind-later",
+};
+
+const NOTIFICATION_ACTION_LABELS = {
+  OPEN: "열기",
+  CLOSE: "닫기",
+  EXPLORE: "확인하기",
+  VIEW_MISSIONS: "미션 보기",
+  VIEW_COMMUNITY: "커뮤니티 보기",
+  VIEW_ANNOUNCEMENT: "공지사항 보기",
+  COMPLETE_MISSION: "미션 완료하기",
+  REMIND_LATER: "1시간 후 알림",
+};
+
+const NOTIFICATION_MESSAGES = {
+  DAILY_REMINDER: {
+    TITLE: "📖 성경 읽기 시간입니다!",
+    BODY: "오늘의 성경 말씀을 읽어보세요. 하나님의 말씀으로 하루를 시작하세요.",
+  },
+  MISSION_REMINDER_LATER: {
+    TITLE: "⏰ 미션 다시 알림",
+    BODY: "미션을 완료할 시간입니다!",
+  },
+  BIBLE_READING_SNOOZE: {
+    TITLE: "📖 성경 읽기 리마인더",
+    BODY: "성경 읽기 시간입니다. 오늘의 말씀을 확인해보세요.",
+  },
+  DEFAULT: {
+    TITLE: "Bible Daily",
+    BODY: "새로운 알림이 있습니다.",
+  },
+};
+
+const SYNC_TAGS = {
+  BACKGROUND_CHECK: "background-notification-check",
+  DAILY_CHECK: "daily-notification-check",
+};
+
+const TIMING = {
+  REMIND_LATER_DELAY: 60 * 60 * 1000, // 1시간 후
+};
+
+const ROUTES = {
+  HOME: "/",
+  MISSIONS: "/missions",
+  POSTS: "/posts",
+  MANIFEST: "/manifest.json",
+};
+
+const VIBRATION_PATTERNS = {
+  DEFAULT: [100, 50, 100],
+};
+
+const MESSAGE_TYPES = {
+  SCHEDULE_NOTIFICATION: "SCHEDULE_NOTIFICATION",
+  CANCEL_NOTIFICATIONS: "CANCEL_NOTIFICATIONS",
+  TRIGGER_BACKGROUND_CHECK: "TRIGGER_BACKGROUND_CHECK",
+  NAVIGATE: "navigate",
+};
+
+const LOG_MESSAGES = {
+  BACKGROUND_CHECK_START: "🔄 백그라운드 알림 체크 시작",
+  PERIODIC_CHECK_START: "🔄 주기적 알림 체크 시작",
+  BACKGROUND_NOTIFICATION_SENT: "📱 백그라운드 알림 발송:",
+  NOTIFICATION_CLOSED: "알림이 닫혔습니다.",
+  REMIND_LATER_SET: "1시간 후 다시 알림이 설정되었습니다.",
+  NOTIFICATIONS_CANCELLED: "${type} 타입의 알림들이 취소되었습니다.",
+  NOTIFICATION_POSTPONED: "⏰ 알림이 방해 금지 시간 이후로 연기되었습니다:",
+};
+
+const ERROR_MESSAGES = {
+  BACKGROUND_CHECK_ERROR: "❌ 백그라운드 알림 체크 오류:",
+  NOTIFICATION_CANCEL_ERROR: "알림 취소 오류:",
+};
+
 const TOPIC_CONFIGS = {
   [NOTIFICATION_TOPICS.NEW_MISSIONS]: {
-    routing: { url: "/missions", requiresAuth: false },
-    icon: "/icons/192.png",
-    badge: "/icons/192.png",
-    tag: "new-missions",
+    routing: { url: ROUTES.MISSIONS, requiresAuth: false },
+    icon: NOTIFICATION_ICONS.DEFAULT,
+    badge: NOTIFICATION_ICONS.BADGE,
+    tag: NOTIFICATION_TOPICS.NEW_MISSIONS,
     actions: [
-      { action: "view-missions", title: "미션 보기", icon: "/icons/192.png" },
-      { action: "close", title: "닫기", icon: "/icons/192.png" },
+      {
+        action: NOTIFICATION_ACTIONS.VIEW_MISSIONS,
+        title: NOTIFICATION_ACTION_LABELS.VIEW_MISSIONS,
+        icon: NOTIFICATION_ICONS.DEFAULT,
+      },
+      {
+        action: NOTIFICATION_ACTIONS.CLOSE,
+        title: NOTIFICATION_ACTION_LABELS.CLOSE,
+        icon: NOTIFICATION_ICONS.DEFAULT,
+      },
     ],
     requireInteraction: true,
   },
   [NOTIFICATION_TOPICS.MISSION_REMINDERS]: {
-    routing: { url: "/missions", requiresAuth: false },
-    icon: "/icons/192.png",
-    badge: "/icons/192.png",
-    tag: "mission-reminders",
+    routing: { url: ROUTES.MISSIONS, requiresAuth: false },
+    icon: NOTIFICATION_ICONS.DEFAULT,
+    badge: NOTIFICATION_ICONS.BADGE,
+    tag: NOTIFICATION_TOPICS.MISSION_REMINDERS,
     actions: [
       {
-        action: "complete-mission",
-        title: "미션 완료하기",
-        icon: "/icons/192.png",
+        action: NOTIFICATION_ACTIONS.COMPLETE_MISSION,
+        title: NOTIFICATION_ACTION_LABELS.COMPLETE_MISSION,
+        icon: NOTIFICATION_ICONS.DEFAULT,
       },
       {
-        action: "remind-later",
-        title: "1시간 후 알림",
-        icon: "/icons/192.png",
+        action: NOTIFICATION_ACTIONS.REMIND_LATER,
+        title: NOTIFICATION_ACTION_LABELS.REMIND_LATER,
+        icon: NOTIFICATION_ICONS.DEFAULT,
       },
-      { action: "close", title: "닫기", icon: "/icons/192.png" },
+      {
+        action: NOTIFICATION_ACTIONS.CLOSE,
+        title: NOTIFICATION_ACTION_LABELS.CLOSE,
+        icon: NOTIFICATION_ICONS.DEFAULT,
+      },
     ],
     requireInteraction: false,
   },
   [NOTIFICATION_TOPICS.COMMUNITY_UPDATES]: {
-    routing: { url: "/posts", requiresAuth: false },
-    icon: "/icons/192.png",
-    badge: "/icons/192.png",
-    tag: "community-updates",
+    routing: { url: ROUTES.POSTS, requiresAuth: false },
+    icon: NOTIFICATION_ICONS.DEFAULT,
+    badge: NOTIFICATION_ICONS.BADGE,
+    tag: NOTIFICATION_TOPICS.COMMUNITY_UPDATES,
     actions: [
       {
-        action: "view-community",
-        title: "커뮤니티 보기",
-        icon: "/icons/192.png",
+        action: NOTIFICATION_ACTIONS.VIEW_COMMUNITY,
+        title: NOTIFICATION_ACTION_LABELS.VIEW_COMMUNITY,
+        icon: NOTIFICATION_ICONS.DEFAULT,
       },
-      { action: "close", title: "닫기", icon: "/icons/192.png" },
+      {
+        action: NOTIFICATION_ACTIONS.CLOSE,
+        title: NOTIFICATION_ACTION_LABELS.CLOSE,
+        icon: NOTIFICATION_ICONS.DEFAULT,
+      },
     ],
     requireInteraction: false,
   },
   [NOTIFICATION_TOPICS.ANNOUNCEMENTS]: {
-    routing: { url: "/", requiresAuth: false },
-    icon: "/icons/192.png",
-    badge: "/icons/192.png",
-    tag: "announcements",
+    routing: { url: ROUTES.HOME, requiresAuth: false },
+    icon: NOTIFICATION_ICONS.DEFAULT,
+    badge: NOTIFICATION_ICONS.BADGE,
+    tag: NOTIFICATION_TOPICS.ANNOUNCEMENTS,
     actions: [
       {
-        action: "view-announcement",
-        title: "공지사항 보기",
-        icon: "/icons/192.png",
+        action: NOTIFICATION_ACTIONS.VIEW_ANNOUNCEMENT,
+        title: NOTIFICATION_ACTION_LABELS.VIEW_ANNOUNCEMENT,
+        icon: NOTIFICATION_ICONS.DEFAULT,
       },
-      { action: "close", title: "닫기", icon: "/icons/192.png" },
+      {
+        action: NOTIFICATION_ACTIONS.CLOSE,
+        title: NOTIFICATION_ACTION_LABELS.CLOSE,
+        icon: NOTIFICATION_ICONS.DEFAULT,
+      },
     ],
     requireInteraction: true,
   },
@@ -85,9 +210,9 @@ function createAdminTestNotificationOptions(
 ) {
   return {
     body: notificationBody,
-    icon: "/icons/192.png",
-    badge: "/icons/192.png",
-    tag: "admin-test-notification",
+    icon: NOTIFICATION_ICONS.DEFAULT,
+    badge: NOTIFICATION_ICONS.BADGE,
+    tag: NOTIFICATION_TAGS.ADMIN_TEST,
     data: {
       ...notificationData,
       dateOfArrival: Date.now(),
@@ -95,14 +220,14 @@ function createAdminTestNotificationOptions(
     },
     actions: [
       {
-        action: "explore",
-        title: "확인하기",
-        icon: "/icons/192.png",
+        action: NOTIFICATION_ACTIONS.EXPLORE,
+        title: NOTIFICATION_ACTION_LABELS.EXPLORE,
+        icon: NOTIFICATION_ICONS.DEFAULT,
       },
       {
-        action: "close",
-        title: "닫기",
-        icon: "/icons/192.png",
+        action: NOTIFICATION_ACTIONS.CLOSE,
+        title: NOTIFICATION_ACTION_LABELS.CLOSE,
+        icon: NOTIFICATION_ICONS.DEFAULT,
       },
     ],
     requireInteraction: true,
@@ -147,8 +272,16 @@ function createDefaultNotificationOptions(title, body, data = {}) {
       primaryKey: "bible-daily",
     },
     actions: [
-      { action: "explore", title: "확인하기", icon: "/icons/192.png" },
-      { action: "close", title: "닫기", icon: "/icons/192.png" },
+      {
+        action: NOTIFICATION_ACTIONS.EXPLORE,
+        title: NOTIFICATION_ACTION_LABELS.EXPLORE,
+        icon: NOTIFICATION_ICONS.DEFAULT,
+      },
+      {
+        action: NOTIFICATION_ACTIONS.CLOSE,
+        title: NOTIFICATION_ACTION_LABELS.CLOSE,
+        icon: NOTIFICATION_ICONS.DEFAULT,
+      },
     ],
     requireInteraction: false,
     silent: false,
@@ -195,7 +328,7 @@ function handleNotificationAction(action, topic, data = {}) {
 }
 
 // 정적 파일들 (런타임에 동적으로 추가됨)
-const urlsToCache = ["/", "/manifest.json", "/icons/192.png"];
+const urlsToCache = [ROUTES.HOME, ROUTES.MANIFEST, NOTIFICATION_ICONS.DEFAULT];
 
 // 개발 환경 감지
 const isDev =
@@ -424,6 +557,218 @@ async function handleStaticRequest(request) {
   }
 }
 
+// 백그라운드 동기화를 위한 주기적 체크
+self.addEventListener("sync", (event) => {
+  if (event.tag === SYNC_TAGS.BACKGROUND_CHECK) {
+    console.log(LOG_MESSAGES.BACKGROUND_CHECK_START);
+    event.waitUntil(checkScheduledNotifications());
+  }
+});
+
+// 주기적인 백그라운드 작업 (PWA가 설치된 경우)
+self.addEventListener("periodicsync", (event) => {
+  if (event.tag === SYNC_TAGS.DAILY_CHECK) {
+    console.log(LOG_MESSAGES.PERIODIC_CHECK_START);
+    event.waitUntil(checkScheduledNotifications());
+  }
+});
+
+// 스케줄된 알림 확인 및 발송
+async function checkScheduledNotifications() {
+  try {
+    // IndexedDB에서 스케줄된 알림 목록 가져오기
+    const scheduledNotifications = await getScheduledNotifications();
+    const now = new Date();
+
+    for (const notification of scheduledNotifications) {
+      const scheduleTime = new Date(notification.scheduleTime);
+
+      // 알림 시간이 지났고 아직 발송되지 않았다면
+      if (scheduleTime <= now && !notification.sent) {
+        // 방해 금지 시간 체크
+        if (!isInQuietHours(notification.settings)) {
+          await showScheduledNotification(notification);
+          await markNotificationAsSent(notification.id);
+
+          // 일일 알림인 경우 다음 날 스케줄 생성
+          if (notification.type === NOTIFICATION_TYPES.DAILY_REMINDER) {
+            await scheduleNextDayNotification(notification);
+          }
+        } else {
+          // 방해 금지 시간이면 다음 체크 시간으로 연기
+          await postponeNotification(notification);
+        }
+      }
+    }
+  } catch (error) {
+    console.error(ERROR_MESSAGES.BACKGROUND_CHECK_ERROR, error);
+  }
+}
+
+// IndexedDB에서 스케줄된 알림 가져오기
+async function getScheduledNotifications() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("BibleDailyNotifications", 1);
+
+    request.onerror = () => reject(request.error);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(["notifications"], "readonly");
+      const store = transaction.objectStore("notifications");
+      const getRequest = store.getAll();
+
+      getRequest.onsuccess = () => resolve(getRequest.result || []);
+      getRequest.onerror = () => reject(getRequest.error);
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = event.target.result;
+      if (!db.objectStoreNames.contains("notifications")) {
+        const store = db.createObjectStore("notifications", { keyPath: "id" });
+        store.createIndex("scheduleTime", "scheduleTime", { unique: false });
+        store.createIndex("type", "type", { unique: false });
+      }
+    };
+  });
+}
+
+// 알림을 발송됨으로 표시
+async function markNotificationAsSent(notificationId) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("BibleDailyNotifications", 1);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(["notifications"], "readwrite");
+      const store = transaction.objectStore("notifications");
+
+      const getRequest = store.get(notificationId);
+      getRequest.onsuccess = () => {
+        const notification = getRequest.result;
+        if (notification) {
+          notification.sent = true;
+          notification.sentAt = new Date().toISOString();
+          const putRequest = store.put(notification);
+          putRequest.onsuccess = () => resolve();
+          putRequest.onerror = () => reject(putRequest.error);
+        }
+      };
+    };
+  });
+}
+
+// 다음 날 일일 알림 스케줄 생성
+async function scheduleNextDayNotification(notification) {
+  const nextDay = new Date(notification.scheduleTime);
+  nextDay.setDate(nextDay.getDate() + 1);
+
+  const newNotification = {
+    ...notification,
+    id: `daily-reminder-${Date.now()}`,
+    scheduleTime: nextDay.toISOString(),
+    sent: false,
+    createdAt: new Date().toISOString(),
+  };
+
+  await saveNotificationToIndexedDB(newNotification);
+}
+
+// 알림을 방해 금지 시간 이후로 연기
+async function postponeNotification(notification) {
+  const settings = notification.settings;
+  if (!settings?.quietHours) return;
+
+  const now = new Date();
+  const [endHour, endMin] = settings.quietEnd.split(":").map(Number);
+
+  const postponedTime = new Date(now);
+  postponedTime.setHours(endHour, endMin, 0, 0);
+
+  // 방해 금지 종료 시간이 이미 지났다면 내일로 설정
+  if (postponedTime <= now) {
+    postponedTime.setDate(postponedTime.getDate() + 1);
+  }
+
+  // 알림 시간 업데이트
+  notification.scheduleTime = postponedTime.toISOString();
+  await saveNotificationToIndexedDB(notification);
+
+  console.log(
+    `${LOG_MESSAGES.NOTIFICATION_POSTPONED} ${postponedTime.toLocaleString()}`
+  );
+}
+
+// 방해 금지 시간 체크
+function isInQuietHours(settings) {
+  if (!settings?.quietHours) return false;
+
+  const now = new Date();
+  const currentTime = now.getHours() * 60 + now.getMinutes();
+
+  const [startHour, startMin] = settings.quietStart.split(":").map(Number);
+  const [endHour, endMin] = settings.quietEnd.split(":").map(Number);
+
+  const startTime = startHour * 60 + startMin;
+  const endTime = endHour * 60 + endMin;
+
+  if (startTime > endTime) {
+    return currentTime >= startTime || currentTime <= endTime;
+  } else {
+    return currentTime >= startTime && currentTime <= endTime;
+  }
+}
+
+// 스케줄된 알림 표시
+async function showScheduledNotification(notification) {
+  const options = {
+    body: notification.body,
+    icon: NOTIFICATION_ICONS.DEFAULT,
+    badge: NOTIFICATION_ICONS.BADGE,
+    tag: notification.tag || NOTIFICATION_TAGS.SCHEDULED,
+    requireInteraction: notification.requireInteraction || true,
+    vibrate: VIBRATION_PATTERNS.DEFAULT,
+    data: {
+      ...notification.data,
+      type: notification.type,
+      scheduleTime: notification.scheduleTime,
+      source: "background",
+    },
+    actions: [
+      {
+        action: NOTIFICATION_ACTIONS.OPEN,
+        title: NOTIFICATION_ACTION_LABELS.OPEN,
+        icon: NOTIFICATION_ICONS.DEFAULT,
+      },
+      {
+        action: NOTIFICATION_ACTIONS.CLOSE,
+        title: NOTIFICATION_ACTION_LABELS.CLOSE,
+        icon: NOTIFICATION_ICONS.DEFAULT,
+      },
+    ],
+  };
+
+  await self.registration.showNotification(notification.title, options);
+  console.log(LOG_MESSAGES.BACKGROUND_NOTIFICATION_SENT, notification.title);
+}
+
+// IndexedDB에 알림 저장
+async function saveNotificationToIndexedDB(notification) {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("BibleDailyNotifications", 1);
+
+    request.onsuccess = () => {
+      const db = request.result;
+      const transaction = db.transaction(["notifications"], "readwrite");
+      const store = transaction.objectStore("notifications");
+      const putRequest = store.put(notification);
+
+      putRequest.onsuccess = () => resolve();
+      putRequest.onerror = () => reject(putRequest.error);
+    };
+  });
+}
+
 // 푸시 알림 수신
 self.addEventListener("push", (event) => {
   let pushData = null;
@@ -481,14 +826,121 @@ self.addEventListener("push", (event) => {
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
+  const data = event.notification.data || {};
+  const action = event.action;
+
+  // 액션별 처리
+  if (action === NOTIFICATION_ACTIONS.OPEN || !action) {
+    // 기본 클릭 또는 열기 액션
+    let targetUrl = ROUTES.HOME;
+
+    if (data.type === NOTIFICATION_TYPES.DAILY_REMINDER) {
+      targetUrl = ROUTES.HOME;
+    } else if (data.url) {
+      targetUrl = data.url;
+    }
+
+    event.waitUntil(
+      clients.matchAll({ type: "window" }).then((clientList) => {
+        // 이미 열린 탭이 있으면 해당 탭을 활성화
+        for (const client of clientList) {
+          if (client.url.includes(self.location.origin) && "focus" in client) {
+            client.focus();
+            if (targetUrl !== ROUTES.HOME) {
+              client.postMessage({
+                type: MESSAGE_TYPES.NAVIGATE,
+                url: targetUrl,
+              });
+            }
+            return;
+          }
+        }
+
+        // 열린 탭이 없으면 새 창 열기
+        if (clients.openWindow) {
+          return clients.openWindow(self.location.origin + targetUrl);
+        }
+      })
+    );
+  } else if (action === NOTIFICATION_ACTIONS.CLOSE) {
+    // 닫기 액션 - 별도 처리 없음
+    console.log(LOG_MESSAGES.NOTIFICATION_CLOSED);
+  } else if (action === NOTIFICATION_ACTIONS.REMIND_LATER) {
+    // 1시간 후 다시 알림
+    const laterTime = new Date(Date.now() + TIMING.REMIND_LATER_DELAY);
+    const laterNotification = {
+      id: `remind-later-${Date.now()}`,
+      type: NOTIFICATION_TYPES.MISSION_REMINDER,
+      title: NOTIFICATION_MESSAGES.MISSION_REMINDER_LATER.TITLE,
+      body: NOTIFICATION_MESSAGES.MISSION_REMINDER_LATER.BODY,
+      scheduleTime: laterTime.toISOString(),
+      tag: NOTIFICATION_TAGS.MISSION_REMINDER_LATER,
+      requireInteraction: false,
+      sent: false,
+      createdAt: new Date().toISOString(),
+      data: data,
+    };
+
+    event.waitUntil(saveNotificationToIndexedDB(laterNotification));
+    console.log(LOG_MESSAGES.REMIND_LATER_SET);
+  }
+});
+
+// 메시지 수신 처리 (앱에서 서비스워커로 보내는 메시지)
+self.addEventListener("message", (event) => {
+  const { type, data } = event.data || {};
+
+  if (type === MESSAGE_TYPES.SCHEDULE_NOTIFICATION) {
+    // 앱에서 알림 스케줄 요청
+    event.waitUntil(saveNotificationToIndexedDB(data));
+  } else if (type === MESSAGE_TYPES.CANCEL_NOTIFICATIONS) {
+    // 특정 타입 알림 취소
+    event.waitUntil(cancelNotificationsByType(data.notificationType));
+  } else if (type === MESSAGE_TYPES.TRIGGER_BACKGROUND_CHECK) {
+    // 수동으로 백그라운드 체크 트리거
+    event.waitUntil(checkScheduledNotifications());
+  }
+});
+
+// 특정 타입의 알림 취소
+async function cancelNotificationsByType(type) {
+  try {
+    const db = await openDatabase();
+    const transaction = db.transaction(["notifications"], "readwrite");
+    const store = transaction.objectStore("notifications");
+    const index = store.index("type");
+
+    const request = index.getAllKeys(type);
+    request.onsuccess = () => {
+      const keys = request.result;
+      keys.forEach((key) => store.delete(key));
+    };
+
+    console.log(LOG_MESSAGES.NOTIFICATIONS_CANCELLED.replace("${type}", type));
+  } catch (error) {
+    console.error(ERROR_MESSAGES.NOTIFICATION_CANCEL_ERROR, error);
+  }
+}
+
+// 데이터베이스 열기 헬퍼
+async function openDatabase() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("BibleDailyNotifications", 1);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => resolve(request.result);
+  });
+}
+
+// 기존 알림 클릭 처리 (토픽 기반)
+self.addEventListener("notificationclick", (event) => {
   const notificationData = event.notification.data || {};
   const topic = notificationData.topic;
   const notificationType = notificationData.type;
   const action = event.action;
 
   // 관리자 테스트 알림 처리
-  if (notificationType === "admin-test") {
-    if (action === "close") {
+  if (notificationType === NOTIFICATION_TYPES.ADMIN_TEST) {
+    if (action === NOTIFICATION_ACTIONS.CLOSE) {
       return;
     }
     // 기본적으로 홈페이지로 이동
@@ -536,19 +988,22 @@ self.addEventListener("notificationclick", (event) => {
   if (event.notification.tag === "daily-bible-reminder") {
     if (event.action === "remind-later") {
       setTimeout(() => {
-        self.registration.showNotification("📖 성경 읽기 리마인더", {
-          body: "성경 읽기 시간입니다. 오늘의 말씀을 확인해보세요.",
-          icon: "/icons/192.png",
-          badge: "/icons/192.png",
-          tag: "daily-bible-reminder-snooze",
-          requireInteraction: true,
-          actions: [
-            {
-              action: "read-now",
-              title: "지금 읽기",
-            },
-          ],
-        });
+        self.registration.showNotification(
+          NOTIFICATION_MESSAGES.BIBLE_READING_SNOOZE.TITLE,
+          {
+            body: NOTIFICATION_MESSAGES.BIBLE_READING_SNOOZE.BODY,
+            icon: NOTIFICATION_ICONS.DEFAULT,
+            badge: NOTIFICATION_ICONS.BADGE,
+            tag: NOTIFICATION_TAGS.DAILY_BIBLE_REMINDER_SNOOZE,
+            requireInteraction: true,
+            actions: [
+              {
+                action: "read-now",
+                title: "지금 읽기",
+              },
+            ],
+          }
+        );
       }, 60 * 60 * 1000);
       return;
     }

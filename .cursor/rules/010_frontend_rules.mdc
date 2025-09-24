@@ -38,6 +38,8 @@ components/
 ├── layout/          # 레이아웃 컴포넌트
 ├── forms/           # 폼 관련 컴포넌트
 ├── common/          # 공통 컴포넌트
+├── constants/       # 공통 상수
+├── queries/         # React-Query key
 └── features/        # 기능별 컴포넌트
 ```
 
@@ -66,6 +68,38 @@ export const userKeys = {
   details: () => [...userKeys.all, "detail"] as const,
   detail: (id: number) => [...userKeys.details(), { id }] as const,
 };
+```
+
+### 상수 관리
+
+- 반복되는 문자열의 경우, 항상 상수로 처리해서 유지보수성을 높임
+- 상수명 패턴은 대문자로 처리(e.g. NOTIFICATION_TYPE='background')
+- 모든 상수는 `src/constants/` 폴더에 도메인별로 분리하여 관리
+- 각 도메인별 파일명은 kebab-case 사용 (예: `notifications.ts`, `database.ts`)
+- 중앙 집중 관리를 위해 `constants/index.ts`에서 모든 상수를 re-export
+
+### 상수 폴더 구조
+
+```
+constants/
+├── index.ts           # 모든 상수 re-export
+├── notifications.ts   # 알림 관련 상수
+├── database.ts        # 데이터베이스 관련 상수
+├── sync.ts           # 동기화 관련 상수
+├── timing.ts         # 시간 관련 상수
+├── storage.ts        # 스토리지 관련 상수
+├── routes.ts         # 라우팅 관련 상수
+└── messages.ts       # 로그 및 에러 메시지 상수
+```
+
+### 상수 사용법
+
+```typescript
+// ✅ 올바른 사용법 - 중앙 index에서 import
+import { NOTIFICATION_TYPES, ROUTES } from "@/constants";
+
+// ❌ 피해야 할 사용법 - 개별 파일에서 직접 import
+import { NOTIFICATION_TYPES } from "@/constants/notifications";
 ```
 
 ## 🔐 보안 및 안전성

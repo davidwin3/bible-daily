@@ -9,6 +9,7 @@ import { useNavigate } from "react-router-dom";
 import { NotificationPermissionCard } from "@/components/notifications/NotificationPermissionCard";
 import { LocalNotificationSettings } from "@/components/notifications/LocalNotificationSettings";
 import { ServerNotificationSettings } from "@/components/notifications/ServerNotificationSettings";
+import { STORAGE_KEYS } from "@/constants";
 
 interface NotificationSettings {
   dailyReminder: boolean;
@@ -80,7 +81,9 @@ export const NotificationSettingsPage: React.FC = () => {
 
   useEffect(() => {
     // 로컬 스토리지에서 설정 불러오기
-    const savedSettings = localStorage.getItem("notificationSettings");
+    const savedSettings = localStorage.getItem(
+      STORAGE_KEYS.NOTIFICATION_SETTINGS
+    );
     if (savedSettings) {
       setSettings(JSON.parse(savedSettings));
     }
@@ -88,7 +91,10 @@ export const NotificationSettingsPage: React.FC = () => {
 
   const saveSettings = (newSettings: NotificationSettings) => {
     setSettings(newSettings);
-    localStorage.setItem("notificationSettings", JSON.stringify(newSettings));
+    localStorage.setItem(
+      STORAGE_KEYS.NOTIFICATION_SETTINGS,
+      JSON.stringify(newSettings)
+    );
 
     // 매일 성경 읽기 리마인더 설정 변경 시 스케줄 업데이트
     if (newSettings.dailyReminder && newSettings.dailyReminderTime) {

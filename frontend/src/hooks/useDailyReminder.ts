@@ -1,5 +1,22 @@
 import { useEffect, useCallback } from "react";
 import { useNotifications } from "./useNotifications";
+import {
+  saveScheduledNotification,
+  deleteNotificationsByType,
+  createDailyReminderNotification,
+  requestBackgroundSync,
+  registerPeriodicBackgroundSync,
+} from "@/lib/backgroundNotifications";
+import {
+  NOTIFICATION_TYPES,
+  NOTIFICATION_MESSAGES,
+  NOTIFICATION_TAGS,
+  NOTIFICATION_ICONS,
+  STORAGE_KEYS,
+  TIMING,
+  LOG_MESSAGES,
+  ERROR_MESSAGES,
+} from "@/constants";
 
 interface NotificationSettings {
   dailyReminder: boolean;
@@ -117,14 +134,14 @@ export const useDailyReminder = () => {
       return;
     }
 
-    await showNotification("📖 성경 읽기 시간입니다!", {
-      body: "오늘의 성경 말씀을 읽어보세요. 하나님의 말씀으로 하루를 시작하세요.",
-      icon: "/icons/192.png",
-      badge: "/icons/192.png",
-      tag: "daily-bible-reminder",
+    await showNotification(NOTIFICATION_MESSAGES.DAILY_REMINDER.TITLE, {
+      body: NOTIFICATION_MESSAGES.DAILY_REMINDER.BODY,
+      icon: NOTIFICATION_ICONS.DEFAULT,
+      badge: NOTIFICATION_ICONS.BADGE,
+      tag: NOTIFICATION_TAGS.DAILY_BIBLE_REMINDER,
       requireInteraction: true,
       data: {
-        type: "daily-reminder",
+        type: NOTIFICATION_TYPES.DAILY_REMINDER,
         timestamp: Date.now(),
       },
     } as NotificationOptions & {
@@ -134,48 +151,108 @@ export const useDailyReminder = () => {
       }>;
     });
 
-    console.log("📖 매일 성경 읽기 알림을 표시했습니다.");
+    console.log(LOG_MESSAGES.DAILY_REMINDER_SHOWN);
   }, [permission, showNotification, isQuietHours]);
 
-  // 다음 알림 스케줄링
+  // 다음 알림 스케줄링 (백그라운드 알림 지원)
   const scheduleNextReminder = useCallback(
-    (settings: NotificationSettings) => {
+    async (settings: NotificationSettings) => {
       if (!settings.dailyReminder || permission !== "granted") {
         return;
       }
 
-      const nextReminderTime = getNextReminderTime(
-        settings.dailyReminderTime,
-        settings
-      );
-      const delay = nextReminderTime.getTime() - Date.now();
+      try {
+        // 기존 일일 알림 스케줄 삭제
+        await deleteNotificationsByType(NOTIFICATION_TYPES.DAILY_REMINDER);
 
-      console.log(
-        `📅 다음 성경 읽기 알림: ${nextReminderTime.toLocaleString()}`
-      );
-
-      // 기존 타이머 제거
-      const existingTimerId = localStorage.getItem("daily-reminder-timer-id");
-      if (existingTimerId) {
-        clearTimeout(Number(existingTimerId));
-      }
-
-      // 새 타이머 설정
-      const timerId = setTimeout(async () => {
-        await showDailyReminder();
-
-        // 알림 표시 후 다음 날 알림 스케줄링
-        const updatedSettings = JSON.parse(
-          localStorage.getItem("notificationSettings") || "{}"
-        ) as NotificationSettings;
-
-        if (updatedSettings.dailyReminder) {
-          scheduleNextReminder(updatedSettings);
+        // 기존 타이머도 정리
+        const existingTimerId = localStorage.getItem(STORAGE_KEYS.TIMER_ID);
+        if (existingTimerId) {
+          clearTimeout(Number(existingTimerId));
+          localStorage.removeItem(STORAGE_KEYS.TIMER_ID);
         }
-      }, delay);
 
-      // 타이머 ID 저장 (페이지 새로고침 시 정리용)
-      localStorage.setItem("daily-reminder-timer-id", timerId.toString());
+        // 백그라운드 알림 스케줄 생성
+        const notification = createDailyReminderNotification(
+          settings.dailyReminderTime,
+          {
+            quietHours: settings.quietHours,
+            quietStart: settings.quietStart,
+            quietEnd: settings.quietEnd,
+          }
+        );
+
+        await saveScheduledNotification(notification);
+
+        console.log(
+          `${LOG_MESSAGES.BACKGROUND_SCHEDULED} ${new Date(
+            notification.scheduleTime
+          ).toLocaleString()}`
+        );
+
+        // 백그라운드 동기화 요청
+        await requestBackgroundSync();
+
+        // 주기적 백그라운드 동기화 등록 (PWA 환경에서만)
+        await registerPeriodicBackgroundSync();
+
+        // 폴백용 앱 내 타이머도 설정 (앱이 실행 중일 때 빠른 응답용)
+        const nextReminderTime = getNextReminderTime(
+          settings.dailyReminderTime,
+          settings
+        );
+        const delay = nextReminderTime.getTime() - Date.now();
+
+        if (delay > 0 && delay < TIMING.FALLBACK_TIMER_THRESHOLD) {
+          // 24시간 이내면 앱 내 타이머도 설정
+          const timerId = setTimeout(async () => {
+            await showDailyReminder();
+
+            // 앱 내 타이머 실행 후에도 다음 날 스케줄링
+            const updatedSettings = JSON.parse(
+              localStorage.getItem(STORAGE_KEYS.NOTIFICATION_SETTINGS) || "{}"
+            ) as NotificationSettings;
+
+            if (updatedSettings.dailyReminder) {
+              scheduleNextReminder(updatedSettings);
+            }
+          }, delay);
+
+          localStorage.setItem(STORAGE_KEYS.TIMER_ID, timerId.toString());
+          console.log(
+            `${
+              LOG_MESSAGES.FALLBACK_TIMER_SET
+            } ${nextReminderTime.toLocaleString()}`
+          );
+        }
+      } catch (error) {
+        console.error(ERROR_MESSAGES.NOTIFICATION_SCHEDULE_ERROR, error);
+
+        // 백그라운드 알림 실패 시 기존 방식으로 폴백
+        const nextReminderTime = getNextReminderTime(
+          settings.dailyReminderTime,
+          settings
+        );
+        const delay = nextReminderTime.getTime() - Date.now();
+
+        if (delay > 0) {
+          const timerId = setTimeout(async () => {
+            await showDailyReminder();
+            const updatedSettings = JSON.parse(
+              localStorage.getItem(STORAGE_KEYS.NOTIFICATION_SETTINGS) || "{}"
+            ) as NotificationSettings;
+
+            if (updatedSettings.dailyReminder) {
+              scheduleNextReminder(updatedSettings);
+            }
+          }, delay);
+
+          localStorage.setItem(STORAGE_KEYS.TIMER_ID, timerId.toString());
+          console.log(
+            `${LOG_MESSAGES.FALLBACK_MODE} ${nextReminderTime.toLocaleString()}`
+          );
+        }
+      }
     },
     [permission, getNextReminderTime, showDailyReminder]
   );
@@ -183,7 +260,7 @@ export const useDailyReminder = () => {
   // 알림 스케줄 초기화
   const initializeDailyReminder = useCallback(() => {
     const settings = JSON.parse(
-      localStorage.getItem("notificationSettings") || "{}"
+      localStorage.getItem(STORAGE_KEYS.NOTIFICATION_SETTINGS) || "{}"
     ) as Partial<NotificationSettings>;
 
     if (settings.dailyReminder && settings.dailyReminderTime) {
@@ -191,14 +268,25 @@ export const useDailyReminder = () => {
     }
   }, [scheduleNextReminder]);
 
-  // 알림 스케줄 취소
-  const cancelDailyReminder = useCallback(() => {
-    const existingTimerId = localStorage.getItem("daily-reminder-timer-id");
+  // 알림 스케줄 취소 (백그라운드 알림 포함)
+  const cancelDailyReminder = useCallback(async () => {
+    try {
+      // 백그라운드 알림 스케줄 삭제
+      await deleteNotificationsByType(NOTIFICATION_TYPES.DAILY_REMINDER);
+      console.log(LOG_MESSAGES.BACKGROUND_SCHEDULE_DELETED);
+    } catch (error) {
+      console.error(ERROR_MESSAGES.NOTIFICATION_DELETE_ERROR, error);
+    }
+
+    // 앱 내 타이머도 정리
+    const existingTimerId = localStorage.getItem(STORAGE_KEYS.TIMER_ID);
     if (existingTimerId) {
       clearTimeout(Number(existingTimerId));
-      localStorage.removeItem("daily-reminder-timer-id");
-      console.log("📖 매일 성경 읽기 알림이 취소되었습니다.");
+      localStorage.removeItem(STORAGE_KEYS.TIMER_ID);
+      console.log(LOG_MESSAGES.APP_TIMER_CANCELLED);
     }
+
+    console.log(LOG_MESSAGES.DAILY_REMINDER_CANCELLED);
   }, []);
 
   // 컴포넌트 마운트 시 알림 초기화
