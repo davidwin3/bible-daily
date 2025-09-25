@@ -10,3 +10,4 @@ export * from "./timing";
 export * from "./storage";
 export * from "./routes";
 export * from "./messages";
+export * from "./theme";

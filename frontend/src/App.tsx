@@ -9,6 +9,7 @@ import {
 } from "react-router-dom";
 import { useEffect } from "react";
 import { AuthProvider } from "@/contexts/auth";
+import { ThemeProvider } from "@/contexts/theme";
 import { Layout } from "@/components/layout/Layout";
 import { LoginPage } from "@/pages/LoginPage";
 import { CompleteRegistrationPage } from "@/pages/CompleteRegistrationPage";
@@ -77,106 +78,108 @@ function ServiceWorkerMessageHandler() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <BrowserRouter>
-          {/* Service Worker 메시지 처리 */}
-          <ServiceWorkerMessageHandler />
-          {/* 인앱 브라우저 알림 (전역) */}
-          <InAppBrowserAlert />
-          <Routes>
-            <Route path="/login" element={<LoginPage />} />
-            <Route
-              path="/complete-registration"
-              element={<CompleteRegistrationPage />}
-            />
-            <Route path="/" element={<Layout />}>
-              <Route index element={<HomePage />} />
-              <Route path="posts" element={<PostsPage />} />
-              <Route path="posts/:id" element={<PostDetailPage />} />
+      <ThemeProvider>
+        <AuthProvider>
+          <BrowserRouter>
+            {/* Service Worker 메시지 처리 */}
+            <ServiceWorkerMessageHandler />
+            {/* 인앱 브라우저 알림 (전역) */}
+            <InAppBrowserAlert />
+            <Routes>
+              <Route path="/login" element={<LoginPage />} />
               <Route
-                path="posts/new"
-                element={
-                  <ProtectedRoute>
-                    <CreatePostPage />
-                  </ProtectedRoute>
-                }
+                path="/complete-registration"
+                element={<CompleteRegistrationPage />}
               />
-              <Route
-                path="posts/:id/edit"
-                element={
-                  <ProtectedRoute>
-                    <EditPostPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route path="missions" element={<MissionsPage />} />
-              <Route path="cells" element={<CellsPage />} />
-              <Route path="cells/:id" element={<CellDetailPage />} />
-              <Route path="learning" element={<LearningPage />} />
-              <Route
-                path="notifications"
-                element={
-                  <ProtectedRoute>
-                    <NotificationSettingsPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="profile"
-                element={
-                  <ProtectedRoute>
-                    <ProfilePage />
-                  </ProtectedRoute>
-                }
-              />
-              {/* Admin Routes */}
-              <Route
-                path="admin"
-                element={
-                  <AdminRoute>
-                    <AdminDashboardPage />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="admin/missions"
-                element={
-                  <AdminRoute>
-                    <AdminMissionsPage />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="admin/cells"
-                element={
-                  <AdminRoute>
-                    <AdminCellsPage />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="admin/users"
-                element={
-                  <AdminRoute>
-                    <AdminUsersPage />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="admin/notifications"
-                element={
-                  <AdminRoute>
-                    <NotificationManagementPage />
-                  </AdminRoute>
-                }
-              />
-              {/* 인앱 브라우저 테스트 페이지 */}
-              <Route path="inapp-test" element={<InAppTestPage />} />
-            </Route>
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </BrowserRouter>
-      </AuthProvider>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<HomePage />} />
+                <Route path="posts" element={<PostsPage />} />
+                <Route path="posts/:id" element={<PostDetailPage />} />
+                <Route
+                  path="posts/new"
+                  element={
+                    <ProtectedRoute>
+                      <CreatePostPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="posts/:id/edit"
+                  element={
+                    <ProtectedRoute>
+                      <EditPostPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route path="missions" element={<MissionsPage />} />
+                <Route path="cells" element={<CellsPage />} />
+                <Route path="cells/:id" element={<CellDetailPage />} />
+                <Route path="learning" element={<LearningPage />} />
+                <Route
+                  path="notifications"
+                  element={
+                    <ProtectedRoute>
+                      <NotificationSettingsPage />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="profile"
+                  element={
+                    <ProtectedRoute>
+                      <ProfilePage />
+                    </ProtectedRoute>
+                  }
+                />
+                {/* Admin Routes */}
+                <Route
+                  path="admin"
+                  element={
+                    <AdminRoute>
+                      <AdminDashboardPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="admin/missions"
+                  element={
+                    <AdminRoute>
+                      <AdminMissionsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="admin/cells"
+                  element={
+                    <AdminRoute>
+                      <AdminCellsPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="admin/users"
+                  element={
+                    <AdminRoute>
+                      <AdminUsersPage />
+                    </AdminRoute>
+                  }
+                />
+                <Route
+                  path="admin/notifications"
+                  element={
+                    <AdminRoute>
+                      <NotificationManagementPage />
+                    </AdminRoute>
+                  }
+                />
+                {/* 인앱 브라우저 테스트 페이지 */}
+                <Route path="inapp-test" element={<InAppTestPage />} />
+              </Route>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </BrowserRouter>
+        </AuthProvider>
+      </ThemeProvider>
 
       {/* PWA 디버그 패널 (개발 환경에서만) */}
       <PWADebugToggle />

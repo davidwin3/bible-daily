@@ -18,7 +18,9 @@ import {
   SettingsIcon,
   MailIcon,
   CalendarIcon,
+  Palette,
 } from "lucide-react";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 export const ProfilePage: React.FC = () => {
   const { user, logout } = useAuth();
@@ -103,6 +105,19 @@ export const ProfilePage: React.FC = () => {
             <BellIcon className="h-4 w-4 mr-3" />
             알림 설정
           </Button>
+
+          <Separator />
+
+          {/* 테마 설정 */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Palette className="h-4 w-4" />
+              <span>테마 설정</span>
+            </div>
+          </div>
+          <div className="pl-7">
+            <ThemeToggle variant="dropdown" />
+          </div>
 
           <Separator />
 

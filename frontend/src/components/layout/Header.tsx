@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Link } from "react-router-dom";
 import { User, Settings } from "lucide-react";
+import { ThemeToggle } from "@/components/common/ThemeToggle";
 
 export const Header: React.FC = () => {
   const { user } = useAuth();
@@ -20,6 +21,7 @@ export const Header: React.FC = () => {
         <div className="flex items-center gap-2 sm:gap-4">
           {user ? (
             <>
+              <ThemeToggle variant="button" />
               {user.role === "admin" && (
                 <Link to="/admin">
                   <Button variant="ghost" size="sm" className="px-2 sm:px-3">
@@ -38,11 +40,14 @@ export const Header: React.FC = () => {
               </Link>
             </>
           ) : (
-            <Link to="/login">
-              <Button variant="default" size="sm">
-                로그인
-              </Button>
-            </Link>
+            <>
+              <ThemeToggle variant="button" />
+              <Link to="/login">
+                <Button variant="default" size="sm">
+                  로그인
+                </Button>
+              </Link>
+            </>
           )}
         </div>
       </div>
