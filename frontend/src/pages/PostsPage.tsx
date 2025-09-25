@@ -105,22 +105,18 @@ export const PostsPage: React.FC = () => {
       </div>
 
       {/* Search */}
-      <Card>
-        <CardContent className="pt-6">
-          <form onSubmit={handleSearch} className="flex gap-2">
-            <div className="relative flex-1">
-              <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="제목이나 내용으로 검색..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button type="submit">검색</Button>
-          </form>
-        </CardContent>
-      </Card>
+      <form onSubmit={handleSearch} className="flex gap-2">
+        <div className="relative flex-1">
+          <SearchIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="제목이나 내용으로 검색..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
+        </div>
+        <Button type="submit">검색</Button>
+      </form>
 
       {/* Posts List */}
       <div className="space-y-4">
