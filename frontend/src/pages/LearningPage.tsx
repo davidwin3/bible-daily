@@ -275,6 +275,7 @@ const FillBlanksStep: React.FC<LearningStepProps> = ({
     [key: number]: "correct" | "incorrect" | null;
   }>({});
   const [isCompleted, setIsCompleted] = useState(false);
+  const [optionsReshuffleKey, setOptionsReshuffleKey] = useState(0);
 
   // 영어 문장을 단어로 분리하고 일부를 빈칸으로 만들기
   const words = verse.english.split(" ");
@@ -355,8 +356,8 @@ const FillBlanksStep: React.FC<LearningStepProps> = ({
 
   const blanksIndices = getBlanksForVerse(verse.english);
 
-  // 정답과 오답 옵션 생성
-  const generateOptions = () => {
+  // 정답과 오답 옵션 생성 (정답을 맞출 때마다 순서 변경)
+  const generateOptions = React.useMemo(() => {
     const correctWords = blanksIndices.map((index) =>
       words[index].replace(/[^\w]/g, "").toLowerCase()
     );
@@ -413,18 +414,33 @@ const FillBlanksStep: React.FC<LearningStepProps> = ({
     const allOptions = [...correctWords];
 
     // 오답 추가 (정답의 2배 정도)
+    const baseSeed = verse.reference.length + verse.english.length;
+    let random = baseSeed + optionsReshuffleKey; // 정답을 맞출 때마다 시드 변경
+
     while (allOptions.length < correctWords.length * 3) {
-      const distractor =
-        distractors[Math.floor(Math.random() * distractors.length)];
+      // 간단한 의사 랜덤 생성기 (Linear Congruential Generator)
+      random = (random * 1103515245 + 12345) & 0x7fffffff;
+      const distractor = distractors[random % distractors.length];
       if (!allOptions.includes(distractor)) {
         allOptions.push(distractor);
       }
     }
 
-    return allOptions.sort(() => Math.random() - 0.5);
-  };
+    // 정답을 맞출 때마다 다른 시드로 셔플
+    const shuffledOptions = [...allOptions];
+    for (let i = shuffledOptions.length - 1; i > 0; i--) {
+      random = (random * 1103515245 + 12345) & 0x7fffffff;
+      const j = random % (i + 1);
+      [shuffledOptions[i], shuffledOptions[j]] = [
+        shuffledOptions[j],
+        shuffledOptions[i],
+      ];
+    }
 
-  const options = generateOptions();
+    return shuffledOptions;
+  }, [verse.reference, verse.english, blanksIndices, optionsReshuffleKey]);
+
+  const options = generateOptions;
 
   const correctAnswers: { [key: number]: string } = {};
   blanksIndices.forEach((index) => {
@@ -445,6 +461,8 @@ const FillBlanksStep: React.FC<LearningStepProps> = ({
     if (isCorrect) {
       // 정답 사운드 효과
       playCorrectSound();
+      // 정답을 맞춘 경우 보기 순서 변경을 위해 키 증가
+      setOptionsReshuffleKey((prev) => prev + 1);
     }
 
     // 모든 빈칸이 올바르게 채워졌는지 확인
