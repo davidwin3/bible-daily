@@ -224,14 +224,14 @@ const MeditationStep: React.FC<LearningStepProps> = ({ verse, onNext }) => {
             <h3 className="text-xl font-semibold mb-4">{verse.reference}</h3>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg">
-            <p className="text-lg leading-relaxed text-center">
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <p className="text-lg leading-relaxed text-center text-gray-900 dark:text-gray-100">
               {verse.korean}
             </p>
           </div>
 
-          <div className="border-t pt-4">
-            <p className="text-base text-gray-700 text-center leading-relaxed">
+          <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+            <p className="text-base text-gray-700 dark:text-gray-300 text-center leading-relaxed">
               {verse.english}
             </p>
           </div>
@@ -506,11 +506,11 @@ const FillBlanksStep: React.FC<LearningStepProps> = ({
                 "inline-block min-w-16 px-2 py-1 rounded border-2 border-dashed text-center",
                 selectedWord
                   ? feedbackState === "correct"
-                    ? "bg-green-100 border-green-300 text-green-800"
+                    ? "bg-green-100 dark:bg-green-900/30 border-green-300 dark:border-green-600 text-green-800 dark:text-green-200"
                     : feedbackState === "incorrect"
-                    ? "bg-red-100 border-red-300 text-red-800"
-                    : "bg-blue-100 border-blue-300"
-                  : "border-gray-300"
+                    ? "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-600 text-red-800 dark:text-red-200"
+                    : "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-600 text-blue-800 dark:text-blue-200"
+                  : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800"
               )}
             >
               {selectedWord || "___"}
@@ -544,14 +544,14 @@ const FillBlanksStep: React.FC<LearningStepProps> = ({
             <h3 className="text-xl font-semibold mb-4">{verse.reference}</h3>
           </div>
 
-          <div className="bg-gray-50 rounded-lg">
-            <p className="text-lg leading-relaxed text-center">
+          <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+            <p className="text-lg leading-relaxed text-center text-gray-900 dark:text-gray-100">
               {verse.korean}
             </p>
           </div>
 
-          <div className="border-t pt-4">
-            <div className="text-base text-gray-700 text-center leading-relaxed break-words">
+          <div className="border-t border-gray-200 dark:border-gray-600 pt-4">
+            <div className="text-base text-gray-700 dark:text-gray-300 text-center leading-relaxed break-words">
               {renderSentence()}
             </div>
           </div>
@@ -628,14 +628,22 @@ const CompletionStep: React.FC<
             </p>
           </div>
 
-          <div className="bg-green-50 p-2 rounded-lg border border-green-200">
-            <h3 className="text-xl font-semibold mb-4">{verse.reference}</h3>
-            <p className="text-lg mb-4">{verse.korean}</p>
-            <p className="text-base text-gray-700">{verse.english}</p>
+          <div className="bg-green-50 dark:bg-green-900/20 p-4 rounded-lg border border-green-200 dark:border-green-700">
+            <h3 className="text-xl font-semibold mb-4 text-gray-900 dark:text-gray-100">
+              {verse.reference}
+            </h3>
+            <p className="text-lg mb-4 text-gray-900 dark:text-gray-100">
+              {verse.korean}
+            </p>
+            <p className="text-base text-gray-700 dark:text-gray-300">
+              {verse.english}
+            </p>
           </div>
 
           <div className="space-y-4">
-            <p className="text-gray-600">이제 입으로 한번 읽어보세요!</p>
+            <p className="text-gray-600 dark:text-gray-400">
+              이제 입으로 한번 읽어보세요!
+            </p>
             <Button
               onClick={handleSpeak}
               variant="outline"
@@ -747,17 +755,23 @@ export const LearningPage: React.FC = () => {
   // }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* Header */}
-      <div className="bg-white sticky top-16 z-10 border-b px-4 py-3 flex items-center justify-center">
-        <h1 className="text-lg font-semibold text-center">성경 구절 학습</h1>
+      <div className="bg-white dark:bg-gray-800 sticky top-16 z-10 border-b border-gray-200 dark:border-gray-700 px-4 py-3 flex items-center justify-center">
+        <h1 className="text-lg font-semibold text-center text-gray-900 dark:text-gray-100">
+          성경 구절 학습
+        </h1>
       </div>
 
       {/* Progress */}
-      <div className="px-4 py-4 bg-white border-b">
+      <div className="px-4 py-4 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
         <div className="flex justify-between items-center mb-2">
-          <span className="text-sm text-gray-600">진행상황</span>
-          <span className="text-sm text-gray-600">{currentStep}/3</span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            진행상황
+          </span>
+          <span className="text-sm text-gray-600 dark:text-gray-400">
+            {currentStep}/3
+          </span>
         </div>
         <Progress value={(currentStep / 3) * 100} className="h-2" />
       </div>
