@@ -640,7 +640,7 @@ const CompletionStep: React.FC<
             <p className="text-lg font-semibold text-green-600 mb-2">
               학습 완료!
             </p>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               완료 시간: {Math.floor(completionTime / 60)}분{" "}
               {completionTime % 60}초
             </p>

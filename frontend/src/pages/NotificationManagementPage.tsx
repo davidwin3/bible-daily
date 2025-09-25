@@ -14,10 +14,12 @@ export const NotificationManagementPage: React.FC = () => {
   return (
     <>
       <AdminNav />
-      <div className="container mx-auto px-4 py-8 pb-20">
+      <div className="container mx-auto px-4 py-8 pb-20 min-h-screen bg-background">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">알림 관리</h1>
-          <p className="text-gray-600">토픽 구독 및 알림 전송을 관리하세요.</p>
+          <h1 className="text-3xl font-bold text-foreground mb-2">알림 관리</h1>
+          <p className="text-muted-foreground">
+            토픽 구독 및 알림 전송을 관리하세요.
+          </p>
         </div>
 
         <div className="max-w-4xl mx-auto space-y-6">

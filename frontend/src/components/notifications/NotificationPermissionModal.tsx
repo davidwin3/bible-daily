@@ -85,7 +85,7 @@ export const NotificationPermissionModal: React.FC<
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10 dark:bg-primary/20">
             <Bell className="h-8 w-8 text-primary" />
           </div>
           <DialogTitle className="text-xl font-semibold">

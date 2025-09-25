@@ -99,7 +99,7 @@ export const CompleteRegistrationPage: React.FC = () => {
                 className="w-full"
                 maxLength={100}
               />
-              <p className="text-sm text-gray-500">
+              <p className="text-sm text-muted-foreground">
                 실명은 다른 사용자들에게 표시되며, 변경이 불가능합니다.
               </p>
             </div>

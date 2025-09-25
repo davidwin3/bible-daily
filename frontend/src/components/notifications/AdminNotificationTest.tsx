@@ -75,12 +75,12 @@ export const AdminNotificationTest: React.FC<AdminNotificationTestProps> = ({
     <Card className="border-0 shadow-sm rounded-xl">
       <CardHeader className="pb-3 px-4 pt-4">
         <CardTitle className="flex items-center gap-3 text-base">
-          <div className="p-2.5 bg-purple-50 rounded-xl">
-            <SettingsIcon className="h-4 w-4 text-purple-600" />
+          <div className="p-2.5 bg-purple-50 dark:bg-purple-900/30 rounded-xl">
+            <SettingsIcon className="h-4 w-4 text-purple-600 dark:text-purple-400" />
           </div>
           관리자 테스트
         </CardTitle>
-        <CardDescription className="text-sm leading-relaxed text-gray-600">
+        <CardDescription className="text-sm leading-relaxed text-muted-foreground">
           특정 사용자에게 테스트 알림을 전송할 수 있습니다
         </CardDescription>
       </CardHeader>
@@ -90,7 +90,7 @@ export const AdminNotificationTest: React.FC<AdminNotificationTestProps> = ({
           <div>
             <Label
               htmlFor="notificationTitle"
-              className="text-sm text-gray-700"
+              className="text-sm text-muted-foreground"
             >
               알림 제목
             </Label>
@@ -103,7 +103,10 @@ export const AdminNotificationTest: React.FC<AdminNotificationTestProps> = ({
             />
           </div>
           <div>
-            <Label htmlFor="notificationBody" className="text-sm text-gray-700">
+            <Label
+              htmlFor="notificationBody"
+              className="text-sm text-muted-foreground"
+            >
               알림 내용
             </Label>
             <Textarea
@@ -121,7 +124,7 @@ export const AdminNotificationTest: React.FC<AdminNotificationTestProps> = ({
         {/* FCM 토큰으로 전송 */}
         <div className="space-y-3">
           <div>
-            <Label htmlFor="fcmToken" className="text-sm text-gray-700">
+            <Label htmlFor="fcmToken" className="text-sm text-muted-foreground">
               FCM 토큰으로 전송
             </Label>
             <div className="flex gap-2 mt-1">
@@ -144,7 +147,7 @@ export const AdminNotificationTest: React.FC<AdminNotificationTestProps> = ({
                 전송
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               브라우저 개발자 도구에서 FCM 토큰을 확인할 수 있습니다
             </p>
           </div>
@@ -155,7 +158,7 @@ export const AdminNotificationTest: React.FC<AdminNotificationTestProps> = ({
         {/* 사용자 ID로 전송 */}
         <div className="space-y-3">
           <div>
-            <Label htmlFor="userId" className="text-sm text-gray-700">
+            <Label htmlFor="userId" className="text-sm text-muted-foreground">
               사용자 ID로 전송
             </Label>
             <div className="flex gap-2 mt-1">
@@ -178,7 +181,7 @@ export const AdminNotificationTest: React.FC<AdminNotificationTestProps> = ({
                 전송
               </Button>
             </div>
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               데이터베이스의 사용자 UUID를 입력하세요
             </p>
           </div>

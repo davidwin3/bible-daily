@@ -35,22 +35,22 @@ export const NotificationPermissionCard: React.FC<
     <Card className="border-0 shadow-sm rounded-xl">
       <CardHeader className="pb-3 px-4 pt-4">
         <CardTitle className="flex items-center gap-3 text-base">
-          <div className="p-2.5 bg-blue-50 rounded-xl">
-            <ShieldIcon className="h-4 w-4 text-blue-600" />
+          <div className="p-2.5 bg-blue-50 dark:bg-blue-900/30 rounded-xl">
+            <ShieldIcon className="h-4 w-4 text-blue-600 dark:text-blue-400" />
           </div>
           알림 권한
         </CardTitle>
-        <CardDescription className="text-sm leading-relaxed text-gray-600">
+        <CardDescription className="text-sm leading-relaxed text-muted-foreground">
           브라우저 알림을 받기 위해 권한 설정이 필요합니다
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-0 px-4 pb-4">
         {!isSupported ? (
           <div className="text-center py-8">
-            <div className="p-3 bg-gray-100 rounded-full w-fit mx-auto mb-4">
-              <BellOffIcon className="h-6 w-6 text-gray-500" />
+            <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full w-fit mx-auto mb-4">
+              <BellOffIcon className="h-6 w-6 text-muted-foreground" />
             </div>
-            <p className="text-sm text-gray-600 leading-relaxed">
+            <p className="text-sm text-muted-foreground leading-relaxed">
               이 브라우저는 알림을 지원하지 않습니다
             </p>
           </div>
@@ -59,16 +59,16 @@ export const NotificationPermissionCard: React.FC<
             <div className="flex items-start justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-sm font-medium text-gray-900">
+                  <span className="text-sm font-medium text-foreground">
                     브라우저 알림 상태
                   </span>
                   <span
                     className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium ${
                       permission === "granted"
-                        ? "bg-green-100 text-green-700"
+                        ? "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400"
                         : permission === "denied"
-                        ? "bg-red-100 text-red-700"
-                        : "bg-yellow-100 text-yellow-700"
+                        ? "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400"
+                        : "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400"
                     }`}
                   >
                     {permission === "granted"
@@ -78,7 +78,7 @@ export const NotificationPermissionCard: React.FC<
                       : "대기중"}
                   </span>
                 </div>
-                <p className="text-xs text-gray-500 leading-relaxed">
+                <p className="text-xs text-muted-foreground leading-relaxed">
                   푸시 알림과 로컬 알림을 받으려면 권한이 필요합니다
                 </p>
               </div>
@@ -100,7 +100,7 @@ export const NotificationPermissionCard: React.FC<
                     variant="outline"
                     onClick={onTestNotification}
                     size="sm"
-                    className="h-10 text-sm px-4 rounded-lg border-gray-200"
+                    className="h-10 text-sm px-4 rounded-lg border-border"
                   >
                     테스트
                   </Button>
@@ -108,7 +108,7 @@ export const NotificationPermissionCard: React.FC<
                     variant="outline"
                     onClick={onScheduleTest}
                     size="sm"
-                    className="h-10 text-sm px-4 rounded-lg border-gray-200"
+                    className="h-10 text-sm px-4 rounded-lg border-border"
                   >
                     예약 테스트
                   </Button>
@@ -116,7 +116,7 @@ export const NotificationPermissionCard: React.FC<
                     variant="outline"
                     onClick={onDailyReminderTest}
                     size="sm"
-                    className="h-10 text-sm px-4 rounded-lg border-gray-200"
+                    className="h-10 text-sm px-4 rounded-lg border-border"
                   >
                     성경 알림 테스트
                   </Button>

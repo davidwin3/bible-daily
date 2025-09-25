@@ -213,10 +213,10 @@ export const AdminMissionsPage: React.FC = () => {
         <div className="mb-6 sm:mb-8">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-1 sm:mb-2">
+              <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-1 sm:mb-2">
                 미션 관리
               </h1>
-              <p className="text-sm sm:text-base text-gray-600">
+              <p className="text-sm sm:text-base text-muted-foreground">
                 일일 성경 읽기 미션을 관리하세요.
               </p>
             </div>
@@ -286,7 +286,7 @@ export const AdminMissionsPage: React.FC = () => {
                       >
                         {mission.isActive ? "활성" : "비활성"}
                       </Badge>
-                      <span className="text-xs sm:text-sm text-gray-500">
+                      <span className="text-xs sm:text-sm text-muted-foreground">
                         {dayjsUtils.parse(mission.date)?.format("MM월 DD일")}
                       </span>
                     </div>
@@ -323,13 +323,13 @@ export const AdminMissionsPage: React.FC = () => {
                     </h3>
 
                     {mission.description && (
-                      <p className="text-sm sm:text-base text-gray-600 whitespace-pre-wrap leading-relaxed">
+                      <p className="text-sm sm:text-base text-muted-foreground whitespace-pre-wrap leading-relaxed">
                         {mission.description}
                       </p>
                     )}
 
                     {/* 통계 정보 - 모바일 최적화 */}
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm text-gray-500">
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
                         <span>{dayjsUtils.formatSimple(mission.date)}</span>
@@ -359,8 +359,8 @@ export const AdminMissionsPage: React.FC = () => {
           {missions?.length === 0 && (
             <Card>
               <CardContent className="p-12 text-center">
-                <BookOpen className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">등록된 미션이 없습니다.</p>
+                <BookOpen className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">등록된 미션이 없습니다.</p>
               </CardContent>
             </Card>
           )}

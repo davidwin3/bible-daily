@@ -178,14 +178,14 @@ export const NotificationSettingsPage: React.FC = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-50/50 p-4">
+      <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950/50 p-4">
         <div className="max-w-md mx-auto space-y-6 pt-8">
           <Card className="border-0 shadow-sm rounded-xl">
             <CardContent className="py-16 text-center px-6">
-              <div className="p-4 bg-gray-100 rounded-full w-fit mx-auto mb-6">
-                <BellOffIcon className="h-8 w-8 text-gray-500" />
+              <div className="p-4 bg-gray-100 dark:bg-gray-800 rounded-full w-fit mx-auto mb-6">
+                <BellOffIcon className="h-8 w-8 text-muted-foreground" />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">
+              <h3 className="text-lg font-semibold text-foreground mb-3">
                 로그인이 필요합니다
               </h3>
               <p className="text-muted-foreground text-sm leading-relaxed">
@@ -199,9 +199,9 @@ export const NotificationSettingsPage: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
+    <div className="min-h-screen bg-gray-50/50 dark:bg-gray-950/50">
       {/* 상단 헤더 */}
-      <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+      <div className="sticky top-0 z-10 bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800">
         <div className="flex items-center px-4 py-3">
           <Button
             variant="ghost"
@@ -212,8 +212,8 @@ export const NotificationSettingsPage: React.FC = () => {
             <ArrowLeftIcon className="h-5 w-5" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-lg font-semibold text-gray-900">알림 설정</h1>
-            <p className="text-sm text-gray-600">
+            <h1 className="text-lg font-semibold text-foreground">알림 설정</h1>
+            <p className="text-sm text-muted-foreground">
               맞춤형 알림으로 더 나은 경험을
             </p>
           </div>

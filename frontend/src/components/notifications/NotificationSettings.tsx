@@ -103,11 +103,11 @@ export function NotificationSettings() {
   const getStatusColor = () => {
     switch (permission) {
       case "granted":
-        return "text-green-600";
+        return "text-green-600 dark:text-green-400";
       case "denied":
-        return "text-red-600";
+        return "text-red-600 dark:text-red-400";
       default:
-        return "text-gray-600";
+        return "text-muted-foreground";
     }
   };
 
@@ -152,7 +152,7 @@ export function NotificationSettings() {
 
         {/* 테스트 버튼 */}
         {isEnabled && (
-          <div className="pt-4 border-t">
+          <div className="pt-4 border-t border-border">
             <Button
               onClick={sendTestNotification}
               variant="outline"
@@ -166,12 +166,12 @@ export function NotificationSettings() {
 
         {/* 차단된 경우 안내 */}
         {permission === "denied" && (
-          <div className="p-4 bg-orange-50 border border-orange-200 rounded-lg">
-            <p className="text-sm text-orange-800">
+          <div className="p-4 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded-lg">
+            <p className="text-sm text-orange-800 dark:text-orange-200">
               알림이 차단되어 있습니다. 브라우저 설정에서 알림을 허용한 후
               페이지를 새로고침하세요.
             </p>
-            <ul className="mt-2 text-xs text-orange-700 list-disc list-inside">
+            <ul className="mt-2 text-xs text-orange-700 dark:text-orange-300 list-disc list-inside">
               <li>Chrome: 주소창 왼쪽 자물쇠 아이콘 → 알림 허용</li>
               <li>Safari: 환경설정 → 웹사이트 → 알림</li>
               <li>Firefox: 주소창 방패 아이콘 → 알림 허용</li>

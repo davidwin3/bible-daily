@@ -63,9 +63,9 @@ export function OfflineSyncStatus() {
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 {isOnline ? (
-                  <Wifi className="h-4 w-4 text-green-600" />
+                  <Wifi className="h-4 w-4 text-green-600 dark:text-green-400" />
                 ) : (
-                  <WifiOff className="h-4 w-4 text-red-600" />
+                  <WifiOff className="h-4 w-4 text-red-600 dark:text-red-400" />
                 )}
 
                 <CardTitle className="text-sm">
@@ -73,7 +73,7 @@ export function OfflineSyncStatus() {
                 </CardTitle>
 
                 {isSyncing && (
-                  <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                  <Loader2 className="h-4 w-4 animate-spin text-blue-600 dark:text-blue-400" />
                 )}
 
                 {hasPendingActions && (
@@ -87,9 +87,9 @@ export function OfflineSyncStatus() {
                 {lastSyncResult && (
                   <>
                     {lastSyncResult.failed.length > 0 ? (
-                      <AlertCircle className="h-4 w-4 text-amber-600" />
+                      <AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400" />
                     ) : (
-                      <CheckCircle className="h-4 w-4 text-green-600" />
+                      <CheckCircle className="h-4 w-4 text-green-600 dark:text-green-400" />
                     )}
                   </>
                 )}
@@ -129,7 +129,7 @@ export function OfflineSyncStatus() {
                       size="sm"
                       variant="outline"
                       onClick={clearPendingActions}
-                      className="h-7 text-xs text-red-600 hover:text-red-700"
+                      className="h-7 text-xs text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300"
                     >
                       <X className="h-3 w-3 mr-1" />
                       삭제
@@ -163,13 +163,13 @@ export function OfflineSyncStatus() {
 
                 <div className="grid grid-cols-2 gap-4 text-xs">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-3 w-3 text-green-600" />
+                    <CheckCircle className="h-3 w-3 text-green-600 dark:text-green-400" />
                     <span>성공: {lastSyncResult.successful.length}개</span>
                   </div>
 
                   {lastSyncResult.failed.length > 0 && (
                     <div className="flex items-center gap-2">
-                      <AlertCircle className="h-3 w-3 text-red-600" />
+                      <AlertCircle className="h-3 w-3 text-red-600 dark:text-red-400" />
                       <span>실패: {lastSyncResult.failed.length}개</span>
                     </div>
                   )}
@@ -177,11 +177,14 @@ export function OfflineSyncStatus() {
 
                 {lastSyncResult.failed.length > 0 && (
                   <div className="mt-2 space-y-1">
-                    <p className="text-xs font-medium text-red-600">
+                    <p className="text-xs font-medium text-red-600 dark:text-red-400">
                       실패한 작업:
                     </p>
                     {lastSyncResult.failed.map((failed, index) => (
-                      <div key={index} className="text-xs text-red-600 pl-2">
+                      <div
+                        key={index}
+                        className="text-xs text-red-600 dark:text-red-400 pl-2"
+                      >
                         • {getActionTypeLabel(failed.type)}: {failed.error}
                       </div>
                     ))}
@@ -193,19 +196,21 @@ export function OfflineSyncStatus() {
             {/* 상태별 안내 메시지 */}
             <div className="mt-4 p-3 bg-muted/30 rounded text-xs">
               {!isOnline ? (
-                <p className="text-amber-600">
+                <p className="text-amber-600 dark:text-amber-400">
                   📵 현재 오프라인 상태입니다. 작업한 내용은 자동으로 저장되며,
                   온라인 연결 시 자동으로 동기화됩니다.
                 </p>
               ) : isSyncing ? (
-                <p className="text-blue-600">🔄 동기화 진행 중입니다...</p>
+                <p className="text-blue-600 dark:text-blue-400">
+                  🔄 동기화 진행 중입니다...
+                </p>
               ) : hasPendingActions ? (
-                <p className="text-amber-600">
+                <p className="text-amber-600 dark:text-amber-400">
                   ⏳ 동기화 대기 중인 작업이 있습니다. 수동으로 동기화하거나
                   잠시 기다려주세요.
                 </p>
               ) : (
-                <p className="text-green-600">
+                <p className="text-green-600 dark:text-green-400">
                   ✅ 모든 작업이 동기화되었습니다.
                 </p>
               )}

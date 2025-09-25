@@ -197,10 +197,10 @@ export const AdminCellsPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8 pb-20">
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-8 gap-4">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
               셀 관리
             </h1>
-            <p className="text-gray-600">
+            <p className="text-muted-foreground">
               소그룹 셀을 관리하고 멤버를 배정하세요.
             </p>
           </div>
@@ -243,7 +243,7 @@ export const AdminCellsPage: React.FC = () => {
                         >
                           {cell.isActive ? "활성" : "비활성"}
                         </Badge>
-                        <span className="text-xs sm:text-sm text-gray-500">
+                        <span className="text-xs sm:text-sm text-muted-foreground">
                           ID: {cell.id.slice(0, 8)}
                         </span>
                       </div>
@@ -252,12 +252,12 @@ export const AdminCellsPage: React.FC = () => {
                     <h3 className="text-lg font-semibold mb-2">{cell.name}</h3>
 
                     {cell.description && (
-                      <p className="text-gray-600 mb-3 whitespace-pre-wrap text-sm">
+                      <p className="text-muted-foreground mb-3 whitespace-pre-wrap text-sm">
                         {cell.description}
                       </p>
                     )}
 
-                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-gray-500">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-6 text-sm text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <Users className="h-4 w-4" />
                         <span>
@@ -311,8 +311,8 @@ export const AdminCellsPage: React.FC = () => {
           {cells?.length === 0 && (
             <Card>
               <CardContent className="p-12 text-center">
-                <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-500">등록된 셀이 없습니다.</p>
+                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">등록된 셀이 없습니다.</p>
               </CardContent>
             </Card>
           )}
@@ -348,7 +348,7 @@ export const AdminCellsPage: React.FC = () => {
                   <h3 className="text-lg font-semibold mb-3">기본 정보</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm">
                     <div className="flex flex-col sm:block">
-                      <span className="text-gray-500 text-xs sm:text-sm">
+                      <span className="text-muted-foreground text-xs sm:text-sm">
                         셀 이름:
                       </span>
                       <span className="font-medium mt-1 sm:ml-2 sm:mt-0">
@@ -356,7 +356,7 @@ export const AdminCellsPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex flex-col sm:block">
-                      <span className="text-gray-500 text-xs sm:text-sm">
+                      <span className="text-muted-foreground text-xs sm:text-sm">
                         리더:
                       </span>
                       <span className="font-medium mt-1 sm:ml-2 sm:mt-0">
@@ -364,7 +364,7 @@ export const AdminCellsPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex flex-col sm:block">
-                      <span className="text-gray-500 text-xs sm:text-sm">
+                      <span className="text-muted-foreground text-xs sm:text-sm">
                         멤버 수:
                       </span>
                       <span className="font-medium mt-1 sm:ml-2 sm:mt-0">
@@ -372,7 +372,7 @@ export const AdminCellsPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex flex-col sm:block">
-                      <span className="text-gray-500 text-xs sm:text-sm">
+                      <span className="text-muted-foreground text-xs sm:text-sm">
                         상태:
                       </span>
                       <div className="mt-1 sm:ml-2 sm:mt-0 sm:inline">
@@ -388,7 +388,7 @@ export const AdminCellsPage: React.FC = () => {
                   </div>
                   {cellDetail.description && (
                     <div className="mt-4">
-                      <span className="text-gray-500 text-xs sm:text-sm">
+                      <span className="text-muted-foreground text-xs sm:text-sm">
                         설명:
                       </span>
                       <p className="mt-2 text-sm whitespace-pre-wrap bg-gray-50 p-3 rounded-md">
@@ -414,7 +414,7 @@ export const AdminCellsPage: React.FC = () => {
                           <DialogTitle>멤버 추가</DialogTitle>
                         </DialogHeader>
                         <div className="space-y-4">
-                          <p className="text-sm text-gray-600">
+                          <p className="text-sm text-muted-foreground">
                             셀에 속하지 않은 사용자를 선택하여 추가하세요.
                           </p>
                           <div className="max-h-60 overflow-y-auto space-y-2">
@@ -425,7 +425,7 @@ export const AdminCellsPage: React.FC = () => {
                               >
                                 <div>
                                   <p className="font-medium">{user.realName}</p>
-                                  <p className="text-sm text-gray-500">
+                                  <p className="text-sm text-muted-foreground">
                                     {user.email}
                                   </p>
                                   <Badge variant="outline" className="text-xs">
@@ -446,7 +446,7 @@ export const AdminCellsPage: React.FC = () => {
                               </div>
                             ))}
                             {availableUsers.length === 0 && (
-                              <p className="text-center text-gray-500 py-8">
+                              <p className="text-center text-muted-foreground py-8">
                                 추가할 수 있는 사용자가 없습니다.
                               </p>
                             )}
@@ -468,7 +468,7 @@ export const AdminCellsPage: React.FC = () => {
                               <p className="font-medium text-sm sm:text-base">
                                 {member.user.realName}
                               </p>
-                              <p className="text-xs sm:text-sm text-gray-500 break-all">
+                              <p className="text-xs sm:text-sm text-muted-foreground break-all">
                                 {member.user.email}
                               </p>
                             </div>
@@ -487,24 +487,30 @@ export const AdminCellsPage: React.FC = () => {
                               )}
                             </div>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-gray-500 mt-3">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2 text-xs text-muted-foreground mt-3">
                             <div className="flex flex-col">
-                              <span className="text-gray-400">가입일</span>
+                              <span className="text-muted-foreground">
+                                가입일
+                              </span>
                               <span>
                                 {dayjsUtils.formatSimple(member.joinedAt)}
                               </span>
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-gray-400">최근 미션</span>
+                              <span className="text-muted-foreground">
+                                최근 미션
+                              </span>
                               <span>{member.recentMissions}개</span>
                             </div>
                             <div className="flex flex-col">
-                              <span className="text-gray-400">완료율</span>
+                              <span className="text-muted-foreground">
+                                완료율
+                              </span>
                               <span>{member.completionRate?.toFixed(1)}%</span>
                             </div>
                             {member.user.lastLoginAt && (
                               <div className="flex flex-col">
-                                <span className="text-gray-400">
+                                <span className="text-muted-foreground">
                                   최근 로그인
                                 </span>
                                 <span>
@@ -534,7 +540,7 @@ export const AdminCellsPage: React.FC = () => {
                     ))}
 
                     {cellDetail.members?.length === 0 && (
-                      <div className="text-center py-8 text-gray-500">
+                      <div className="text-center py-8 text-muted-foreground">
                         <Users className="h-8 w-8 mx-auto mb-2 opacity-50" />
                         <p>멤버가 없습니다.</p>
                       </div>

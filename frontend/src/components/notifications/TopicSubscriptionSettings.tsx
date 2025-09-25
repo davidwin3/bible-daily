@@ -99,11 +99,11 @@ export const TopicSubscriptionSettings: React.FC<
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between">
           <div>
-            <CardTitle className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-              <BellIcon className="h-5 w-5 text-blue-600" />
+            <CardTitle className="text-lg font-semibold text-foreground flex items-center gap-2">
+              <BellIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
               토픽 구독 관리
             </CardTitle>
-            <p className="text-sm text-gray-600 mt-1">
+            <p className="text-sm text-muted-foreground mt-1">
               관심 있는 알림 카테고리를 선택하세요
             </p>
           </div>
@@ -117,13 +117,13 @@ export const TopicSubscriptionSettings: React.FC<
         {topics.map((topic) => (
           <div
             key={topic.id}
-            className="flex items-start justify-between p-4 bg-gray-50/50 rounded-lg border border-gray-100"
+            className="flex items-start justify-between p-4 bg-gray-50/50 dark:bg-gray-800/50 rounded-lg border border-gray-100 dark:border-gray-700"
           >
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <Label
                   htmlFor={`topic-${topic.id}`}
-                  className="text-sm font-medium text-gray-900 cursor-pointer"
+                  className="text-sm font-medium text-foreground cursor-pointer"
                 >
                   {topic.name}
                 </Label>
@@ -133,19 +133,19 @@ export const TopicSubscriptionSettings: React.FC<
                   </Badge>
                 )}
               </div>
-              <p className="text-xs text-gray-600 leading-relaxed">
+              <p className="text-xs text-muted-foreground leading-relaxed">
                 {topic.description}
               </p>
 
               {/* 구독 상태 표시 */}
               <div className="flex items-center gap-2 mt-2">
                 {topic.isSubscribed ? (
-                  <div className="flex items-center gap-1 text-xs text-green-600">
+                  <div className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400">
                     <CheckIcon className="h-3 w-3" />
                     구독 중
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1 text-xs text-gray-500">
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <XIcon className="h-3 w-3" />
                     구독 안함
                   </div>
@@ -187,12 +187,12 @@ export const TopicSubscriptionSettings: React.FC<
         ))}
 
         {/* 안내 메시지 */}
-        <div className="mt-6 p-3 bg-blue-50 rounded-lg border border-blue-100">
+        <div className="mt-6 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-100 dark:border-blue-700">
           <div className="flex items-start gap-2">
-            <BellIcon className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-            <div className="text-xs text-blue-800 leading-relaxed">
+            <BellIcon className="h-4 w-4 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" />
+            <div className="text-xs text-blue-800 dark:text-blue-200 leading-relaxed">
               <p className="font-medium mb-1">토픽 구독 안내</p>
-              <ul className="space-y-1 text-blue-700">
+              <ul className="space-y-1 text-blue-700 dark:text-blue-300">
                 <li>• 새로운 FCM 토큰은 자동으로 필수 토픽에 구독됩니다</li>
                 <li>• 토픽별로 알림을 받을지 선택할 수 있습니다</li>
                 <li>• 필수 토픽은 구독 해제할 수 없습니다</li>

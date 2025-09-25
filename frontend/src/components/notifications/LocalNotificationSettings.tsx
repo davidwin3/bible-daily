@@ -36,12 +36,12 @@ export const LocalNotificationSettings: React.FC<
     <Card className="border-0 shadow-sm rounded-xl">
       <CardHeader className="pb-3 px-4 pt-4">
         <CardTitle className="flex items-center gap-3 text-base">
-          <div className="p-2.5 bg-green-50 rounded-xl">
-            <ClockIcon className="h-4 w-4 text-green-600" />
+          <div className="p-2.5 bg-green-50 dark:bg-green-900/30 rounded-xl">
+            <ClockIcon className="h-4 w-4 text-green-600 dark:text-green-400" />
           </div>
           로컬 알림
         </CardTitle>
-        <CardDescription className="text-sm leading-relaxed text-gray-600">
+        <CardDescription className="text-sm leading-relaxed text-muted-foreground">
           앱에서 자동으로 생성되는 알림들을 설정할 수 있습니다
         </CardDescription>
       </CardHeader>
@@ -50,10 +50,10 @@ export const LocalNotificationSettings: React.FC<
         <div className="space-y-3">
           <div className="flex items-start justify-between min-h-[44px]">
             <div className="flex-1 min-w-0 pr-3">
-              <Label className="text-sm font-medium text-gray-900 leading-tight">
+              <Label className="text-sm font-medium text-foreground leading-tight">
                 매일 성경 읽기 리마인더
               </Label>
-              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 매일 정해진 시간에 성경 읽기 알림을 받습니다
               </p>
             </div>
@@ -67,9 +67,12 @@ export const LocalNotificationSettings: React.FC<
           </div>
 
           {settings.dailyReminder && (
-            <div className="ml-0 pl-4 border-l-2 border-gray-100 space-y-3">
+            <div className="ml-0 pl-4 border-l-2 border-gray-100 dark:border-gray-700 space-y-3">
               <div>
-                <Label htmlFor="reminderTime" className="text-sm text-gray-700">
+                <Label
+                  htmlFor="reminderTime"
+                  className="text-sm text-muted-foreground"
+                >
                   알림 시간
                 </Label>
                 <Input
@@ -84,12 +87,12 @@ export const LocalNotificationSettings: React.FC<
               </div>
 
               {getNextReminderDisplay() && (
-                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                  <p className="text-sm text-green-800">
+                <div className="p-3 bg-green-50 dark:bg-green-900/30 rounded-lg border border-green-200 dark:border-green-700">
+                  <p className="text-sm text-green-800 dark:text-green-200">
                     <span className="font-medium">다음 알림:</span>{" "}
                     {getNextReminderDisplay()}
                   </p>
-                  <p className="text-xs text-green-600 mt-1">
+                  <p className="text-xs text-green-600 dark:text-green-400 mt-1">
                     매일 설정된 시간에 성경 읽기 알림을 받습니다
                   </p>
                 </div>
@@ -103,11 +106,11 @@ export const LocalNotificationSettings: React.FC<
         {/* 미션 마감 알림 */}
         <div className="flex items-start justify-between min-h-[44px]">
           <div className="flex-1 min-w-0 pr-3">
-            <Label className="text-sm font-medium text-gray-900 flex items-center gap-2 leading-tight">
-              <TargetIcon className="h-3.5 w-3.5 text-orange-500" />
+            <Label className="text-sm font-medium text-foreground flex items-center gap-2 leading-tight">
+              <TargetIcon className="h-3.5 w-3.5 text-orange-500 dark:text-orange-400" />
               미션 마감 알림
             </Label>
-            <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
               미션 마감 전에 알림을 받습니다 (오후 9시)
             </p>
           </div>
@@ -126,11 +129,11 @@ export const LocalNotificationSettings: React.FC<
         <div className="space-y-3">
           <div className="flex items-start justify-between min-h-[44px]">
             <div className="flex-1 min-w-0 pr-3">
-              <Label className="text-sm font-medium text-gray-900 flex items-center gap-2 leading-tight">
-                <MoonIcon className="h-3.5 w-3.5 text-purple-500" />
+              <Label className="text-sm font-medium text-foreground flex items-center gap-2 leading-tight">
+                <MoonIcon className="h-3.5 w-3.5 text-purple-500 dark:text-purple-400" />
                 방해 금지 시간
               </Label>
-              <p className="text-xs text-gray-500 mt-1 leading-relaxed">
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                 지정된 시간 동안에는 알림을 받지 않습니다
               </p>
             </div>
@@ -144,9 +147,12 @@ export const LocalNotificationSettings: React.FC<
           </div>
 
           {settings.quietHours && (
-            <div className="ml-0 pl-4 border-l-2 border-gray-100 grid grid-cols-2 gap-3">
+            <div className="ml-0 pl-4 border-l-2 border-gray-100 dark:border-gray-700 grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="quietStart" className="text-sm text-gray-700">
+                <Label
+                  htmlFor="quietStart"
+                  className="text-sm text-muted-foreground"
+                >
                   시작 시간
                 </Label>
                 <Input
@@ -160,7 +166,10 @@ export const LocalNotificationSettings: React.FC<
                 />
               </div>
               <div>
-                <Label htmlFor="quietEnd" className="text-sm text-gray-700">
+                <Label
+                  htmlFor="quietEnd"
+                  className="text-sm text-muted-foreground"
+                >
                   종료 시간
                 </Label>
                 <Input

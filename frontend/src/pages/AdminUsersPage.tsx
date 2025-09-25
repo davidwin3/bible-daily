@@ -175,10 +175,10 @@ export const AdminUsersPage: React.FC = () => {
       <AdminNav />
       <div className="container mx-auto px-4 py-4 sm:py-8 pb-20">
         <div className="mb-6 sm:mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-foreground mb-2">
             사용자 관리
           </h1>
-          <p className="text-sm sm:text-base text-gray-600">
+          <p className="text-sm sm:text-base text-muted-foreground">
             등록된 사용자를 관리하고 권한을 설정하세요.
           </p>
         </div>
@@ -196,7 +196,7 @@ export const AdminUsersPage: React.FC = () => {
             <div>
               <label className="block text-sm font-medium mb-2">검색</label>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="이름 또는 이메일"
                   value={searchTerm}
@@ -293,14 +293,14 @@ export const AdminUsersPage: React.FC = () => {
                         <h3 className="text-base sm:text-lg font-semibold truncate">
                           {user.realName}
                         </h3>
-                        <p className="text-sm text-gray-600 truncate">
+                        <p className="text-sm text-muted-foreground truncate">
                           {user.email}
                         </p>
                       </div>
                     </div>
 
                     {/* 통계 정보 - 모바일에서 세로 배치 */}
-                    <div className="space-y-1 sm:space-y-0 sm:flex sm:items-center sm:gap-6 text-xs sm:text-sm text-gray-500">
+                    <div className="space-y-1 sm:space-y-0 sm:flex sm:items-center sm:gap-6 text-xs sm:text-sm text-muted-foreground">
                       <span className="block sm:inline">
                         가입일: {dayjsUtils.formatSimple(user.createdAt)}
                       </span>
@@ -338,9 +338,11 @@ export const AdminUsersPage: React.FC = () => {
 
                     {/* 역할 변경 */}
                     <div className="flex-1 sm:flex-none">
-                      <Popover 
-                        open={openPopoverId === user.id} 
-                        onOpenChange={(open) => setOpenPopoverId(open ? user.id : null)}
+                      <Popover
+                        open={openPopoverId === user.id}
+                        onOpenChange={(open) =>
+                          setOpenPopoverId(open ? user.id : null)
+                        }
                       >
                         <PopoverTrigger asChild>
                           <Button
@@ -426,8 +428,8 @@ export const AdminUsersPage: React.FC = () => {
           {filteredUsers.length === 0 && (
             <Card>
               <CardContent className="p-8 sm:p-12 text-center">
-                <Users className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-sm sm:text-base text-gray-500">
+                <Users className="h-10 w-10 sm:h-12 sm:w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-sm sm:text-base text-muted-foreground">
                   {searchTerm || roleFilter || statusFilter
                     ? "조건에 맞는 사용자가 없습니다."
                     : "등록된 사용자가 없습니다."}
@@ -464,7 +466,7 @@ export const AdminUsersPage: React.FC = () => {
                       <h4 className="text-lg sm:text-xl font-semibold truncate">
                         {userDetail.name}
                       </h4>
-                      <p className="text-sm sm:text-base text-gray-600 truncate">
+                      <p className="text-sm sm:text-base text-muted-foreground truncate">
                         {userDetail.email}
                       </p>
                       <div className="flex flex-wrap gap-2 mt-2">
@@ -488,13 +490,15 @@ export const AdminUsersPage: React.FC = () => {
 
                   <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 text-xs sm:text-sm">
                     <div>
-                      <span className="text-gray-500">가입일:</span>
+                      <span className="text-muted-foreground">가입일:</span>
                       <span className="ml-2 block sm:inline">
                         {dayjsUtils.formatKorean(userDetail.createdAt)}
                       </span>
                     </div>
                     <div>
-                      <span className="text-gray-500">최근 로그인:</span>
+                      <span className="text-muted-foreground">
+                        최근 로그인:
+                      </span>
                       <span className="ml-2 block sm:inline">
                         {userDetail.lastLoginAt
                           ? dayjsUtils.formatKorean(userDetail.lastLoginAt)
@@ -502,7 +506,9 @@ export const AdminUsersPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="col-span-2">
-                      <span className="text-gray-500">Firebase UID:</span>
+                      <span className="text-muted-foreground">
+                        Firebase UID:
+                      </span>
                       <span className="ml-2 font-mono text-xs break-all">
                         {userDetail.firebaseUid}
                       </span>
@@ -519,13 +525,17 @@ export const AdminUsersPage: React.FC = () => {
                     <div className="p-3 sm:p-4 bg-gray-50 rounded-lg">
                       <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 text-xs sm:text-sm">
                         <div>
-                          <span className="text-gray-500">셀 이름:</span>
+                          <span className="text-muted-foreground">
+                            셀 이름:
+                          </span>
                           <span className="ml-2 font-medium block sm:inline">
                             {userDetail.cellInfo.name}
                           </span>
                         </div>
                         <div>
-                          <span className="text-gray-500">셀 리더:</span>
+                          <span className="text-muted-foreground">
+                            셀 리더:
+                          </span>
                           <span className="ml-2 block sm:inline">
                             {userDetail.cellInfo.leader.name}
                           </span>
@@ -533,7 +543,7 @@ export const AdminUsersPage: React.FC = () => {
                       </div>
                       {userDetail.cellInfo.description && (
                         <div className="mt-3 sm:mt-2">
-                          <span className="text-gray-500 text-xs sm:text-sm">
+                          <span className="text-muted-foreground text-xs sm:text-sm">
                             설명:
                           </span>
                           <p className="mt-1 text-xs sm:text-sm whitespace-pre-wrap">
@@ -543,7 +553,7 @@ export const AdminUsersPage: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <p className="text-gray-500 text-sm">
+                    <p className="text-muted-foreground text-sm">
                       소속된 셀이 없습니다.
                     </p>
                   )}
@@ -561,17 +571,23 @@ export const AdminUsersPage: React.FC = () => {
                       </h4>
                       <div className="text-xs sm:text-sm space-y-1">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">전체 미션:</span>
+                          <span className="text-muted-foreground">
+                            전체 미션:
+                          </span>
                           <span>{userDetail.missionStats.totalMissions}개</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">완료 미션:</span>
+                          <span className="text-muted-foreground">
+                            완료 미션:
+                          </span>
                           <span>
                             {userDetail.missionStats.completedMissions}개
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">전체 완료율:</span>
+                          <span className="text-muted-foreground">
+                            전체 완료율:
+                          </span>
                           <span>
                             {userDetail.missionStats.overallCompletionRate.toFixed(
                               1
@@ -587,19 +603,25 @@ export const AdminUsersPage: React.FC = () => {
                       </h4>
                       <div className="text-xs sm:text-sm space-y-1">
                         <div className="flex justify-between">
-                          <span className="text-gray-500">최근 미션:</span>
+                          <span className="text-muted-foreground">
+                            최근 미션:
+                          </span>
                           <span>
                             {userDetail.missionStats.recentMissions}개
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">최근 완료:</span>
+                          <span className="text-muted-foreground">
+                            최근 완료:
+                          </span>
                           <span>
                             {userDetail.missionStats.recentCompletedMissions}개
                           </span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-gray-500">최근 완료율:</span>
+                          <span className="text-muted-foreground">
+                            최근 완료율:
+                          </span>
                           <span>
                             {userDetail.missionStats.recentCompletionRate.toFixed(
                               1
@@ -619,11 +641,15 @@ export const AdminUsersPage: React.FC = () => {
                   </h3>
                   <div className="space-y-2 sm:grid sm:grid-cols-2 sm:gap-4 sm:space-y-0 text-xs sm:text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-500">전체 게시물:</span>
+                      <span className="text-muted-foreground">
+                        전체 게시물:
+                      </span>
                       <span>{userDetail.postStats.totalPosts}개</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-500">최근 게시물 (30일):</span>
+                      <span className="text-muted-foreground">
+                        최근 게시물 (30일):
+                      </span>
                       <span>{userDetail.postStats.recentPosts}개</span>
                     </div>
                   </div>

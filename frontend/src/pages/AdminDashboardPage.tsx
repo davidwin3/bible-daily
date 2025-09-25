@@ -68,10 +68,12 @@ export const AdminDashboardPage: React.FC = () => {
       <AdminNav />
       <div className="container mx-auto px-4 py-8 pb-20">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          <h1 className="text-3xl font-bold text-foreground mb-2">
             관리자 대시보드
           </h1>
-          <p className="text-gray-600">전체 시스템 현황을 확인하세요.</p>
+          <p className="text-muted-foreground">
+            전체 시스템 현황을 확인하세요.
+          </p>
         </div>
 
         {/* 개요 카드들 */}
@@ -79,7 +81,7 @@ export const AdminDashboardPage: React.FC = () => {
           {overviewCards.map((card, index) => (
             <Card key={index}>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium text-gray-600">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
                   {card.title}
                 </CardTitle>
                 <card.icon className="h-4 w-4 text-muted-foreground" />
@@ -103,25 +105,33 @@ export const AdminDashboardPage: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">전체 미션:</span>
+                  <span className="text-sm text-muted-foreground">
+                    전체 미션:
+                  </span>
                   <span className="font-medium">
                     {dashboard.missions.totalMissions}개
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">전체 참여:</span>
+                  <span className="text-sm text-muted-foreground">
+                    전체 참여:
+                  </span>
                   <span className="font-medium">
                     {dashboard.missions.totalUserMissions}회
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">완료된 미션:</span>
+                  <span className="text-sm text-muted-foreground">
+                    완료된 미션:
+                  </span>
                   <span className="font-medium">
                     {dashboard.missions.completedUserMissions}회
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">전체 완료율:</span>
+                  <span className="text-sm text-muted-foreground">
+                    전체 완료율:
+                  </span>
                   <span className="font-medium">
                     {dashboard.missions.overallCompletionRate.toFixed(1)}%
                   </span>
@@ -139,7 +149,7 @@ export const AdminDashboardPage: React.FC = () => {
                           key={index}
                           className="flex justify-between items-center text-sm"
                         >
-                          <span className="text-gray-600">
+                          <span className="text-muted-foreground">
                             {dayjsUtils.parse(stat.date)?.format("M월 D일")}
                           </span>
                           <span className="font-medium">
@@ -162,19 +172,25 @@ export const AdminDashboardPage: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">전체 셀:</span>
+                  <span className="text-sm text-muted-foreground">
+                    전체 셀:
+                  </span>
                   <span className="font-medium">
                     {dashboard.cells.totalCells}개
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">전체 멤버:</span>
+                  <span className="text-sm text-muted-foreground">
+                    전체 멤버:
+                  </span>
                   <span className="font-medium">
                     {dashboard.cells.totalMembers}명
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">평균 멤버 수:</span>
+                  <span className="text-sm text-muted-foreground">
+                    평균 멤버 수:
+                  </span>
                   <span className="font-medium">
                     {dashboard.cells.averageMembersPerCell}명
                   </span>
@@ -190,7 +206,9 @@ export const AdminDashboardPage: React.FC = () => {
                         key={index}
                         className="flex justify-between items-center text-sm"
                       >
-                        <span className="text-gray-600">{cell.cellName}</span>
+                        <span className="text-muted-foreground">
+                          {cell.cellName}
+                        </span>
                         <span className="font-medium">
                           {cell.completionRate.toFixed(1)}%
                         </span>
@@ -210,25 +228,33 @@ export const AdminDashboardPage: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">전체 사용자:</span>
+                  <span className="text-sm text-muted-foreground">
+                    전체 사용자:
+                  </span>
                   <span className="font-medium">
                     {dashboard.users.totalUsers}명
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">활성 사용자:</span>
+                  <span className="text-sm text-muted-foreground">
+                    활성 사용자:
+                  </span>
                   <span className="font-medium">
                     {dashboard.users.activeUsers}명
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">비활성 사용자:</span>
+                  <span className="text-sm text-muted-foreground">
+                    비활성 사용자:
+                  </span>
                   <span className="font-medium">
                     {dashboard.users.inactiveUsers}명
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">최근 활동률:</span>
+                  <span className="text-sm text-muted-foreground">
+                    최근 활동률:
+                  </span>
                   <span className="font-medium">
                     {dashboard.users.activityRate.toFixed(1)}%
                   </span>
@@ -239,19 +265,19 @@ export const AdminDashboardPage: React.FC = () => {
                 <h4 className="font-medium mb-3">역할별 분포</h4>
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">관리자:</span>
+                    <span className="text-muted-foreground">관리자:</span>
                     <span className="font-medium">
                       {dashboard.users.roleDistribution.admin}명
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">선생님:</span>
+                    <span className="text-muted-foreground">선생님:</span>
                     <span className="font-medium">
                       {dashboard.users.roleDistribution.teacher}명
                     </span>
                   </div>
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">학생:</span>
+                    <span className="text-muted-foreground">학생:</span>
                     <span className="font-medium">
                       {dashboard.users.roleDistribution.student}명
                     </span>
@@ -269,7 +295,7 @@ export const AdminDashboardPage: React.FC = () => {
             <CardContent>
               <div className="space-y-4">
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     셀에 속한 사용자:
                   </span>
                   <span className="font-medium">
@@ -277,7 +303,7 @@ export const AdminDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     셀에 속하지 않은 사용자:
                   </span>
                   <span className="font-medium">
@@ -285,7 +311,7 @@ export const AdminDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     신규 가입자 (30일):
                   </span>
                   <span className="font-medium">
@@ -293,7 +319,7 @@ export const AdminDashboardPage: React.FC = () => {
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-muted-foreground">
                     최근 활성 사용자 (7일):
                   </span>
                   <span className="font-medium">

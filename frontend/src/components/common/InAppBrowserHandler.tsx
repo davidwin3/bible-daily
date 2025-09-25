@@ -97,8 +97,8 @@ export function InAppBrowserHandler({
       <Card className="w-full max-w-md mx-auto">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="p-3 bg-orange-100 rounded-full">
-              <AlertTriangle className="h-8 w-8 text-orange-600" />
+            <div className="p-3 bg-orange-100 dark:bg-orange-900/30 rounded-full">
+              <AlertTriangle className="h-8 w-8 text-orange-600 dark:text-orange-400" />
             </div>
           </div>
           <CardTitle className="text-xl">인앱 브라우저 호환 문제</CardTitle>
@@ -111,9 +111,9 @@ export function InAppBrowserHandler({
         <CardContent className="space-y-4">
           {!showManualGuide ? (
             <>
-              <div className="flex items-center gap-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                <Smartphone className="h-4 w-4 text-blue-600" />
-                <p className="text-sm text-blue-800">
+              <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-900/30 rounded-lg border border-blue-200 dark:border-blue-700">
+                <Smartphone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <p className="text-sm text-blue-800 dark:text-blue-200">
                   아래 버튼을 눌러 외부 브라우저로 이동하세요.
                 </p>
               </div>
