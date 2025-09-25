@@ -81,6 +81,114 @@ const getRandomVerse = () => {
   return SAMPLE_VERSES[Math.floor(Math.random() * SAMPLE_VERSES.length)];
 };
 
+// TTS 영어 음성 헬퍼 함수
+const createEnglishSpeech = (
+  text: string,
+  onEnd?: () => void,
+  onError?: (event?: SpeechSynthesisErrorEvent) => void
+) => {
+  if (!("speechSynthesis" in window)) {
+    console.warn("Speech synthesis not supported");
+    onError?.();
+    return;
+  }
+
+  // 영어 음성 찾기
+  const getEnglishVoice = () => {
+    const voices = speechSynthesis.getVoices();
+
+    // 1순위: 명시적으로 en-US 음성 찾기
+    let englishVoice = voices.find(
+      (voice) =>
+        voice.lang === "en-US" &&
+        !voice.name.includes("한국어") &&
+        !voice.name.includes("Korean")
+    );
+
+    // 2순위: en으로 시작하는 모든 영어 음성
+    if (!englishVoice) {
+      englishVoice = voices.find(
+        (voice) =>
+          voice.lang.startsWith("en") &&
+          !voice.name.includes("한국어") &&
+          !voice.name.includes("Korean")
+      );
+    }
+
+    // 3순위: 영어 키워드가 포함된 음성
+    if (!englishVoice) {
+      englishVoice = voices.find(
+        (voice) =>
+          voice.name.toLowerCase().includes("english") ||
+          voice.name.toLowerCase().includes("samantha") ||
+          voice.name.toLowerCase().includes("alex") ||
+          voice.name.toLowerCase().includes("daniel") ||
+          voice.name.toLowerCase().includes("karen") ||
+          voice.name.toLowerCase().includes("moira") ||
+          voice.name.toLowerCase().includes("tessa") ||
+          voice.name.toLowerCase().includes("veena") ||
+          voice.name.toLowerCase().includes("fred")
+      );
+    }
+
+    return englishVoice;
+  };
+
+  // 음성이 로드될 때까지 대기
+  const speakWithVoice = () => {
+    try {
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = "en-US";
+      utterance.rate = 0.8;
+      utterance.pitch = 1.0;
+      utterance.volume = 1.0;
+
+      const englishVoice = getEnglishVoice();
+      if (englishVoice) {
+        utterance.voice = englishVoice;
+        console.log("Selected voice:", englishVoice.name, englishVoice.lang);
+      } else {
+        console.warn("No English voice found, using default");
+      }
+
+      utterance.onend = () => {
+        console.log("Speech ended successfully");
+        onEnd?.();
+      };
+
+      utterance.onerror = (event) => {
+        console.error("Speech synthesis error:", event);
+        onError?.(event);
+      };
+
+      // iOS Safari 호환성을 위한 추가 처리
+      speechSynthesis.cancel(); // 이전 발화 취소
+      setTimeout(() => {
+        speechSynthesis.speak(utterance);
+      }, 100);
+    } catch (error) {
+      console.error("Error creating speech utterance:", error);
+      onError?.();
+    }
+  };
+
+  // 음성 목록이 로드되지 않은 경우 대기
+  if (speechSynthesis.getVoices().length === 0) {
+    const timeoutId = setTimeout(() => {
+      console.warn("Voice loading timeout");
+      onError?.();
+    }, 5000);
+
+    speechSynthesis.addEventListener("voiceschanged", function handler() {
+      clearTimeout(timeoutId);
+      speechSynthesis.removeEventListener("voiceschanged", handler);
+      speakWithVoice();
+    });
+  } else {
+    speakWithVoice();
+  }
+};
+
 interface LearningStepProps {
   verse: (typeof SAMPLE_VERSES)[0];
   onNext: () => void;
@@ -92,15 +200,12 @@ const MeditationStep: React.FC<LearningStepProps> = ({ verse, onNext }) => {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const handleSpeak = () => {
-    if ("speechSynthesis" in window) {
-      setIsPlaying(true);
-      const utterance = new SpeechSynthesisUtterance(verse.english);
-      utterance.lang = "en-US";
-      utterance.rate = 0.8;
-      utterance.onend = () => setIsPlaying(false);
-      utterance.onerror = () => setIsPlaying(false);
-      speechSynthesis.speak(utterance);
-    }
+    setIsPlaying(true);
+    createEnglishSpeech(
+      verse.english,
+      () => setIsPlaying(false), // onEnd
+      () => setIsPlaying(false) // onError
+    );
   };
 
   return (
@@ -500,12 +605,7 @@ const CompletionStep: React.FC<
   const navigate = useNavigate();
 
   const handleSpeak = () => {
-    if ("speechSynthesis" in window) {
-      const utterance = new SpeechSynthesisUtterance(verse.english);
-      utterance.lang = "en-US";
-      utterance.rate = 0.8;
-      speechSynthesis.speak(utterance);
-    }
+    createEnglishSpeech(verse.english);
   };
 
   return (
