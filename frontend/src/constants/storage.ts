@@ -5,5 +5,7 @@
 // 로컬 스토리지 키
 export const STORAGE_KEYS = {
   NOTIFICATION_SETTINGS: "notificationSettings",
+  NOTIFICATION_ENABLED: "notificationEnabled",
+  NOTIFICATION_PERMISSION_REQUESTED: "notificationPermissionRequested",
   TIMER_ID: "daily-reminder-timer-id",
 } as const;
