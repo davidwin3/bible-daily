@@ -7,7 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Calendar } from "@/components/ui/calendar";
 import { useAuth } from "@/contexts/auth";
@@ -20,13 +19,13 @@ import {
 } from "@/hooks/useMissions";
 import {
   BookOpenIcon,
+  CalendarIcon,
   CheckCircleIcon,
   CircleIcon,
-  CalendarIcon,
   TrendingUpIcon,
-  TargetIcon,
 } from "lucide-react";
 import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
+import { TodayMissionCard } from "@/components/missions/TodayMissionCard";
 import dayjs, { dayjsUtils } from "@/lib/dayjs";
 import { useQueryClient } from "@tanstack/react-query";
 import { missionKeys } from "@/queries";
@@ -149,63 +148,16 @@ export const MissionsPage: React.FC = () => {
 
       {/* Today's Mission */}
       {todayMission && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TargetIcon className="h-5 w-5 text-primary" />
-                <CardTitle className="text-lg">오늘의 미션</CardTitle>
-                <Badge variant="secondary">
-                  {formatDate(todayMission.date)}
-                </Badge>
-              </div>
-              {user && (
-                <Button
-                  variant={
-                    isMissionCompleted(todayMission.id) ? "default" : "outline"
-                  }
-                  size="sm"
-                  onClick={() => handleToggleCompletion(todayMission.id)}
-                  disabled={toggleCompletionMutation.isPending}
-                  className="flex items-center gap-2"
-                >
-                  {isMissionCompleted(todayMission.id) ? (
-                    <CheckCircleIcon className="h-4 w-4" />
-                  ) : (
-                    <CircleIcon className="h-4 w-4" />
-                  )}
-                  {isMissionCompleted(todayMission.id) ? "완료됨" : "읽기 완료"}
-                </Button>
-              )}
-            </div>
-            {todayMission.title && (
-              <CardDescription className="text-base font-medium">
-                {todayMission.title}
-              </CardDescription>
-            )}
-          </CardHeader>
-          <CardContent>
-            <ScriptureDisplay
-              mission={todayMission}
-              variant="mobile"
-              className="mb-4"
-            />
-
-            {todayMission.description && (
-              <p className="text-muted-foreground mb-4 whitespace-pre-wrap">
-                {todayMission.description}
-              </p>
-            )}
-
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <TrendingUpIcon className="h-4 w-4" />
-                완료율: {Math.round(todayMission.completionRate || 0)}%
-              </div>
-              <div>완료: {todayMission.completionCount || 0}명</div>
-            </div>
-          </CardContent>
-        </Card>
+        <TodayMissionCard
+          mission={todayMission}
+          variant="detailed"
+          isCompleted={isMissionCompleted(todayMission.id)}
+          onToggleCompletion={
+            user ? () => handleToggleCompletion(todayMission.id) : undefined
+          }
+          isLoading={toggleCompletionMutation.isPending}
+          showUser={!!user}
+        />
       )}
 
       {/* User Progress */}

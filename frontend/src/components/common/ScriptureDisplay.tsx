@@ -11,6 +11,7 @@ interface ScriptureDisplayProps {
   variant?: "default" | "compact" | "detailed" | "mobile";
   className?: string;
   allowExpand?: boolean;
+  showBibleApp?: boolean;
 }
 
 export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
@@ -18,6 +19,7 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
   variant = "default",
   className,
   allowExpand = false,
+  showBibleApp = true,
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   // 구절 포맷팅 함수
@@ -107,15 +109,17 @@ export const ScriptureDisplay: React.FC<ScriptureDisplayProps> = ({
               </Button>
             )}
 
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={openBibleApp}
-              className="h-6 w-6 p-0 md:h-8 md:w-8"
-              title="성경 앱에서 열기"
-            >
-              <ExternalLink className="h-3 w-3 md:h-4 md:w-4" />
-            </Button>
+            {showBibleApp && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={openBibleApp}
+                className="h-6 w-6 p-0 md:h-8 md:w-8"
+                title="성경 앱에서 열기"
+              >
+                <ExternalLink className="h-3 w-3 md:h-4 md:w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </div>

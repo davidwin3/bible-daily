@@ -2,18 +2,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Link } from "react-router-dom";
-import {
-  Calendar,
-  CheckCircle,
-  MessageSquare,
-  Target,
-  Users,
-} from "lucide-react";
+import { Calendar, MessageSquare, Target } from "lucide-react";
 import { useAuth } from "@/contexts/auth";
 import { useTodayMission } from "@/hooks/useMissions";
 import { usePosts, type Post } from "@/hooks/usePosts";
-import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
 import { OfflineSyncStatus } from "@/components/OfflineSyncStatus";
+import { TodayMissionCard } from "@/components/missions/TodayMissionCard";
 import { dayjsUtils } from "@/lib/dayjs";
 
 export const HomePage: React.FC = () => {
@@ -40,69 +34,50 @@ export const HomePage: React.FC = () => {
       </div>
 
       {/* 오늘의 미션 */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Target className="h-5 w-5 text-primary" />
-              <CardTitle>오늘의 미션</CardTitle>
+      {missionLoading ? (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Target className="h-5 w-5 text-primary" />
+                <CardTitle>오늘의 미션</CardTitle>
+              </div>
+              <Badge variant="secondary">
+                <Calendar className="h-3 w-3 mr-1" />
+                {dayjsUtils.formatKorean(dayjsUtils.now())}
+              </Badge>
             </div>
-            <Badge variant="secondary">
-              <Calendar className="h-3 w-3 mr-1" />
-              {dayjsUtils.formatKorean(dayjsUtils.now())}
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {missionLoading ? (
+          </CardHeader>
+          <CardContent>
             <div className="animate-pulse space-y-2">
               <div className="h-4 bg-muted rounded w-3/4"></div>
               <div className="h-3 bg-muted rounded w-1/2"></div>
             </div>
-          ) : todayMission ? (
-            <div className="space-y-3">
-              <div>
-                <h3 className="font-semibold mb-3">
-                  {todayMission.title || "오늘의 성경 읽기"}
-                </h3>
-                <ScriptureDisplay
-                  mission={todayMission}
-                  variant="compact"
-                  allowExpand={true}
-                />
-              </div>
-              {todayMission.description && (
-                <p className="text-sm whitespace-pre-wrap">
-                  {todayMission.description}
-                </p>
-              )}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-4 w-4" />
-                    <span>{todayMission.completionCount || 0}명 완료</span>
-                  </div>
-                  {todayMission.completionRate && (
-                    <div className="flex items-center gap-1">
-                      <CheckCircle className="h-4 w-4" />
-                      <span>{Math.round(todayMission.completionRate)}%</span>
-                    </div>
-                  )}
-                </div>
-                <Link to="/missions">
-                  <Button size="sm">자세히 보기</Button>
-                </Link>
-              </div>
+          </CardContent>
+        </Card>
+      ) : todayMission ? (
+        <TodayMissionCard
+          mission={todayMission}
+          variant="compact"
+          showUser={true}
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Target className="h-5 w-5 text-primary" />
+              <CardTitle>오늘의 미션</CardTitle>
             </div>
-          ) : (
+          </CardHeader>
+          <CardContent>
             <div className="text-center py-4">
               <p className="text-muted-foreground">
                 오늘의 미션이 준비되지 않았습니다
               </p>
             </div>
-          )}
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      )}
 
       {/* 최근 소감 */}
       <Card>
