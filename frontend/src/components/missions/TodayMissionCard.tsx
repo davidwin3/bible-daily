@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +12,7 @@ import {
   Calendar,
 } from "lucide-react";
 import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
+import { MissionUncompleteDialog } from "./MissionUncompleteDialog";
 import { dayjsUtils } from "@/lib/dayjs";
 import type { Mission } from "@/lib/types";
 
@@ -21,6 +23,7 @@ interface TodayMissionCardProps {
   isLoading?: boolean;
   variant?: "compact" | "detailed";
   showUser?: boolean;
+  enableUncompleteDialog?: boolean; // 미완료 다이얼로그 활성화 여부
 }
 
 export const TodayMissionCard: React.FC<TodayMissionCardProps> = ({
@@ -30,7 +33,36 @@ export const TodayMissionCard: React.FC<TodayMissionCardProps> = ({
   isLoading = false,
   variant = "detailed",
   showUser = true,
+  enableUncompleteDialog = false,
 }) => {
+  const [uncompleteDialog, setUncompleteDialog] = useState({
+    open: false,
+    missionDate: "",
+  });
+
+  const handleToggleClick = () => {
+    if (!onToggleCompletion) return;
+
+    // 다이얼로그가 활성화되어 있고, 현재 완료 상태인 경우 다이얼로그 표시
+    if (enableUncompleteDialog && isCompleted) {
+      const missionDate = formatDate(mission.date);
+      setUncompleteDialog({
+        open: true,
+        missionDate,
+      });
+      return;
+    }
+
+    // 그 외의 경우는 바로 토글
+    onToggleCompletion();
+  };
+
+  const handleConfirmUncomplete = () => {
+    if (onToggleCompletion) {
+      onToggleCompletion();
+    }
+  };
+
   const formatDate = (date: Date | string) => {
     if (variant === "compact") {
       return dayjsUtils.formatKorean(
@@ -115,7 +147,7 @@ export const TodayMissionCard: React.FC<TodayMissionCardProps> = ({
             <Button
               variant={isCompleted ? "default" : "outline"}
               size="sm"
-              onClick={onToggleCompletion}
+              onClick={handleToggleClick}
               disabled={isLoading}
               className="flex items-center gap-2"
             >
@@ -151,6 +183,18 @@ export const TodayMissionCard: React.FC<TodayMissionCardProps> = ({
           <div>완료: {mission.completionCount || 0}명</div>
         </div>
       </CardContent>
+
+      {/* Mission Uncomplete Dialog */}
+      {enableUncompleteDialog && (
+        <MissionUncompleteDialog
+          open={uncompleteDialog.open}
+          onOpenChange={(open) =>
+            setUncompleteDialog((prev) => ({ ...prev, open }))
+          }
+          onConfirm={handleConfirmUncomplete}
+          missionDate={uncompleteDialog.missionDate}
+        />
+      )}
     </Card>
   );
 };
