@@ -15,6 +15,7 @@ import { ScriptureDisplay } from "@/components/common/ScriptureDisplay";
 import { MissionUncompleteDialog } from "./MissionUncompleteDialog";
 import { dayjsUtils } from "@/lib/dayjs";
 import type { Mission } from "@/lib/types";
+import { useEventTracking } from "@/hooks/useAnalytics";
 
 interface TodayMissionCardProps {
   mission: Mission;
@@ -39,9 +40,20 @@ export const TodayMissionCard: React.FC<TodayMissionCardProps> = ({
     open: false,
     missionDate: "",
   });
+  const { trackButtonClick } = useEventTracking();
 
   const handleToggleClick = () => {
     if (!onToggleCompletion) return;
+
+    // 이벤트 추적
+    trackButtonClick("mission_completion_toggle", {
+      event_category: "mission",
+      custom_parameters: {
+        mission_id: mission.id,
+        action: isCompleted ? "uncomplete" : "complete",
+        variant: variant,
+      },
+    });
 
     // 다이얼로그가 활성화되어 있고, 현재 완료 상태인 경우 다이얼로그 표시
     if (enableUncompleteDialog && isCompleted) {
@@ -124,7 +136,20 @@ export const TodayMissionCard: React.FC<TodayMissionCardProps> = ({
                 </div>
               </div>
               <Link key="more" to="/missions">
-                <Button size="sm">자세히 보기</Button>
+                <Button
+                  size="sm"
+                  onClick={() =>
+                    trackButtonClick("mission_detail_view", {
+                      event_category: "navigation",
+                      custom_parameters: {
+                        mission_id: mission.id,
+                        source: "homepage_mission_card",
+                      },
+                    })
+                  }
+                >
+                  자세히 보기
+                </Button>
               </Link>
             </div>
           </div>

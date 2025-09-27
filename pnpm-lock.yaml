@@ -243,6 +243,9 @@ importers:
       firebase:
         specifier: ^12.1.0
         version: 12.2.0
+      gtag:
+        specifier: ^1.0.1
+        version: 1.0.1
       lucide-react:
         specifier: ^0.541.0
         version: 0.541.0(react@19.1.1)
@@ -334,6 +337,9 @@ importers:
       vite:
         specifier: ^7.1.2
         version: 7.1.3(@types/node@24.3.0)(jiti@1.21.7)(terser@5.43.1)(yaml@2.8.1)
+      vite-plugin-radar:
+        specifier: ^0.10.1
+        version: 0.10.1(vite@7.1.3(@types/node@24.3.0)(jiti@1.21.7)(terser@5.43.1)(yaml@2.8.1))
       vitest:
         specifier: ^3.2.4
         version: 3.2.4(@types/node@24.3.0)(jiti@1.21.7)(jsdom@26.1.0)(terser@5.43.1)(yaml@2.8.1)
@@ -4255,6 +4261,11 @@ packages:
   graphemer@1.4.0:
     resolution: {integrity: sha512-EtKwoO6kxCL9WO5xipiHTZlSzBm7WLT627TqC/uVRd0HKmq8NXyebnNYxDoBi7wt8eTWrUrKXCOVaFq9x1kgag==}
 
+  gtag@1.0.1:
+    resolution: {integrity: sha512-BvWgeldFJq1MBpgf5LP0UXhcvdzdl5Sb+TmC+l2hskLn4EWS2IDEqW4dbkKx2sxOqm8tCDpedu0xden1DdlD/w==}
+    engines: {node: '>=0.10.0'}
+    hasBin: true
+
   gtoken@7.1.0:
     resolution: {integrity: sha512-pCcEwRi+TKpMlxAQObHDQ56KawURgyAf6jtIY046fJ5tIv3zDe/LEIubckAO8fj6JnAxLdmWkUfNyulQ2iKdEw==}
     engines: {node: '>=14.0.0'}
@@ -6217,6 +6228,11 @@ packages:
     resolution: {integrity: sha512-EbKSKh+bh1E1IFxeO0pg1n4dvoOTt0UDiXMd/qn++r98+jPO1xtJilvXldeuQ8giIB5IkpjCgMleHMNEsGH6pg==}
     engines: {node: ^18.0.0 || ^20.0.0 || >=22.0.0}
     hasBin: true
+
+  vite-plugin-radar@0.10.1:
+    resolution: {integrity: sha512-a1PEDWgbuh7Wms8d/KHY5v7YM2w/mw2ShnlZSiIeAqr+sRQJf6POZE5Vg4eTXhoaWhKH89rl1llznHGNX9CMMQ==}
+    peerDependencies:
+      vite: ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
 
   vite@7.1.3:
     resolution: {integrity: sha512-OOUi5zjkDxYrKhTV3V7iKsoS37VUM7v40+HuwEmcrsf11Cdx9y3DIr2Px6liIcZFwt3XSRpQvFpL3WVy7ApkGw==}
@@ -10946,6 +10962,8 @@ snapshots:
 
   graphemer@1.4.0: {}
 
+  gtag@1.0.1: {}
+
   gtoken@7.1.0:
     dependencies:
       gaxios: 6.7.1
@@ -13089,6 +13107,10 @@ snapshots:
       - terser
       - tsx
       - yaml
+
+  vite-plugin-radar@0.10.1(vite@7.1.3(@types/node@24.3.0)(jiti@1.21.7)(terser@5.43.1)(yaml@2.8.1)):
+    dependencies:
+      vite: 7.1.3(@types/node@24.3.0)(jiti@1.21.7)(terser@5.43.1)(yaml@2.8.1)
 
   vite@7.1.3(@types/node@24.3.0)(jiti@1.21.7)(terser@5.43.1)(yaml@2.8.1):
     dependencies:

@@ -2,6 +2,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Home, MessageSquare, Target, Users, BookOpen } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { NewBadge } from "@/components/ui/NewBadge";
+import { useEventTracking } from "@/hooks/useAnalytics";
 
 const navItems = [
   { href: "/", label: "홈", icon: Home },
@@ -13,6 +14,7 @@ const navItems = [
 
 export const Navigation: React.FC = () => {
   const location = useLocation();
+  const { trackButtonClick } = useEventTracking();
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-background border-t border-border z-50 navigation-bottom">
@@ -30,6 +32,16 @@ export const Navigation: React.FC = () => {
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
                 )}
+                onClick={() =>
+                  trackButtonClick(`nav_${label}`, {
+                    event_category: "navigation",
+                    custom_parameters: {
+                      destination: href,
+                      nav_label: label,
+                      is_new_feature: isNew || false,
+                    },
+                  })
+                }
               >
                 <div className="relative">
                   <Icon className="h-5 w-5 mb-1" />

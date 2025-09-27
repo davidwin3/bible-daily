@@ -1,5 +1,6 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
+import { VitePluginRadar } from "vite-plugin-radar";
 import path from "path";
 import fs from "fs";
 import type { Plugin, ViteDevServer } from "vite";
@@ -8,9 +9,6 @@ import type { Plugin, ViteDevServer } from "vite";
 const processServiceWorker = (env: Record<string, string>) => {
   const envVars = {
     VITE_API_BASE_URL: env.VITE_API_BASE_URL || "http://localhost:3000",
-    VITE_FIREBASE_PROJECT_ID: env.VITE_FIREBASE_PROJECT_ID || "",
-    VITE_FIREBASE_MESSAGING_SENDER_ID:
-      env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
   };
 
   const swTemplatePath = path.resolve(__dirname, "src/sw.template.js");
@@ -41,6 +39,7 @@ const processFirebaseMessagingServiceWorker = (env: Record<string, string>) => {
     VITE_FIREBASE_MESSAGING_SENDER_ID:
       env.VITE_FIREBASE_MESSAGING_SENDER_ID || "",
     VITE_FIREBASE_APP_ID: env.VITE_FIREBASE_APP_ID || "",
+    VITE_FIREBASE_MEASUREMENT_ID: env.VITE_FIREBASE_MEASUREMENT_ID || "",
   };
 
   const firebaseSwTemplatePath = path.resolve(
@@ -161,6 +160,11 @@ export default defineConfig(({ mode }) => {
           : undefined,
       }),
       serviceWorkerPlugin(env),
+      VitePluginRadar({
+        analytics: {
+          id: env.VITE_FIREBASE_MEASUREMENT_ID || "",
+        },
+      }),
     ],
     resolve: {
       alias: {
