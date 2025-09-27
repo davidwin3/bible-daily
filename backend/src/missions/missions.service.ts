@@ -270,12 +270,101 @@ export class MissionsService {
     const completionRate =
       totalMissions > 0 ? (completedMissions / totalMissions) * 100 : 0;
 
+    // 연속 완료 계산을 위해 전체 미션 데이터 조회 (날짜 순으로 정렬)
+    const allUserMissions = await this.userMissionsRepository
+      .createQueryBuilder('userMission')
+      .leftJoinAndSelect('userMission.mission', 'mission')
+      .where('userMission.userId = :userId', { userId })
+      .orderBy('mission.date', 'ASC')
+      .getMany();
+
+    // 연속 완료 계산
+    const { currentStreak, longestStreak } =
+      this.calculateStreaks(allUserMissions);
+
     return {
       userMissions,
       totalMissions,
       completedMissions,
       completionRate,
+      currentStreak,
+      longestStreak,
     };
+  }
+
+  private calculateStreaks(userMissions: UserMission[]): {
+    currentStreak: number;
+    longestStreak: number;
+  } {
+    if (userMissions.length === 0) {
+      return { currentStreak: 0, longestStreak: 0 };
+    }
+
+    // 완료된 미션들만 필터링하고 completedAt 날짜순으로 정렬
+    const completedMissions = userMissions
+      .filter((um) => um.isCompleted && um.completedAt)
+      .map((um) => um.completedAt!.toISOString().split('T')[0]) // completedAt을 YYYY-MM-DD 형식으로 변환
+      .sort();
+
+    if (completedMissions.length === 0) {
+      return { currentStreak: 0, longestStreak: 0 };
+    }
+
+    // 중복 날짜 제거 (같은 날 여러 미션을 완료한 경우)
+    const uniqueCompletedDates = [...new Set(completedMissions)];
+
+    // 오늘 날짜
+    const today = new Date().toISOString().split('T')[0];
+
+    let currentStreak = 0;
+    let longestStreak = 0;
+    let tempStreak = 0;
+
+    // 현재 연속 완료 계산 (오늘부터 거슬러 올라가며)
+    const completedDatesSet = new Set(uniqueCompletedDates);
+    const checkDate = new Date(today);
+
+    while (true) {
+      const dateStr = checkDate.toISOString().split('T')[0];
+
+      if (completedDatesSet.has(dateStr)) {
+        currentStreak++;
+        // 하루 전으로 이동
+        checkDate.setDate(checkDate.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+
+    // 최장 연속 완료 계산
+    if (uniqueCompletedDates.length === 1) {
+      longestStreak = 1;
+    } else {
+      tempStreak = 1; // 첫 번째 완료는 무조건 1
+
+      for (let i = 1; i < uniqueCompletedDates.length; i++) {
+        const currentDate = new Date(uniqueCompletedDates[i]);
+        const previousDate = new Date(uniqueCompletedDates[i - 1]);
+
+        // 날짜 차이 계산 (밀리초를 일로 변환)
+        const diffTime = currentDate.getTime() - previousDate.getTime();
+        const diffDays = diffTime / (1000 * 60 * 60 * 24);
+
+        if (diffDays === 1) {
+          // 연속된 날짜
+          tempStreak++;
+          longestStreak = Math.max(longestStreak, tempStreak);
+        } else {
+          // 연속이 끊어짐
+          tempStreak = 1;
+        }
+      }
+
+      // 마지막 시퀀스도 체크
+      longestStreak = Math.max(longestStreak, tempStreak);
+    }
+
+    return { currentStreak, longestStreak };
   }
 
   // Admin only methods
