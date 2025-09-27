@@ -3,11 +3,19 @@
  * 페이지뷰, 이벤트 추적을 위한 재사용 가능한 함수들
  */
 
+import {
+  GA_COMMANDS,
+  GA_EVENTS,
+  GA_EVENT_CATEGORIES,
+  GA_DEFAULTS,
+  type GACommand,
+} from "../constants/analytics";
+
 // Google Analytics 타입 정의
 declare global {
   interface Window {
     gtag: (
-      command: "config" | "event" | "js" | "set",
+      command: GACommand,
       targetId: string | Date | object,
       config?: object
     ) => void;
@@ -58,7 +66,7 @@ class AnalyticsLogger {
 
       // gtag가 로드될 때까지 최대 5초 대기
       let attempts = 0;
-      const maxAttempts = 50; // 100ms * 50 = 5초
+      const maxAttempts = GA_DEFAULTS.MAX_GTAG_WAIT_ATTEMPTS; // 100ms * 50 = 5초
 
       const checkGtag = () => {
         if (typeof window.gtag === "function" || attempts >= maxAttempts) {
@@ -66,7 +74,7 @@ class AnalyticsLogger {
           return;
         }
         attempts++;
-        setTimeout(checkGtag, 100);
+        setTimeout(checkGtag, GA_DEFAULTS.GTAG_CHECK_INTERVAL);
       };
 
       checkGtag();
@@ -89,7 +97,7 @@ class AnalyticsLogger {
     };
 
     if (typeof window.gtag === "function") {
-      window.gtag("event", "page_view", pageViewData);
+      window.gtag(GA_COMMANDS.EVENT, GA_EVENTS.PAGE_VIEW, pageViewData);
     }
 
     if (this.isDevelopment) {
@@ -109,7 +117,7 @@ class AnalyticsLogger {
     await this.waitForGtag();
 
     const eventData = {
-      event_category: params.event_category || "engagement",
+      event_category: params.event_category || GA_DEFAULTS.EVENT_CATEGORY,
       event_label: params.event_label,
       value: params.value,
       ...params.custom_parameters,
@@ -123,7 +131,7 @@ class AnalyticsLogger {
     });
 
     if (typeof window.gtag === "function") {
-      window.gtag("event", eventName, eventData);
+      window.gtag(GA_COMMANDS.EVENT, eventName, eventData);
     }
 
     if (this.isDevelopment) {
@@ -138,8 +146,8 @@ class AnalyticsLogger {
     buttonName: string,
     params: GAEventParams = {}
   ): Promise<void> {
-    return this.trackEvent("click", {
-      event_category: "button",
+    return this.trackEvent(GA_EVENTS.CLICK, {
+      event_category: GA_EVENT_CATEGORIES.BUTTON,
       event_label: buttonName,
       ...params,
     });
@@ -149,8 +157,8 @@ class AnalyticsLogger {
    * 폼 제출 이벤트 추적
    */
   trackFormSubmit(formName: string, params: GAEventParams = {}): Promise<void> {
-    return this.trackEvent("form_submit", {
-      event_category: "form",
+    return this.trackEvent(GA_EVENTS.FORM_SUBMIT, {
+      event_category: GA_EVENT_CATEGORIES.FORM,
       event_label: formName,
       ...params,
     });
@@ -160,8 +168,8 @@ class AnalyticsLogger {
    * 검색 이벤트 추적
    */
   trackSearch(searchTerm: string, params: GAEventParams = {}): Promise<void> {
-    return this.trackEvent("search", {
-      event_category: "search",
+    return this.trackEvent(GA_EVENTS.SEARCH, {
+      event_category: GA_EVENT_CATEGORIES.SEARCH,
       event_label: searchTerm,
       search_term: searchTerm,
       ...params,
@@ -175,8 +183,8 @@ class AnalyticsLogger {
     engagementType: string,
     params: GAEventParams = {}
   ): Promise<void> {
-    return this.trackEvent("engagement", {
-      event_category: "user_engagement",
+    return this.trackEvent(GA_EVENTS.ENGAGEMENT, {
+      event_category: GA_EVENT_CATEGORIES.USER_ENGAGEMENT,
       event_label: engagementType,
       ...params,
     });
@@ -186,11 +194,11 @@ class AnalyticsLogger {
    * 오류 이벤트 추적
    */
   trackError(errorMessage: string, params: GAEventParams = {}): Promise<void> {
-    return this.trackEvent("exception", {
-      event_category: "error",
+    return this.trackEvent(GA_EVENTS.EXCEPTION, {
+      event_category: GA_EVENT_CATEGORIES.ERROR,
       event_label: errorMessage,
       description: errorMessage,
-      fatal: false,
+      fatal: GA_DEFAULTS.FATAL,
       ...params,
     });
   }
@@ -215,7 +223,7 @@ class AnalyticsLogger {
     await this.waitForGtag();
 
     if (typeof window.gtag === "function") {
-      window.gtag("set", {
+      window.gtag(GA_COMMANDS.SET, {
         [propertyName]: value,
       });
     }

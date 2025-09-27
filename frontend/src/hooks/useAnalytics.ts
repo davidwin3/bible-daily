@@ -5,6 +5,14 @@
 import { useCallback, useEffect } from "react";
 import { useLocation } from "react-router-dom";
 import { analytics, type GAEventParams } from "../lib/analytics";
+import {
+  GA_EVENT_CATEGORIES,
+  GA_ENGAGEMENT_TYPES,
+  GA_INTERACTION_TYPES,
+  GA_DEFAULTS,
+  GA_SCROLL_THRESHOLDS,
+  GA_TIME_INTERVALS,
+} from "../constants/analytics";
 
 /**
  * 페이지뷰 자동 추적 훅
@@ -118,7 +126,7 @@ export function useFormTracking() {
           originalHandler?.();
         } catch (error) {
           trackError(`Form submission error: ${formName}`, {
-            event_category: "form_error",
+            event_category: GA_EVENT_CATEGORIES.FORM_ERROR,
             custom_parameters: { form_name: formName },
           });
           throw error;
@@ -134,7 +142,9 @@ export function useFormTracking() {
 /**
  * 스크롤 추적 훅
  */
-export function useScrollTracking(threshold: number = 75) {
+export function useScrollTracking(
+  threshold: number = GA_SCROLL_THRESHOLDS.DEFAULT
+) {
   const { trackEngagement } = useEventTracking();
 
   useEffect(() => {
@@ -150,8 +160,8 @@ export function useScrollTracking(threshold: number = 75) {
       );
 
       if (scrollPercent >= threshold) {
-        trackEngagement("scroll", {
-          event_category: "scroll_tracking",
+        trackEngagement(GA_ENGAGEMENT_TYPES.SCROLL, {
+          event_category: GA_EVENT_CATEGORIES.SCROLL_TRACKING,
           value: scrollPercent,
           custom_parameters: { scroll_depth: scrollPercent },
         });
@@ -167,7 +177,9 @@ export function useScrollTracking(threshold: number = 75) {
 /**
  * 시간 기반 참여도 추적 훅
  */
-export function useTimeTracking(intervals: number[] = [30, 60, 120, 300]) {
+export function useTimeTracking(
+  intervals: readonly number[] = GA_TIME_INTERVALS.DEFAULT
+) {
   const { trackEngagement } = useEventTracking();
 
   useEffect(() => {
@@ -179,8 +191,8 @@ export function useTimeTracking(intervals: number[] = [30, 60, 120, 300]) {
 
       intervals.forEach((interval) => {
         if (timeSpent >= interval && !trackedIntervals.has(interval)) {
-          trackEngagement("time_on_page", {
-            event_category: "engagement_time",
+          trackEngagement(GA_ENGAGEMENT_TYPES.TIME_ON_PAGE, {
+            event_category: GA_EVENT_CATEGORIES.ENGAGEMENT_TIME,
             value: interval,
             custom_parameters: { time_spent_seconds: interval },
           });
@@ -189,7 +201,10 @@ export function useTimeTracking(intervals: number[] = [30, 60, 120, 300]) {
       });
     };
 
-    const intervalId = setInterval(checkTimeSpent, 5000); // 5초마다 체크
+    const intervalId = setInterval(
+      checkTimeSpent,
+      GA_DEFAULTS.SCROLL_CHECK_INTERVAL
+    ); // 5초마다 체크
     return () => clearInterval(intervalId);
   }, [intervals, trackEngagement]);
 }
@@ -202,20 +217,20 @@ export function useInteractionTracking() {
 
   useEffect(() => {
     let interactionCount = 0;
-    const maxInteractions = 10; // 최대 10개까지만 추적
+    const maxInteractions = GA_DEFAULTS.MAX_INTERACTIONS; // 최대 10개까지만 추적
 
     const handleInteraction = (type: string) => {
       if (interactionCount >= maxInteractions) return;
 
-      trackEngagement("user_interaction", {
-        event_category: "interaction",
+      trackEngagement(GA_ENGAGEMENT_TYPES.USER_INTERACTION, {
+        event_category: GA_EVENT_CATEGORIES.INTERACTION,
         event_label: type,
         value: ++interactionCount,
       });
     };
 
-    const handleClick = () => handleInteraction("click");
-    const handleKeydown = () => handleInteraction("keydown");
+    const handleClick = () => handleInteraction(GA_INTERACTION_TYPES.CLICK);
+    const handleKeydown = () => handleInteraction(GA_INTERACTION_TYPES.KEYDOWN);
 
     document.addEventListener("click", handleClick, { passive: true });
     document.addEventListener("keydown", handleKeydown, { passive: true });
