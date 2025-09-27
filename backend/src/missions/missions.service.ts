@@ -263,12 +263,43 @@ export class MissionsService {
 
     const userMissions = await queryBuilder.getMany();
 
-    const totalMissions = userMissions.length;
+    // 해당 월의 전체 미션 수 조회 (오늘 이전 미션만)
+    let totalMissionsInMonth = 0;
+    if (month) {
+      const startOfMonth = new Date(`${month}-01`);
+      const endOfMonth = new Date(
+        startOfMonth.getFullYear(),
+        startOfMonth.getMonth() + 2,
+        0,
+      );
+
+      const startDateStr = startOfMonth.toISOString().split('T')[0];
+      const endDateStr = endOfMonth.toISOString().split('T')[0];
+      const today = new Date().toISOString().split('T')[0];
+
+      // 오늘 날짜와 월 마지막 날 중 더 이른 날짜를 사용
+      const actualEndDate = endDateStr < today ? endDateStr : today;
+
+      totalMissionsInMonth = await this.missionsRepository
+        .createQueryBuilder('mission')
+        .where('mission.date BETWEEN :startDate AND :endDate', {
+          startDate: startDateStr,
+          endDate: actualEndDate,
+        })
+        .andWhere('mission.isActive = :isActive', { isActive: true })
+        .getCount();
+    } else {
+      // 월이 지정되지 않은 경우 사용자가 참여한 미션 수 사용 (기존 로직 유지)
+      totalMissionsInMonth = userMissions.length;
+    }
+
     const completedMissions = userMissions.filter(
       (um) => um.isCompleted,
     ).length;
     const completionRate =
-      totalMissions > 0 ? (completedMissions / totalMissions) * 100 : 0;
+      totalMissionsInMonth > 0
+        ? (completedMissions / totalMissionsInMonth) * 100
+        : 0;
 
     // 연속 완료 계산을 위해 전체 미션 데이터 조회 (날짜 순으로 정렬)
     const allUserMissions = await this.userMissionsRepository
@@ -284,7 +315,7 @@ export class MissionsService {
 
     return {
       userMissions,
-      totalMissions,
+      totalMissions: totalMissionsInMonth,
       completedMissions,
       completionRate,
       currentStreak,
