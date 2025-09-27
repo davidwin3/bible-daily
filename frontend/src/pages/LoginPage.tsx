@@ -12,6 +12,7 @@ import { useNavigate } from "react-router-dom";
 import { NotificationPermissionModal } from "@/components/notifications/NotificationPermissionModal";
 import { usePWAEnvironment } from "@/hooks/usePWAEnvironment";
 import { STORAGE_KEYS } from "@/constants";
+import { useEventTracking } from "@/hooks/useAnalytics";
 
 export const LoginPage: React.FC = () => {
   const { login, user, loading, pendingRegistration } = useAuth();
@@ -19,6 +20,7 @@ export const LoginPage: React.FC = () => {
   const { isPWA, isLoading: isPWALoading } = usePWAEnvironment();
   const [showNotificationModal, setShowNotificationModal] = useState(false);
   const [isFirstLogin, setIsFirstLogin] = useState(false);
+  const { trackButtonClick, trackEvent } = useEventTracking();
 
   useEffect(() => {
     if (user) {
@@ -44,10 +46,28 @@ export const LoginPage: React.FC = () => {
 
   const handleGoogleLogin = async () => {
     try {
+      trackButtonClick("google_login", {
+        event_category: "authentication",
+        custom_parameters: { login_method: "google" },
+      });
+
       setIsFirstLogin(true); // 로그인 시도 시 첫 로그인으로 표시
       await login();
+
+      trackEvent("login_success", {
+        event_category: "authentication",
+        custom_parameters: { login_method: "google" },
+      });
     } catch (error) {
       console.error("Login failed:", error);
+      trackEvent("login_failed", {
+        event_category: "authentication",
+        custom_parameters: {
+          login_method: "google",
+          error_message:
+            error instanceof Error ? error.message : "Unknown error",
+        },
+      });
       setIsFirstLogin(false); // 로그인 실패 시 초기화
     }
   };

@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { useToggleLike, useLikeStatus } from "@/hooks/usePosts";
 import { useAuth } from "@/contexts/auth";
 import { cn } from "@/lib/utils";
+import { useEventTracking } from "@/hooks/useAnalytics";
 
 interface LikeButtonProps {
   postId: string;
@@ -23,6 +24,7 @@ export function LikeButton({
     !!user && user.id !== authorId
   );
   const toggleLikeMutation = useToggleLike();
+  const { trackButtonClick } = useEventTracking();
 
   // 자신의 게시물인 경우 좋아요 버튼 비활성화
   const isOwnPost = user?.id === authorId;
@@ -32,6 +34,17 @@ export function LikeButton({
 
   const handleToggleLike = () => {
     if (isDisabled) return;
+
+    const isLiked = likeStatus?.liked || false;
+    trackButtonClick("post_like_toggle", {
+      event_category: "engagement",
+      custom_parameters: {
+        post_id: postId,
+        action: isLiked ? "unlike" : "like",
+        current_like_count: likeCount,
+      },
+    });
+
     toggleLikeMutation.mutate(postId);
   };
 

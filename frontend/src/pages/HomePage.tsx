@@ -9,9 +9,11 @@ import { usePosts, type Post } from "@/hooks/usePosts";
 import { OfflineSyncStatus } from "@/components/OfflineSyncStatus";
 import { TodayMissionCard } from "@/components/missions/TodayMissionCard";
 import { dayjsUtils } from "@/lib/dayjs";
+import { useEventTracking } from "@/hooks/useAnalytics";
 
 export const HomePage: React.FC = () => {
   const { user } = useAuth();
+  const { trackButtonClick } = useEventTracking();
 
   const { data: todayMission, isLoading: missionLoading } = useTodayMission();
   const { data: recentPosts, isLoading: postsLoading } = usePosts({ limit: 3 });
@@ -88,7 +90,16 @@ export const HomePage: React.FC = () => {
               <CardTitle>최근 소감</CardTitle>
             </div>
             <Link to="/posts">
-              <Button variant="outline" size="sm">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  trackButtonClick("view_all_posts", {
+                    event_category: "navigation",
+                    custom_parameters: { source: "homepage" },
+                  })
+                }
+              >
                 전체 보기
               </Button>
             </Link>

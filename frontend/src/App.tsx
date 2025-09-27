@@ -34,6 +34,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import { AdminRoute } from "@/components/auth/AdminRoute";
 import { InAppBrowserAlert } from "@/components/common/InAppBrowserHandler";
 import { PWADebugToggle } from "@/components/debug/PWADebugToggle";
+import { usePageViewTracking } from "@/hooks/useAnalytics";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -52,6 +53,9 @@ const queryClient = new QueryClient({
 // Service Worker 메시지 처리 컴포넌트
 function ServiceWorkerMessageHandler() {
   const navigate = useNavigate();
+
+  // 페이지뷰 자동 추적
+  usePageViewTracking();
 
   useEffect(() => {
     const handleMessage = (event: MessageEvent) => {
